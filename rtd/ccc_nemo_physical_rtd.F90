@@ -479,7 +479,7 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('wo', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
           gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
           ! EI u-velocity (only if present in the file)
-          status = nf_inq_varid(iou3, "uoce_eiv", varid)
+          status = nf_inq_varid(iou2, "uoce_eiv", varid)
           IF (status.eq.nf90_noerr) THEN 
               CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
           ELSE; print*,'WARNING: Eddy induced velovity n ot found (normal if ln_ldfeiv = .FALSE.)'
@@ -488,7 +488,7 @@ PROGRAM nemo_ocean_diag
           status = nf_inq_varid(iou3, "voce_eiv", varid)
           IF (status.eq.nf90_noerr) CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
           ! EI w-velocity (only if present in the file)
-          status = nf_inq_varid(iou3, "woce_eiv", varid)
+          status = nf_inq_varid(iou4, "woce_eiv", varid)
           IF (status.eq.nf90_noerr) CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! Wind Stress along i-axis
           CALL getvara ('tauuo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
