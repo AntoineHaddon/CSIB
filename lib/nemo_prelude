@@ -459,8 +459,8 @@ echo "#################### Start NEMO pre-processing #################"
     cn_trcrst_out=${nemo_cn_trcrst_out:="restart_trc"}
 
     # Ocean restart files
-    found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
+    found_rs=`(ls -1 ${runid}*_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 ${runid}*_${cn_ocerst_out}.nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
     rm -f input_ocn_restart_file_names
     touch input_ocn_restart_file_names
@@ -475,8 +475,8 @@ echo "#################### Start NEMO pre-processing #################"
     # Ice restart files
     rm -f input_ice_restart_file_names
     touch input_ice_restart_file_names
-    found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icerst_out}.nc || : ) 2>/dev/null`
+    found_rs=`(ls -1 ${runid}*_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 ${runid}*_${cn_icerst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
       [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs"
       with_ice=off
@@ -493,8 +493,8 @@ echo "#################### Start NEMO pre-processing #################"
     # trc restart files
     rm -f input_trc_restart_file_names
     touch input_trc_restart_file_names
-    found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
+    found_rs=`(ls -1 ${runid}*_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 ${runid}*_${cn_trcrst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
       [ "$nemo_trc" = "on" ] && bail "No trc restart files were found in $nemo_rs"
     else
