@@ -76,9 +76,7 @@ for i in $(seq 0 $((n_suffix-1))); do
 done
 
 # The rebuild executable must be accessable at run time and namelist files present in cwd
-if [[ ! -f rebuild_nemo.exe ]]; then
-  cp ${EXEC_STORAGE_DIR}/rebuild_nemo.exe . || bail "Unable to get rebuild_nemo.exe"
-fi
+cp ${EXEC_STORAGE_DIR}/rebuild_nemo.exe . || bail "Unable to get rebuild_nemo.exe"
 
 # Can use Open MP. But probably only running on one processor.
 export OMP_NUM_THREADS=2
@@ -119,6 +117,33 @@ if (( with_rbld_nemo == 1 )) ; then
          cd $wrkdir
          rm -rf $indir
       fi
+               # Replace the lat/lon to remove the hold made by the land processors elimination
+      ncsave=${freq}_${lsfx}
+      access  $ncsave.nc $indir.nc na 
+      if [ -e "$ncsave.nc" ] ; then
+        chmod u+w $(readlink -f "$ncsave.nc")
+        # detect the grid (U/V/F/T) with the suffix
+        if [[ ${sfx,,} == *"grid_u"*  ]];then
+                  ( ncks -A -h -v glamu,gphiu coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamu;nav_lat=gphiu"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"grid_v"*  ]];then
+                  ( ncks -A -h -v glamv,gphiv coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamv;nav_lat=gphiv"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"grid_f"*  ]];then
+                  ( ncks -A -h -v glamf,gphif coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamf;nav_lat=gphif"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"diaptr"*  ]];then
+                  (  release $ncsave.nc &&
+                   continue )
+        else # grid T is the default 
+                  ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
+        fi
+        ncks -h -O -x -v gphi.,glam.  $ncsave.nc  $ncsave.nc
+        chmod u-w $(readlink -f "$ncsave.nc")
+        release $ncsave.nc
+      fi
+
    done
 fi
 
@@ -168,7 +193,7 @@ outrs=${modellast}_nemors
 #       which would result in $inrs=$outrs
 access in_${inrs} $inrs nocp=off
 cd in_${inrs}
-ln -s ../rebuild_nemo.exe .
+ln -sf ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
 nn_itend=$(cat rs_time.step)
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
@@ -187,7 +212,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs" ] || mv -n $found_rs $pfx.nc
 fi
 
 # Check if the RS is already rebuilt, in which case do nothing.
@@ -209,7 +234,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart_ice.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs" ] || mv -n $found_rs $pfx.nc
 fi
 
 fnpatt=${pfx}_0000.nc
@@ -230,7 +255,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart_trc.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs" ] || mv -n $found_rs $pfx.nc
 fi
 
 fnpatt=${pfx}_0000.nc
