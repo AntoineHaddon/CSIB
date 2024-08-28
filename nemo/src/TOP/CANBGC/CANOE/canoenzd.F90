@@ -49,16 +49,18 @@ MODULE canoenzd
    REAL(wp), PUBLIC :: zsr2    = 0.3_wp     !: specific respiration rate
    REAL(wp), PUBLIC :: lambda2 = 0.8_wp     !: assimilation efficiency
    REAL(wp), PUBLIC :: xremik = 0.25_wp     !: remineralisation rate of POC 
-   REAL(wp), PUBLIC :: xremip = 0.025_wp    !: remineralisation rate of DOC
+   REAL(wp), PUBLIC :: xremip = 0.025_wp    !: remineralisation rate of DOC (not used)
    REAL(wp), PUBLIC :: nitrif = 0.05_wp     !: NH4 nitrification rate 
    REAL(wp), PUBLIC :: xlam1  = 0.0001_wp   !: scavenging rate of iron (low concentrations)
    REAL(wp), PUBLIC :: xlam2  = 2.5_wp      !: scavenging rate of iron (high concentrations)
    REAL(wp), PUBLIC :: ligand = 6.0E+2_wp   !: ligand concentration
-   REAL(wp), PUBLIC :: pocfctr= 0.65574_wp  !: multiplier for POC-dependent scavenging
-   REAL(wp), PUBLIC :: o2thresh  = 6._wp    !: O2 threshold for denitrification
+   REAL(wp), PUBLIC :: pocfctr = 0.65574_wp !: multiplier for POC-dependent Fe scavenging
+   REAL(wp), PUBLIC :: o2thresh = 6._wp     !: O2 threshold for denitrification
    REAL(wp), PUBLIC :: nh4frx = 0.25_wp     !: anammox fraction of denitrification
    REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for O2 inhibition of nitrification
    REAL(wp), PUBLIC :: nyld   = 0.8_wp      !: denitrification stoichiometric coefficient
+   REAL(wp), PUBLIC :: kdca   = 0.0074_wp   !: dissolution rate of CaCO3
+   REAL(wp), PUBLIC :: nca    = 1._wp       !: order of dissolution reaction (not used)
 
    !REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
 
@@ -599,6 +601,12 @@ CONTAINS
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*nyld*zonitr*(1.-nh4frx)        ! +1 mol if denitrification, 0 if anammox
                denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
 
+! CaCO3 dissolution
+               zorem2 = kdca * xstepb * tr(ji,jj,jk,jrcal,Kmm)
+               tr(ji,jj,jk,jrcal, Krhs) = tr(ji,jj,jk,jrcal, Krhs) - zorem2 
+               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + zorem2 * 1.e-6
+               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + zorem2 * 2.e-6
+
             END DO
          END DO
       END DO
@@ -675,6 +683,7 @@ CONTAINS
       NAMELIST/namcanmes/ part2, gmax2, apl, zsr2, lambda2
       NAMELIST/namcanrem/ xremik, xremip, nitrif, xlam1, xlam2, ligand, pocfctr, o2thresh, &
                         & nh4frx, oxymin
+      NAMELIST/namcancal/ kdca, nca
 
       !!----------------------------------------------------------------------
 
@@ -709,6 +718,14 @@ CONTAINS
       READ  ( numnatp_cfgb, namcanrem, IOSTAT = ios, ERR = 908 )
 908   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanrem in configuration namelist_canoe' )
       IF(lwp) WRITE( numonpb, namcanrem )
+
+      REWIND( numnatp_refb )              ! Namelist namcancal in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcancal, IOSTAT = ios, ERR = 909)
+909   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcancal in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcancal in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcancal, IOSTAT = ios, ERR = 910 )
+910   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcancal in configuration namelist_canoe' )
+      IF(lwp) WRITE( numonpb, namcancal )
 
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' '
@@ -753,6 +770,12 @@ CONTAINS
          WRITE(numout,*) '    O2 threshold for denitrification          o2thresh  =', o2thresh
          WRITE(numout,*) '    Annamox fraction of denitrification       nh4frx    =', nh4frx
          WRITE(numout,*) '    O2 dependence of nitrification            oxymin    =', oxymin
+
+         WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for CaCO3 dissolution'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    calcite dissolution rate constant in d^-1           =', kdca
+         WRITE(numout,*) '    order of dissolution reaction (not used)            =', nca
 
       ENDIF
 

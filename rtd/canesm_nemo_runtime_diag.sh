@@ -166,12 +166,12 @@
       access icemod $rtd_hist7 na
 
       # Create run time diagnostics for physical ocean variables
-      [ -s grid_t ] && $nemo_physical_rtd_exe ${yearm} ${mon}
+      $nemo_physical_rtd_exe ${yearm} ${mon} 
 
                    # Sea-ice run time diagnostics
 
       # Create run time diagnostics for ice variables
-      [ -s icemod ] && $nemo_ice_rtd_exe ${yearm} ${mon}
+      $nemo_ice_rtd_exe ${yearm} ${mon}
 
       if [ "$nemo_carbon" = "on" ]; then
                    # Carbon run time diagnostics
@@ -181,7 +181,7 @@
         access ptrc_t $rtd_hist8 na
         access diad_t $rtd_hist9 na
 
-        [ -s ptrc_t ] && [ -s diad_t ] && $nemo_carbon_rtd_exe ${yearm} ${mon}
+        $nemo_carbon_rtd_exe ${yearm} ${mon}
       fi
 
       # Clean up

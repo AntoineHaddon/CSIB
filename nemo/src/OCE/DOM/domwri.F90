@@ -24,6 +24,8 @@ MODULE domwri
    USE iom             ! I/O library
    USE lbclnk          ! lateral boundary conditions - mpp exchanges
    USE lib_mpp         ! MPP library
+   USE sbc_oce, ONLY : nn_ice
+   USE ice, ONLY : jpl,hi_max,hi_mean   ! need the number of ice  categories and their limit
 
    IMPLICIT NONE
    PRIVATE
@@ -85,6 +87,12 @@ CONTAINS
       IF(ln_sco)   CALL iom_putatt( inum, 'VertCoord', 'sco' )
       !                                                         ! ocean cavities under iceshelves
       CALL iom_putatt( inum,   'IsfCav', COUNT( (/ln_isfcav/) ) )  
+      !                                                         ! Sea ice cathegory
+      IF( nn_ice.eq.2) THEN 
+          CALL iom_putatt( inum,   'jpl', jpl ) 
+          CALL iom_rstput( 0, 0, inum, 'hi_max'   , hi_max(1:jpl)   , ktype = jp_r8 ) ! hi_max(0) = 0.
+          CALL iom_rstput( 0, 0, inum, 'hi_mean'   , hi_mean(1:jpl)   , ktype = jp_r8 ) 
+      ENDIF
       !                                                         ! masks
       CALL iom_rstput( 0, 0, inum, 'tmask', tmask, ktype = jp_i1 )     !    ! land-sea mask
       CALL iom_rstput( 0, 0, inum, 'umask', umask, ktype = jp_i1 )

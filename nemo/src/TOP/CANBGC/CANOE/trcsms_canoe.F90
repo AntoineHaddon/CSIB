@@ -147,6 +147,7 @@ CONTAINS
         IF(lwp) write(numout,*) '~~~~~~'
   
         CALL trc_che_2D( kt,Kmm )           ! computation of carbon chemistry constants
+        CALL trc_che_3D( kt,Kmm )           ! computation of carbon chemistry constants
             !
       ENDIF  
       !
