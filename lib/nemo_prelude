@@ -541,7 +541,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   # in case of CanTODS (which has open boundaries), turn off tide ramp
   # on restart (it may not have been on, but this ensures it is off!)
-  if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]] && [[ "$ln_rstart" = ".true." ]]; then
+  if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]] && [[ "$ln_rstart" == ".true." ]]; then
     rn_tide_ramp_dt=0
     mod_nl namelist_cfg rn_tide_ramp_dt
   fi
