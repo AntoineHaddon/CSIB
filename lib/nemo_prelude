@@ -100,7 +100,9 @@ echo "#################### Start NEMO pre-processing #################"
         [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        # In future, will want different forcing. For now, just repeat 2017.
+        #forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        forcing_year=2017
         acc_cp tair_cantods025_y${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
         acc_cp u_cantods025_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
         acc_cp v_cantods025_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
