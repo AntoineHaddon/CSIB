@@ -117,24 +117,24 @@ MODULE trcsms_csib
 
 
    ! model parameters
-   REAL(wp), SAVE ::   z_ia = 0.03_wp                    ! height of skeletal layer
+   REAL(wp), PUBLIC, SAVE ::   z_ia = 0.03_wp                    ! height of skeletal layer
 
-   REAL(wp), SAVE ::   mu_max = 0.85_wp / 86400._wp      ! Maximum specific growth rate  (d)-1 / sec per day
-   REAL(wp), SAVE ::   t_ia = 0.0633_wp                  ! Temperature sensitivity coefficient for the ice algal growth (C)-1
-   REAL(wp), SAVE ::   r_pp = 2.0_wp                     ! ratio of photosynthetic parameters (W m-2)-1
-   REAL(wp), SAVE ::   h_ni = 1.0_wp                     ! N limitation half saturation constant (mmol N m-3)
-   REAL(wp), SAVE ::   vnh4 = 0.2_wp                     ! half-saturation constant for preferential uptake of NH4 (mmol N m-3)
-   REAL(wp), SAVE ::   C2N_dia = 8.83_wp                 ! Carbon to Nitrogen ratio for ice diatoms (-)
-   REAL(wp), SAVE ::   N2C_dia = 1._wp/8.83_wp           ! Nitrogen to Carbon ratio for ice diatoms (-)
-   REAL(wp), SAVE ::   b_ia = 10.0_wp                    ! Mortality threshold for ice diatoms (mmol C m-3)
-   REAL(wp), SAVE ::   r_m1 = 0.03_wp / 86400._wp        ! Linear Mortality rate for ice diatoms (d-1)  / sec per day
-   REAL(wp), SAVE ::   r_m2 = 0.00015_wp / 86400._wp     ! Quadratic Mortality rate for ice diatoms (mmol C m-3 d-1)  / sec per day
-   REAL(wp), SAVE ::   f_rm = 0.3_wp                     ! Remineralization fraction (-)
-   REAL(wp), SAVE ::   r_ni = 0.01_wp  / 86400._wp       ! Nitrification rate (d-1 W m-2)  / sec per day
+   REAL(wp), PUBLIC, SAVE ::   mu_max = 0.85_wp / 86400._wp      ! Maximum specific growth rate  (d)-1 / sec per day
+   REAL(wp), PUBLIC, SAVE ::   t_ia = 0.0633_wp                  ! Temperature sensitivity coefficient for the ice algal growth (C)-1
+   REAL(wp), PUBLIC, SAVE ::   r_pp = 2.0_wp                     ! ratio of photosynthetic parameters (W m-2)-1
+   REAL(wp), PUBLIC, SAVE ::   h_ni = 1.0_wp                     ! N limitation half saturation constant (mmol N m-3)
+   REAL(wp), PUBLIC, SAVE ::   vnh4 = 0.2_wp                     ! half-saturation constant for preferential uptake of NH4 (mmol N m-3)
+   REAL(wp), PUBLIC, SAVE ::   C2N_dia = 8.83_wp                 ! Carbon to Nitrogen ratio for ice diatoms (-)
+   REAL(wp), PUBLIC, SAVE ::   N2C_dia = 1._wp/8.83_wp           ! Nitrogen to Carbon ratio for ice diatoms (-)
+   REAL(wp), PUBLIC, SAVE ::   b_ia = 10.0_wp                    ! Mortality threshold for ice diatoms (mmol C m-3)
+   REAL(wp), PUBLIC, SAVE ::   r_m1 = 0.03_wp / 86400._wp        ! Linear Mortality rate for ice diatoms (d-1)  / sec per day
+   REAL(wp), PUBLIC, SAVE ::   r_m2 = 0.00015_wp / 86400._wp     ! Quadratic Mortality rate for ice diatoms (mmol C m-3 d-1)  / sec per day
+   REAL(wp), PUBLIC, SAVE ::   f_rm = 0.3_wp                     ! Remineralization fraction (-)
+   REAL(wp), PUBLIC, SAVE ::   r_ni = 0.01_wp  / 86400._wp       ! Nitrification rate (d-1 W m-2)  / sec per day
 
-   ! REAL(wp), SAVE ::   c_di = 4.7e-8_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
-   REAL(wp), SAVE ::   c_di = 4.7e-10_wp                 ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
-   REAL(wp), SAVE ::   c_nu = 1.85e-6_wp                 ! Kinematic viscosity of seawater (m2/s)
+   ! REAL(wp), PUBLIC, SAVE ::   c_di = 4.7e-8_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
+   REAL(wp), PUBLIC, SAVE ::   c_di = 4.7e-10_wp                 ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
+   REAL(wp), PUBLIC, SAVE ::   c_nu = 1.85e-6_wp                 ! Kinematic viscosity of seawater (m2/s)
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -157,8 +157,9 @@ CONTAINS
       
       INTEGER  ::   ji,jj,jl           ! dummy loop index
       REAL(wp) :: zscale               ! scale factor between sea ice skeletal layer and ocean surface layer
-      REAL(wp) :: zmaxia               ! for diagnostics/debug
       REAL(wp) :: if_below_bia=0._wp   ! mortality switch
+      REAL(wp) :: zdtDif               ! temp variable for molecular diff
+      REAL(wp) :: zmaxia               ! for diagnostics/debug
 
       !!----------------------------------------------------------------------
       !
@@ -253,9 +254,9 @@ CONTAINS
       CALL ice_friction_velocity
 
 
-      DO jl = 1, jpl
-         DO jj = 1, jpj
-            DO ji = 1, jpi
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            DO jl = 1, jpl
          
                IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
@@ -310,12 +311,12 @@ CONTAINS
                   lagup_no3(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) * da_lag_cat(ji,jj,jl)
                   lagup_nh4(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) * da_lag_cat(ji,jj,jl)
 
-                  ! Diffusion of N at ice ocean interface
-                  ! = D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
-                  IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
-                     moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
-                     moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
-                  ENDIF
+                  ! ! Diffusion of N at ice ocean interface
+                  ! ! = D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
+                  ! IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
+                  !    moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
+                  !    moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
+                  ! ENDIF
 
                   
                ! Biogeochemical processes
@@ -343,7 +344,7 @@ CONTAINS
                   diaup_no3(ji,jj,jl) = N2C_dia * growth_dia(ji,jj,jl) * vnh4/(vnh4+icenh4(ji,jj,jl))             &
                         &     * iceno3(ji,jj,jl) / MAX(1.e-15_wp, iceno3(ji,jj,jl) + icenh4(ji,jj,jl))
                   diaup_nh4(ji,jj,jl) = N2C_dia * growth_dia(ji,jj,jl) * ( 1._wp- vnh4/(vnh4+icenh4(ji,jj,jl)) )  &
-                        &     * icenh4(ji,jj,jl) / MAX(1.e-15_wp, iceno3(ji,jj,jl) + icenh4(ji,jj,jl))
+                        &     * iceno3(ji,jj,jl) / MAX(1.e-15_wp, iceno3(ji,jj,jl) + icenh4(ji,jj,jl))
 
                   ! Remineralization
                   remin_dia(ji,jj,jl) = N2C_dia * f_rm * mortlin_dia(ji,jj,jl)
@@ -382,7 +383,7 @@ CONTAINS
                               )
                   ! guarantee positive concentration
                   icedia(ji,jj,jl) = MAX(0._wp, icedia(ji,jj,jl) )
-                  icedia(ji,jj,jl) = MIN(1000._wp, icedia(ji,jj,jl) ) 
+                  ! icedia(ji,jj,jl) = MIN(1000._wp, icedia(ji,jj,jl) ) 
 
 
                   ! Ocean surface phytoplankton seeding and removal
@@ -411,7 +412,7 @@ CONTAINS
                                        ! source: Uptake from bottom ice growth
                               &        + bogup_no3(ji,jj,jl)                  &
                                        ! source/sink: diffusion at ocean interface
-                              &        + moldif_no3(ji,jj,jl)                 &
+                              ! &        + moldif_no3(ji,jj,jl)                 &
                                        ! sink: uptake by ice diatoms
                               &        - diaup_no3(ji,jj,jl)                  &
                                        ! source: nitrification                
@@ -432,7 +433,7 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kmm)             &
                            ! sink/source: diffusion at ocean interface
-                  &        - moldif_no3(ji,jj,jl) * z_ia * zscale                         &
+                  ! &        - moldif_no3(ji,jj,jl) * z_ia * zscale                         &
                   )
                   ! guarantee positive concentration
                   tr(ji,jj,1,jqno3,Kmm) = MAX(0._wp, tr(ji,jj,1,jqno3,Kmm) )
@@ -449,7 +450,7 @@ CONTAINS
                                        ! source: Uptake from bottom ice growth
                               &        + bogup_nh4(ji,jj,jl)                  & 
                                        ! source/sink: diffusion at ocean interface
-                              &        + moldif_nh4(ji,jj,jl)                 &
+                              ! &        + moldif_nh4(ji,jj,jl)                 &
                                        ! sink: uptake by ice diatoms
                               &        - diaup_nh4(ji,jj,jl)                  &
                                        ! sink: nitrification                
@@ -472,17 +473,42 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kmm)             &
                            ! sink/source: diffusion at ocean interface
-                  &        - moldif_nh4(ji,jj,jl) * z_ia * zscale                         &
+                  ! &        - moldif_nh4(ji,jj,jl) * z_ia * zscale                         &
                   )
                   ! guarantee positive concentration
                   tr(ji,jj,1,jrnh4,Kmm) = MAX(0._wp, tr(ji,jj,1,jrnh4,Kmm) )
 
 
-               ENDIF ! if ice
 
+            ! Diffusion of N at ice ocean interface: 
+                  ! can cause numerical problems if large time step and explicit euler scheme. 
+                  ! instead implicit euler scheme after all other calculations
+                  zdtDif = rDt_trc * c_di / c_nu * abs(fric_vel(ji,jj)) / z_ia
+                  zscale = a_i(ji,jj,jl) * z_ia / e3t_0(ji,jj,1)
+                  ! NO3
+                  iceno3(ji,jj,jl) = ( (1._wp+zdtDif*zscale)*iceno3(ji,jj,jl) + zdtDif*tr(ji,jj,1,jqno3,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
+                  tr(ji,jj,1,jqno3,Kmm) = ( zdtDif*zscale*iceno3(ji,jj,jl) + (1._wp+zdtDif)*tr(ji,jj,1,jqno3,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
+                  ! NH4
+                  icenh4(ji,jj,jl) = ( (1._wp+zdtDif*zscale)*icenh4(ji,jj,jl) + zdtDif*tr(ji,jj,1,jrnh4,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
+                  tr(ji,jj,1,jrnh4,Kmm) = ( zdtDif*zscale*icenh4(ji,jj,jl) + (1._wp+zdtDif)*tr(ji,jj,1,jrnh4,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
+
+                  ! Molecular diffusion flux, for ouput 
+                  ! D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
+                  IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
+                     moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
+                     moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
+                  ENDIF
+
+
+
+               ENDIF ! if ice
+               
+               ENDDO ! loop jpl ice categories
             ENDDO ! loop jpi
          ENDDO ! loop jpj
-      ENDDO ! loop jpl ice categories
+
+
+
 
 
       ! For debug/diagnostics: print max ice diatoms
