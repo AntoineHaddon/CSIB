@@ -108,27 +108,7 @@ CONTAINS
       nitri(:,:,:) = 0._wp
       !
 
-      IF(lwp) THEN                         ! control print
-         WRITE(numout,*) ' '
-         WRITE(numout,*) ' Parameters for CSIB'
-         WRITE(numout,*) ' '
-         WRITE(numout,*) ' z_ia =',z_ia 
-         WRITE(numout,*) ' mu_max =',mu_max
-         WRITE(numout,*) ' t_ia =',t_ia
-         WRITE(numout,*) ' r_pp =',r_pp
-         WRITE(numout,*) ' h_ni =',h_ni
-         WRITE(numout,*) ' vnh4 =',vnh4
-         WRITE(numout,*) ' C2N_dia =',C2N_dia
-         WRITE(numout,*) ' N2C_dia =',N2C_dia
-         WRITE(numout,*) ' b_ia =',b_ia
-         WRITE(numout,*) ' r_m1 =',r_m1
-         WRITE(numout,*) ' r_m2 =',r_m2
-         WRITE(numout,*) ' f_rm =',f_rm
-         WRITE(numout,*) ' r_ni =',r_ni
-         WRITE(numout,*) ' c_nu =',c_nu
-         WRITE(numout,*) ' c_di =',c_di
-         WRITE(numout,*) ' '
-      ENDIF
+      
 
    END SUBROUTINE trc_ini_csib
 
