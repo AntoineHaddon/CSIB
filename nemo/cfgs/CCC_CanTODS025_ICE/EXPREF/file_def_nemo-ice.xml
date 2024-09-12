@@ -25,8 +25,6 @@
        <field field_ref="qtr_ice_bot"     name="qtr_ice_bot"    level="0"  /> <!-- only rtd -->
        <field field_ref="qt_ice_oce"      name="qt_ice_oce"     level="0"  /> <!-- only rtd -->
        <field field_ref="hfxsensib"       name="hfxsensib"      level="0" /> <!-- (Omon*) -->
-       <field field_ref="O_QnsIce"        name="O_QnsIce"       level="0"  /> <!-- only rtd -->
-       <field field_ref="O_QsrIce"        name="O_QsrIce"       level="0"  /> <!-- only rtd -->
        <field field_ref="qns_ice"         name="qns_ice"        level="0" /> <!-- only rtd -->
        <field field_ref="qsr_ice"         name="qsr_ice"        level="0" /> <!-- only rtd -->
        <field field_ref="hfxerr"         name="hfxerr"        level="0" /> <!-- only rtd -->
