@@ -1214,7 +1214,7 @@ CONTAINS
       !
       IF( kt == nit000 ) THEN
       !   cannot be done in the init phase when we use agrif as cpl_freq requires that oasis_enddef is done
-         ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) + cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
+         ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) !+ cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
          IF( ln_dm2dc .AND. ncpl_qsr_freq /= 86400 )   &
             &   CALL ctl_stop( 'sbc_cpl_rcv: diurnal cycle reconstruction (ln_dm2dc) needs daily couping for solar radiation' )
 

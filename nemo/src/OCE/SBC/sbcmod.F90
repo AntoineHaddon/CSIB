@@ -261,7 +261,7 @@ CONTAINS
       nday_qsr = -1   ! allow initialization at the 1st call !LB: now warm-layer of COARE* calls "sbc_dcy_param" of sbcdcy.F90!
       IF( ln_dm2dc ) THEN           !* daily mean to diurnal cycle
          !LB:nday_qsr = -1   ! allow initialization at the 1st call
-         IF( .NOT.( ln_flx .OR. ln_blk .OR. ln_abl ) .AND. nn_components /= jp_iam_oce )   &
+         IF( .NOT.( ln_flx .OR. ln_blk .OR. ln_abl .OR. ln_cpl ) .AND. nn_components /= jp_iam_oce )   &
             &   CALL ctl_stop( 'qsr diurnal cycle from daily values requires flux, bulk or abl formulation' )
       ENDIF
       !                             !* Choice of the Surface Boudary Condition
