@@ -153,14 +153,8 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp Eddyengf.nc               $nemo_Eddyengf
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
-    is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
-    is_defined $nemo_decay_scale_cri && is_defined $nemo_decay_scale_bot || 
-        bail "The files for tidal mixing parameterization must be defined in the configuration file."
-    acc_cp mixing_power_bot.nc       $nemo_mixing_power_bot 
-    acc_cp mixing_power_pyc.nc       $nemo_mixing_power_pyc 
-    acc_cp mixing_power_cri.nc       $nemo_mixing_power_cri 
-    acc_cp decay_scale_bot.nc        $nemo_decay_scale_bot 
-    acc_cp decay_scale_cri.nc        $nemo_decay_scale_cri 
+    is_defined $nemo_zdfiwm || bail "The file for tidal mixing parameterization must be defined in the configuration file."
+    acc_cp zdfiwm_forcing.nc         $nemo_zdfiwm 
   fi 
 
   if [[ $nemo_nn_aei_ijk_t == -20 ]]; then
