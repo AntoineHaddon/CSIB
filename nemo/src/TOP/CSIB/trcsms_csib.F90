@@ -169,6 +169,12 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_csib:  CSIB model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
+      IF(lwp) WRITE(numout,*) ' time step kt ', kt
+      IF(lwp) WRITE(numout,*) ' rDt_trc ', rDt_trc
+      IF(lwp) WRITE(numout,*) ' rn_Dt ', rn_Dt
+      IF(lwp) WRITE(numout,*) ' nsec_day ', nsec_day
+      IF(lwp) WRITE(numout,*)
+      IF(lwp) WRITE(numout,*)
 
       ! Initiation from ocean surface concentrations (need to do it here and not in trcini_csib because CanOE initiation occurs after?)
       IF ( (kt == 1) .AND. (.NOT. ln_rsttr) ) THEN
@@ -364,7 +370,7 @@ CONTAINS
 
 
                   ! Ice diatoms dynamics
-                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (           &
+                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rn_Dt * (           &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                               &        - flush_dia(ji,jj,jl)                  & 
                                        ! sink: loss from lateral melting of ice
@@ -386,7 +392,7 @@ CONTAINS
 
 
                   ! Ice NO3 dynamics
-                  iceno3(ji,jj,jl) = iceno3(ji,jj,jl) + rDt_trc * (         &
+                  iceno3(ji,jj,jl) = iceno3(ji,jj,jl) + rn_Dt * (         &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                               &        - flush_no3(ji,jj,jl)                  & 
                                        ! sink: loss from lateral melting of ice
@@ -410,7 +416,7 @@ CONTAINS
 
 
                   ! Ice NH4 dynamics
-                  icenh4(ji,jj,jl) = icenh4(ji,jj,jl) + rDt_trc * (           &
+                  icenh4(ji,jj,jl) = icenh4(ji,jj,jl) + rn_Dt * (           &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                               &        - flush_nh4(ji,jj,jl)                  & 
                                        ! sink: loss from lateral melting of ice
@@ -435,7 +441,7 @@ CONTAINS
             ! Diffusion of N at ice ocean interface: 
                   ! can cause numerical problems if large time step and explicit euler scheme. 
                   ! instead implicit euler scheme after all other calculations
-                  zdtDif = rDt_trc * c_di / c_nu * abs(fric_vel(ji,jj)) / z_ia
+                  zdtDif = rn_Dt * c_di / c_nu * abs(fric_vel(ji,jj)) / z_ia
                   zscale = a_i(ji,jj,jl) * z_ia / e3t_0(ji,jj,1)
                   ! NO3
                   iceno3(ji,jj,jl) = ( (1._wp+zdtDif*zscale)*iceno3(ji,jj,jl) + zdtDif*tr(ji,jj,1,jqno3,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
@@ -466,7 +472,7 @@ CONTAINS
                   zscale = a_i(ji,jj,jl) / e3t_0(ji,jj,1)
 
                ! Ocean surface phytoplankton seeding and removal
-                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + rDt_trc * (             &
+                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + rn_Dt * (             &
                            ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_dia(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice diatoms from lateral melting of ice
@@ -481,7 +487,7 @@ CONTAINS
 
 
                ! Ocean surface NO3 dynamics
-                  tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + rDt_trc * (             &
+                  tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + rn_Dt * (             &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_no3(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice NO3 from lateral melting of ice
@@ -496,7 +502,7 @@ CONTAINS
 
 
                ! Ocean surface NH4 dynamics
-                  tr(ji,jj,1,jrnh4,Kmm) = tr(ji,jj,1,jrnh4,Kmm) + rDt_trc * (             &
+                  tr(ji,jj,1,jrnh4,Kmm) = tr(ji,jj,1,jrnh4,Kmm) + rn_Dt * (             &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_nh4(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice NO3 from lateral melting of ice
