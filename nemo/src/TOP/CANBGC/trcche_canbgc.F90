@@ -21,7 +21,7 @@ MODULE trcche_canbgc
    USE lib_mpp           !  MPP library
 
    USE in_out_manager    ! in_out_manager grants access to numout file ID
-   USE iom                       ! to access iom_put for diagnostics
+   !USE iom                       ! to access iom_put for diagnostics
    
    USE trc_closea_canbgc ! bgc-specific closea mask
    USE trcsrc_canbgc     ! external sources module
@@ -240,7 +240,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: hi
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
+      !REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
 
@@ -333,16 +333,17 @@ CONTAINS
       !
       ! OR Jan 24th 2023
       ! Moving pH diagnostics here
-      ALLOCATE( zph0(jpi,jpj,jpk) )
-      zph0(:,:,:) = rtrn 
-      DO jj= 1, jpj
-        DO ji= 1, jpi
-          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
-        END DO
-      END DO
-      !
-      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
-      DEALLOCATE( zph0 )
+!      IF ( ln_cmoc ) THEN
+!       ALLOCATE( zph0(jpi,jpj,jpk) )
+!       zph0(:,:,:) = 0. 
+!       DO jj= 1, jpj
+!        DO ji= 1, jpi
+!          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
+!        END DO
+!       END DO
+!       CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+!       DEALLOCATE( zph0 )
+!      END IF
       ! 
       DEALLOCATE( hi )
       !
@@ -366,7 +367,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: hi
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
+      !REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
       !
@@ -427,20 +428,17 @@ CONTAINS
          !
       END DO 
       !
-      ! OR Jan 24th 2023
-      ! Moving pH diagnostics here
-      ALLOCATE( zph0(jpi,jpj,jpk) )
-      zph0(:,:,:) = rtrn 
-      DO jk= 1, jpk
-        DO jj= 1, jpj
-          DO ji= 1, jpi
-          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
-          END DO
-        END DO
-      END DO
-      !
-      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
-      DEALLOCATE( zph0 )      
+!      ALLOCATE( zph0(jpi,jpj,jpk) )
+!      zph0(:,:,:) = rtrn 
+!      DO jk= 1, jpk
+!        DO jj= 1, jpj
+!          DO ji= 1, jpi
+!          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
+!          END DO
+!        END DO
+!      END DO
+!      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+!      DEALLOCATE( zph0 )      
       !
       DEALLOCATE( hi )
       !

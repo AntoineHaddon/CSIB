@@ -127,9 +127,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
-          ! initialize the chemical constants
-          ! JC's 2D carbon chem mode 
+          CALL trc_che_2D( kt, Kmm )   ! initialize the carbon chemistry constants
           !
         !  
         ELSE
@@ -155,8 +153,6 @@ CONTAINS
         IF(lwp) write(numout,*) '~~~~~~'
 
         CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
-        ! initialize the chemical constants
-        ! JC's 2D carbon chem mode 
         !
       ENDIF
       !
