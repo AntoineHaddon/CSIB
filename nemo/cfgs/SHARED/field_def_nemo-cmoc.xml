@@ -41,7 +41,6 @@
      <field_group id="diad_T">
 
        <!-- 3D fields here -->         
-       <field id="pH"          long_name="pH"                                    unit="-"                   grid_ref="grid_T_3D" />
        <!-- <field id="CO3"         long_name="Carbonate"                             unit="mmol/m3"             grid_ref="grid_T_3D" /> -->
        <!-- <field id="CO3sat "     long_name="Carbonate saturation"                  unit="mmol/m3"             grid_ref="grid_T_3D" /> -->
        <!-- <field id="HCO3"        long_name="Bicarbonate"                           unit="mmol/m3"             grid_ref="grid_T_3D" /> -->
@@ -52,6 +51,7 @@
        <field id="closea"      long_name="BGCM closed sea masks"                  unit="-"                   grid_ref="grid_T_3D" />
                                                                                   
        <!-- 2D fields here -->
+       <field id="pH"          long_name="pH"                                     unit="-"                   grid_ref="grid_T_2D" />
        <field id="Cflx"        long_name="CO2 flux positive if ocean gain"        unit="mol/m2/s"            grid_ref="grid_T_2D" />
        <field id="Oflx"        long_name="O2 flux positive if ocean gain"         unit="mol/m2/s"            grid_ref="grid_T_2D" />
 
