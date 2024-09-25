@@ -422,7 +422,7 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
-      nn_evdm  =    0            !  evd apply on tracer (=0) or on tracer and momentum (=1)
+      nn_evdm  =    1            !  evd apply on tracer (=0) or on tracer and momentum (=1)
       rn_evd   =   10.           !  evd mixing coefficient [m2/s]
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
