@@ -302,6 +302,9 @@ CONTAINS
                zbot = qborat2(ji,jj) * ztmas + 0.000416 * ztmas1 
                zdic = tr(ji,jj,1,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
                ztalk = tr(ji,jj,1,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+               ! add 400 uM "guardrail" to prevent extreme pCO2 in runoff-dominated environments
+               zdic = MAX(zdic,0.0004)
+               ztalk = MAX(ztalk,0.0004)
 
                zpo4 = tr(ji,jj,1,jqno3, Kmm) * no3_sf / 16. / zfact                        ! needs to include NH4 for CanOE when available
                zsi = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
@@ -394,6 +397,8 @@ CONTAINS
                   zbot = qborat3(ji,jj,jk) * ztmas + 0.000416 * ztmas1 
                   zdic = tr(ji,jj,jk,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
                   ztalk = tr(ji,jj,jk,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+                  zdic = MAX(zdic,0.0004)
+                  ztalk = MAX(ztalk,0.0004)
                   zpo4 = tr(ji,jj,jk,jqno3, Kmm) * no3_sf / 16. / zfact               ! needs to include NH4 for CanOE when available
                   zsi = qasi3(ji,jj,jk) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
