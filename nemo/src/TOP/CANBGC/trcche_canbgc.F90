@@ -21,7 +21,7 @@ MODULE trcche_canbgc
    USE lib_mpp           !  MPP library
 
    USE in_out_manager    ! in_out_manager grants access to numout file ID
-   USE iom                       ! to access iom_put for diagnostics
+   !USE iom                       ! to access iom_put for diagnostics
    
    USE trc_closea_canbgc ! bgc-specific closea mask
    USE trcsrc_canbgc     ! external sources module
@@ -240,7 +240,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: hi
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
+      !REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
 
@@ -302,6 +302,9 @@ CONTAINS
                zbot = qborat2(ji,jj) * ztmas + 0.000416 * ztmas1 
                zdic = tr(ji,jj,1,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
                ztalk = tr(ji,jj,1,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+               ! add 400 uM "guardrail" to prevent extreme pCO2 in runoff-dominated environments
+               zdic = MAX(zdic,0.0004)
+               ztalk = MAX(ztalk,0.0004)
 
                zpo4 = tr(ji,jj,1,jqno3, Kmm) * no3_sf / 16. / zfact                        ! needs to include NH4 for CanOE when available
                zsi = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
@@ -333,16 +336,17 @@ CONTAINS
       !
       ! OR Jan 24th 2023
       ! Moving pH diagnostics here
-      ALLOCATE( zph0(jpi,jpj,jpk) )
-      zph0(:,:,:) = rtrn 
-      DO jj= 1, jpj
-        DO ji= 1, jpi
-          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
-        END DO
-      END DO
-      !
-      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
-      DEALLOCATE( zph0 )
+!      IF ( ln_cmoc ) THEN
+!       ALLOCATE( zph0(jpi,jpj,jpk) )
+!       zph0(:,:,:) = 0. 
+!       DO jj= 1, jpj
+!        DO ji= 1, jpi
+!          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
+!        END DO
+!       END DO
+!       CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+!       DEALLOCATE( zph0 )
+!      END IF
       ! 
       DEALLOCATE( hi )
       !
@@ -366,7 +370,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: hi
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
+      !REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
       !
@@ -393,6 +397,8 @@ CONTAINS
                   zbot = qborat3(ji,jj,jk) * ztmas + 0.000416 * ztmas1 
                   zdic = tr(ji,jj,jk,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
                   ztalk = tr(ji,jj,jk,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+                  zdic = MAX(zdic,0.0004)
+                  ztalk = MAX(ztalk,0.0004)
                   zpo4 = tr(ji,jj,jk,jqno3, Kmm) * no3_sf / 16. / zfact               ! needs to include NH4 for CanOE when available
                   zsi = qasi3(ji,jj,jk) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
@@ -427,20 +433,17 @@ CONTAINS
          !
       END DO 
       !
-      ! OR Jan 24th 2023
-      ! Moving pH diagnostics here
-      ALLOCATE( zph0(jpi,jpj,jpk) )
-      zph0(:,:,:) = rtrn 
-      DO jk= 1, jpk
-        DO jj= 1, jpj
-          DO ji= 1, jpi
-          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
-          END DO
-        END DO
-      END DO
-      !
-      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
-      DEALLOCATE( zph0 )      
+!      ALLOCATE( zph0(jpi,jpj,jpk) )
+!      zph0(:,:,:) = rtrn 
+!      DO jk= 1, jpk
+!        DO jj= 1, jpj
+!          DO ji= 1, jpi
+!          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
+!          END DO
+!        END DO
+!      END DO
+!      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+!      DEALLOCATE( zph0 )      
       !
       DEALLOCATE( hi )
       !

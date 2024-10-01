@@ -129,7 +129,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
+          CALL trc_che_2D( kt, Kmm )   ! initialization of carbon chemistry constants
         ELSE
             WRITE(numout,*)
             WRITE(numout,*) 'Should something be done for the restart mode here? Nothing coded here yet, some code exists in TOP/trcini.F90 to take care of this though.'
