@@ -159,8 +159,6 @@ CONTAINS
       REAL(wp) :: zdtDif               ! temp variable for molecular diff
       REAL(wp) :: zmaxia               ! for diagnostics/debug
       
-      REAL(wp) :: zdiaos_old, zno3os_old, znh4os_old            ! previous timestep value of ocean surface variables
-
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -264,11 +262,6 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
 
-            ! record ocean surface variables at previous timestep
-            zdiaos_old = tr(ji,jj,1,jrdia,Kmm)
-            zno3os_old = tr(ji,jj,1,jqno3,Kmm)
-            znh4os_old = tr(ji,jj,1,jrnh4,Kmm)
-            
             ! Bottom ice variables
             DO jl = 1, jpl ! loop ice cat
          
@@ -307,9 +300,10 @@ CONTAINS
                   bogup(ji,jj,jl) = dh_bog_cat(ji,jj,jl) * rhoi / rhow
 
                   ! Uptake of ice tracers from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
-                  bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * zdiaos_old /z_ia
-                  bogup_no3(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jqno3,Kmm) /z_ia
-                  bogup_nh4(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrnh4,Kmm) /z_ia
+                  ! bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * zdiaos_old /z_ia
+                  bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kbb) /z_ia
+                  bogup_no3(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jqno3,Kbb) /z_ia
+                  bogup_nh4(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrnh4,Kbb) /z_ia
 
                   ! lagup: water uptake flowrate per ice area from lateral ice growth (m/s) 
                   ! = (sic increase rate / sic) (1/s) * (height new ice) (s) * ice density (kg/m3) / freshwater density (kg/m3)
@@ -318,15 +312,16 @@ CONTAINS
                   ! Uptake of ice diatoms from lateral ice growth  
                   lagup_dia(ji,jj,jl) = &
                         ! water uptake flowrate per ice area * skeletal layer * ocean surface diatoms concentration     
-                        & lagup(ji,jj,jl) / z_ia * zdiaos_old     &
+                        ! & lagup(ji,jj,jl) / z_ia * zdiaos_old     &
+                        & lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdia,Kbb)     &
                         ! - ice tracer conc * (sic increase rate / sic)
                         & - icedia(ji,jj,jl) * da_lag_cat(ji,jj,jl)
                   ! Uptake of ice N from lateral ice growth  
-                  lagup_no3(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) * da_lag_cat(ji,jj,jl)
-                  lagup_nh4(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) * da_lag_cat(ji,jj,jl)
+                  lagup_no3(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jqno3,Kbb) - iceno3(ji,jj,jl) * da_lag_cat(ji,jj,jl)
+                  lagup_nh4(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrnh4,Kbb) - icenh4(ji,jj,jl) * da_lag_cat(ji,jj,jl)
 
-                  ! ! Diffusion of N at ice ocean interface
-                  ! ! = D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
+                  ! Diffusion of N at ice ocean interface
+                  ! = D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
                   ! IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
                   !    moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
                   !    moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
@@ -472,7 +467,7 @@ CONTAINS
                   zscale = a_i(ji,jj,jl) / e3t_0(ji,jj,1)
 
                ! Ocean surface phytoplankton seeding and removal
-                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + rn_Dt * (             &
+                  tr(ji,jj,1,jrdia,Krhs) = tr(ji,jj,1,jrdia,Krhs) +  (                    &
                            ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_dia(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice diatoms from lateral melting of ice
@@ -480,14 +475,12 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * zdiaos_old                        &
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdia,Kbb)                        &
                   )
-                  ! guarantee positive concentration
-                  tr(ji,jj,1,jrdia,Kmm) = MAX(0._wp, tr(ji,jj,1,jrdia,Kmm) )
 
 
                ! Ocean surface NO3 dynamics
-                  tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + rn_Dt * (             &
+                  tr(ji,jj,1,jqno3,Krhs) = tr(ji,jj,1,jqno3,Krhs) +  (             &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_no3(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice NO3 from lateral melting of ice
@@ -495,14 +488,12 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup_no3(ji,jj,jl) * z_ia * zscale                          &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * zno3os_old                        &
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kbb)                        &
                   )
-                  ! guarantee positive concentration
-                  tr(ji,jj,1,jqno3,Kmm) = MAX(0._wp, tr(ji,jj,1,jqno3,Kmm) )
 
 
                ! Ocean surface NH4 dynamics
-                  tr(ji,jj,1,jrnh4,Kmm) = tr(ji,jj,1,jrnh4,Kmm) + rn_Dt * (             &
+                  tr(ji,jj,1,jrnh4,Krhs) = tr(ji,jj,1,jrnh4,Krhs) + (             &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_nh4(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice NO3 from lateral melting of ice
@@ -510,10 +501,8 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup_nh4(ji,jj,jl) * z_ia * zscale                          &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * znh4os_old                        &
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kbb)                        &
                   )
-                  ! guarantee positive concentration
-                  tr(ji,jj,1,jrnh4,Kmm) = MAX(0._wp, tr(ji,jj,1,jrnh4,Kmm) )
 
                   
                ENDIF ! if ice
@@ -528,14 +517,19 @@ CONTAINS
 
 
       ! For debug/diagnostics: print max ice diatoms
-      ! IF(lwp) WRITE(numout,*) 
-      ! IF(lwp) WRITE(numout,*) 'max ice diatoms N hemisphere : '
-      ! DO jl = 1, jpl
-      !    zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
-      !    CALL mpp_max( "trc_sms_csib", zmaxia )
-      !    IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
-      ! ENDDO
-
+      IF(lwp) WRITE(numout,*) 
+      IF(lwp) WRITE(numout,*) 'max ice diatoms N hemisphere : '
+      DO jl = 1, jpl
+         zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
+         CALL mpp_max( "trc_sms_csib", zmaxia )
+         IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
+      ENDDO
+      IF(lwp) WRITE(numout,*) 
+      IF(lwp) WRITE(numout,*) 'max N hemisphere : '
+      zmaxia = MAXVAL( iceno3(:,:,1), MASK= gphit(:,:) > 0._wp )
+      CALL mpp_max( "trc_sms_csib", zmaxia )
+      IF(lwp) WRITE(numout,*) 'max ice no3 cat 1' , zmaxia
+      IF(lwp) WRITE(numout,*) 
 
 
       ! Conversion from intensive/equivalent to extensive/global variables
