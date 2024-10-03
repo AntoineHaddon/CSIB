@@ -34,19 +34,15 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in)  :: Kmm   ! time level indices
       ! CHARACTER (len=20)   :: cltra
-      ! INTEGER              :: jn
+      INTEGER              :: jn
       !!---------------------------------------------------------------------
  
       ! write the tracer concentrations in the file
       ! ---------------------------------------
-      CALL iom_put( 'icedia'           , icedia(:,:,:) )
-      CALL iom_put( 'icedia_gca'       , icedia_gca(:,:,:) )
-
-      CALL iom_put( 'iceno3'           , iceno3(:,:,:) )
-      CALL iom_put( 'iceno3_gca'       , iceno3_gca(:,:,:) )
-      
-      CALL iom_put( 'icenh4'           , icenh4(:,:,:) )
-      CALL iom_put( 'icenh4_gca'       , icenh4_gca(:,:,:) )
+      DO jn=1,jp_csib
+         CALL iom_put( icetrcnm(jn)               , icetra(:,:,:,jn) )
+         CALL iom_put( TRIM(icetrcnm(jn))//'_gca'       , icetra_gca(:,:,:,jn) )
+      ENDDO
 
       ! ! ocean surface BGC
       CALL iom_put( 'PHY2c_os'         , tr(:,:,1,jrdia,Kmm) )

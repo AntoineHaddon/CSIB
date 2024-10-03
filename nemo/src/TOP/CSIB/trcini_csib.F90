@@ -22,7 +22,8 @@ MODULE trcini_csib
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   trc_ini_csib   ! called by trcini.F90 module
+   PUBLIC   trc_ini_csib         ! called by trcini.F90 module
+   PUBLIC   trc_ini_csibnames   
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -40,25 +41,26 @@ CONTAINS
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   Kmm         ! time level indices
-      INTEGER  ::   ji, jj, jl             ! dummy loop indices
-      !
-      CALL trc_nam_csib
-      !
-      !                       ! Allocate CSIB arrays
-      IF( trc_sms_csib_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_csib: unable to allocate CSIB arrays' )
-
+      INTEGER  ::   ji, jj, jl,jn          ! dummy loop indices
+      
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_ini_csib: passive tracer unit vector'
+      IF(lwp) WRITE(numout,*) ' trc_ini_csib:'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       
+      ! Allocate sms_CSIB arrays
+      IF( trc_sms_csib_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_csib: unable to allocate CSIB arrays' )
+      
+      ! read namelist
+      CALL trc_nam_csib
+
+      
       IF( .NOT. ln_rsttr ) THEN
-         icedia(:,:,:)=0._wp
-         iceno3(:,:,:)=0._wp
-         icenh4(:,:,:)=0._wp
+         CALL trc_ini_csibnames() ! when there is a restart this is done by the sea ice model
+         
+         icetra(:,:,:,:) =0._wp
          
          ! init with constant value where latitude > ...
-         ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
-         ! ELSEWHERE                     ;   icedia(:,:,3)=0._wp
+         ! WHERE( gphit(:,:) > 85._wp )   ;   icetra(:,:,3,jridia)=1._wp
          ! END WHERE
 
          ! WHERE( gphit(:,:)>75._wp .AND. gphit(:,:)<80._wp .AND. glamt(:,:)>100._wp .AND. glamt(:,:)<150._wp )  
@@ -68,9 +70,11 @@ CONTAINS
          !    icenh4(:,:,2)=1._wp
          ! END WHERE
 
-         icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
-         iceno3_gca(:,:,:) = iceno3(:,:,:) * a_i(:,:,:)
-         icenh4_gca(:,:,:) = icenh4(:,:,:) * a_i(:,:,:)
+
+         DO jn = 1,jp_csib
+            icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
+         ENDDO
+
       ENDIF
 
       ! initialize fluxes and process rates
@@ -111,6 +115,22 @@ CONTAINS
       
 
    END SUBROUTINE trc_ini_csib
+
+
+   SUBROUTINE trc_ini_csibnames()
+      ! allocate and initiate array of ice tracer variables
+      ! called if no restart by trc_ini_csib 
+      ! or if restart called by sea ice model in icedyn_adv_pra/adv_pra_rst when reading advection moments
+
+      INTEGER :: trc_sms_csib_allocnames = 0
+      ALLOCATE( icetrcnm(jp_csib) ,    STAT=trc_sms_csib_allocnames)
+      IF( trc_sms_csib_allocnames /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_allocnames : failed to allocate arrays' )
+
+      icetrcnm(jridia) = 'icedia'
+      icetrcnm(jrino3) = 'iceno3'
+      icetrcnm(jrinh4) = 'icenh4'
+
+   END SUBROUTINE trc_ini_csibnames
 
    !!======================================================================
 END MODULE trcini_csib

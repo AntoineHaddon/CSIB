@@ -26,6 +26,7 @@ MODULE trcrst
    USE lib_mpp
    
    USE trcsms_csib      ! ice BGC tracers
+   USE par_csib      ! ice BGC parameters
    USE ice , ONLY: a_i  ! for ice BGC tracers
 
    IMPLICIT NONE
@@ -146,12 +147,10 @@ CONTAINS
       END IF
 
       IF ( ln_csib ) THEN ! ice BC tracers
-         CALL iom_get( numrtr, jpdom_auto, 'icedia', icedia(:,:,:) )
-         icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
-         CALL iom_get( numrtr, jpdom_auto, 'iceno3', iceno3(:,:,:) )
-         iceno3_gca(:,:,:) = iceno3(:,:,:) * a_i(:,:,:)
-         CALL iom_get( numrtr, jpdom_auto, 'icenh4', icenh4(:,:,:) )
-         icenh4_gca(:,:,:) = icenh4(:,:,:) * a_i(:,:,:)
+         DO jn=1,jp_csib
+            CALL iom_get( numrtr, jpdom_auto, icetrcnm(jn), icetra(:,:,:,jn) )
+            icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
+         ENDDO
       ENDIF
       !
       IF(.NOT.lrxios) CALL iom_delay_rst( 'READ', 'TOP', numrtr )   ! read only TOP delayed global communication variables
@@ -181,9 +180,9 @@ CONTAINS
       END DO
       
       IF ( ln_csib ) THEN ! ice BC tracers
-         CALL iom_rstput( kt, nitrst, numrtw, 'icedia', icedia(:,:,:) )
-         CALL iom_rstput( kt, nitrst, numrtw, 'iceno3', iceno3(:,:,:) )
-         CALL iom_rstput( kt, nitrst, numrtw, 'icenh4', icenh4(:,:,:) )
+         DO jn=1, jp_csib
+            CALL iom_rstput( kt, nitrst, numrtw, icetrcnm(jn), icetra(:,:,:,jn) )
+         ENDDO
       ENDIF
 
       IF( .NOT. lwxios ) CALL iom_delay_rst( 'WRITE', 'TOP', numrtw )   ! save only TOP delayed global communication variables

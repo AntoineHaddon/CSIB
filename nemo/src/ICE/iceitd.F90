@@ -31,7 +31,8 @@ MODULE iceitd
    USE timing         ! Timing
 
    USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
-   USE trcsms_csib , ONLY : icedia_gca, icediagca_2d, iceno3_gca, iceno3gca_2d, icenh4_gca, icenh4gca_2d     ! ice BGC variables
+   USE par_csib ! sea ice biogeochemistry model CSIB parameters
+   USE trcsms_csib , ONLY : icetra_gca, icetragca_2d    ! ice BGC variables
 
    IMPLICIT NONE
    PRIVATE
@@ -412,7 +413,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:), INTENT(in) ::   pdaice   ! ice area transferred across boundary
       REAL(wp), DIMENSION(:,:), INTENT(in) ::   pdvice   ! ice volume transferred across boundary
       !
-      INTEGER  ::   ji, jl, jk         ! dummy loop indices
+      INTEGER  ::   ji, jl, jk, jn         ! dummy loop indices
       INTEGER  ::   jl2, jl1           ! local integers
       REAL(wp) ::   ztrans             ! ice/snow transferred
       REAL(wp), DIMENSION(jpij)            ::   zworka, zworkv   ! workspace
@@ -441,10 +442,10 @@ CONTAINS
       END DO
       ! to correct roundoff errors on a_i
       CALL tab_2d_1d( npti, nptidx(1:npti), rn_amax_1d(1:npti), rn_amax_2d )
-      IF ( ln_csib ) THEN
-         CALL tab_3d_2d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
-         CALL tab_3d_2d( npti, nptidx(1:npti), iceno3gca_2d(1:npti,1:jpl), iceno3_gca(:,:,:) )
-         CALL tab_3d_2d( npti, nptidx(1:npti), icenh4gca_2d(1:npti,1:jpl), icenh4_gca(:,:,:) )
+      IF ( ln_csib ) THEN ! ice BGC
+         DO jn=1,jp_csib
+            CALL tab_3d_2d( npti, nptidx(1:npti), icetragca_2d(1:npti,1:jpl,jn), icetra_gca(:,:,:,jn) )
+         ENDDO
       ENDIF
 
       !----------------------------------------------------------------------------------------------
@@ -515,18 +516,12 @@ CONTAINS
                   ENDIF
                ENDIF
                !
-               IF ( ln_csib ) THEN
-                  ztrans               = icediagca_2d(ji,jl1) * zworka(ji)     ! Ice algae
-                  icediagca_2d(ji,jl1) = icediagca_2d(ji,jl1) - ztrans
-                  icediagca_2d(ji,jl2) = icediagca_2d(ji,jl2) + ztrans
-                  !
-                  ztrans               = iceno3gca_2d(ji,jl1) * zworka(ji)     ! Ice no3
-                  iceno3gca_2d(ji,jl1) = iceno3gca_2d(ji,jl1) - ztrans
-                  iceno3gca_2d(ji,jl2) = iceno3gca_2d(ji,jl2) + ztrans
-                  !
-                  ztrans               = icenh4gca_2d(ji,jl1) * zworka(ji)     ! Ice nh4
-                  icenh4gca_2d(ji,jl1) = icenh4gca_2d(ji,jl1) - ztrans
-                  icenh4gca_2d(ji,jl2) = icenh4gca_2d(ji,jl2) + ztrans
+               IF ( ln_csib ) THEN ! ice BGC
+                  DO jn=1,jp_csib
+                     ztrans                  = icetragca_2d(ji,jl1,jn) * zworka(ji)
+                     icetragca_2d(ji,jl1,jn) = icetragca_2d(ji,jl1,jn) - ztrans
+                     icetragca_2d(ji,jl2,jn) = icetragca_2d(ji,jl2,jn) + ztrans
+                  ENDDO
                ENDIF
                !
             ENDIF   ! jl1 >0
@@ -572,10 +567,10 @@ CONTAINS
       ! clem: The transfer between one category to another can lead to very small negative values (-1.e-20)
       !       because of truncation error ( i.e. 1. - 1. /= 0 )
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
-      IF( ln_csib ) THEN
-         WHERE( icediagca_2d(1:npti,:) < 0._wp )    icediagca_2d(1:npti,:)   = 0._wp   ! ice algae must be >= 0
-         WHERE( iceno3gca_2d(1:npti,:) < 0._wp )    iceno3gca_2d(1:npti,:)   = 0._wp   ! ice no3 must be >= 0
-         WHERE( icenh4gca_2d(1:npti,:) < 0._wp )    icenh4gca_2d(1:npti,:)   = 0._wp   ! ice nh4 must be >= 0
+      IF( ln_csib ) THEN ! ice BGC
+         DO jn=1,jp_csib
+            WHERE( icetragca_2d(1:npti,:,jn) < 0._wp )    icetragca_2d(1:npti,:,jn)   = 0._wp 
+         ENDDO
       ENDIF
 
       ! at_i must be <= rn_amax
@@ -618,10 +613,10 @@ CONTAINS
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_i_2d(1:npti,jk,jl), e_i(:,:,jk,jl) )
          END DO
       END DO
-      IF ( ln_csib ) THEN
-         CALL tab_2d_3d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
-         CALL tab_2d_3d( npti, nptidx(1:npti), iceno3gca_2d(1:npti,1:jpl), iceno3_gca(:,:,:) )
-         CALL tab_2d_3d( npti, nptidx(1:npti), icenh4gca_2d(1:npti,1:jpl), icenh4_gca(:,:,:) )
+      IF ( ln_csib ) THEN ! ice BGC
+         DO jn=1,jp_csib
+            CALL tab_2d_3d( npti, nptidx(1:npti), icetragca_2d(1:npti,1:jpl,jn), icetra_gca(:,:,:,jn) )
+         ENDDO
       ENDIF
 
       !

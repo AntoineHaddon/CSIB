@@ -31,7 +31,9 @@ MODULE icedyn_rdgrft
    USE timing         ! Timing
 
    USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
-   USE trcsms_csib , ONLY : icedia_gca, icediagca_2d, iceno3_gca, iceno3gca_2d, icenh4_gca, icenh4gca_2d     ! ice BGC variables
+   USE trcsms_csib , ONLY : icetra_gca, icetragca_2d     ! ice BGC variables
+   USE par_csib ! sea ice biogeochemistry model CSIB parameters
+
 
    IMPLICIT NONE
    PRIVATE
@@ -527,8 +529,10 @@ CONTAINS
       REAL(wp)                  ::   airft1, oirft1, aprft1
       REAL(wp), DIMENSION(jpij) ::   airdg2, oirdg2, aprdg2, virdg2, sirdg2, vsrdg, vprdg, vlrdg  ! area etc of new ridges
       REAL(wp), DIMENSION(jpij) ::   airft2, oirft2, aprft2, virft , sirft , vsrft, vprft, vlrft  ! area etc of rafted ice
-      REAL(wp), DIMENSION(jpij) ::   icedia_rdg, iceno3_rdg, icenh4_rdg  ! iBGC content of riging ice/ going to new ridges
-      REAL(wp), DIMENSION(jpij) ::   icedia_rft, iceno3_rft, icenh4_rft  ! iBGC content of rafted ice
+      !
+      INTEGER :: jn     ! dummy loop indice
+      REAL(wp), DIMENSION(jpij,jp_csib) ::   icetra_rdg  ! ice BGC content of riging ice/ going to new ridges
+      REAL(wp), DIMENSION(jpij,jp_csib) ::   icetra_rft  ! ice BGC content of rafted ice
       !
       REAL(wp), DIMENSION(jpij) ::   ersw             ! enth of water trapped into ridges
       REAL(wp), DIMENSION(jpij) ::   zswitch, fvol    ! new ridge volume going to jl2
@@ -618,13 +622,11 @@ CONTAINS
                      vlrft (ji) = v_il_2d(ji,jl1) * afrft
                   ENDIF
                ENDIF
-               IF ( ln_csib ) THEN
-                  icedia_rft(ji) = icediagca_2d(ji,jl1) * afrft     ! ice alage content in rafting ice
-                  icedia_rdg(ji) = icediagca_2d(ji,jl1) * afrdg     ! ice algae content in ridging ice/ going to new ridge
-                  iceno3_rft(ji) = iceno3gca_2d(ji,jl1) * afrft     ! ice no3 content in rafting ice
-                  iceno3_rdg(ji) = iceno3gca_2d(ji,jl1) * afrdg     ! ice no3 content in ridging ice/ going to new ridge
-                  icenh4_rft(ji) = icenh4gca_2d(ji,jl1) * afrft     ! ice nh4 content in rafting ice
-                  icenh4_rdg(ji) = icenh4gca_2d(ji,jl1) * afrdg     ! ice nh4 content in ridging ice/ going to new ridge
+               IF ( ln_csib ) THEN ! ice BGC
+                  DO jn=1,jp_csib
+                     icetra_rft(ji,jn) = icetragca_2d(ji,jl1,jn) * afrft     ! ice tracer content in rafting ice
+                     icetra_rdg(ji,jn) = icetragca_2d(ji,jl1,jn) * afrdg     ! ice tracer content in ridging ice/ going to new ridge
+                  ENDDO
                ENDIF
 
                ! Ice-ocean exchanges associated with ice porosity
@@ -658,10 +660,10 @@ CONTAINS
                      v_il_2d(ji,jl1) = v_il_2d(ji,jl1) - vlrdg(ji) - vlrft(ji)
                   ENDIF
                ENDIF
-               IF ( ln_csib ) THEN
-                  icediagca_2d(ji,jl1) = icediagca_2d(ji,jl1) - icedia_rdg(ji) - icedia_rft(ji)
-                  iceno3gca_2d(ji,jl1) = iceno3gca_2d(ji,jl1) - iceno3_rdg(ji) - iceno3_rft(ji)
-                  icenh4gca_2d(ji,jl1) = icenh4gca_2d(ji,jl1) - icenh4_rdg(ji) - icenh4_rft(ji)
+               IF ( ln_csib ) THEN ! ice BGC
+                  DO jn=1,jp_csib
+                     icetragca_2d(ji,jl1,jn) = icetragca_2d(ji,jl1,jn) - icetra_rdg(ji,jn) - icetra_rft(ji,jn)
+                  ENDDO
                ENDIF
             ENDIF
 
@@ -763,10 +765,10 @@ CONTAINS
                            &                                   + vlrft(ji) * rn_fpndrft * zswitch(ji) )
                      ENDIF
                   ENDIF
-                  IF ( ln_csib ) THEN
-                     icediagca_2d(ji,jl2) = icediagca_2d(ji,jl2) + ( icedia_rdg(ji) * farea + icedia_rft(ji) * zswitch(ji) )
-                     iceno3gca_2d(ji,jl2) = iceno3gca_2d(ji,jl2) + ( iceno3_rdg(ji) * farea + iceno3_rft(ji) * zswitch(ji) )
-                     icenh4gca_2d(ji,jl2) = icenh4gca_2d(ji,jl2) + ( icenh4_rdg(ji) * farea + icenh4_rft(ji) * zswitch(ji) )
+                  IF ( ln_csib ) THEN ! ice BGC
+                     DO jn=1,jp_csib
+                        icetragca_2d(ji,jl2,jn) = icetragca_2d(ji,jl2,jn) + ( icetra_rdg(ji,jn) * farea + icetra_rft(ji,jn) * zswitch(ji) )
+                     ENDDO
                   ENDIF
 
                ENDIF
@@ -798,10 +800,10 @@ CONTAINS
       !----------------
       ! In case ridging/rafting lead to very small negative values (sometimes it happens)
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
-      IF( ln_csib ) THEN
-         WHERE( icediagca_2d(1:npti,:) < 0._wp )    icediagca_2d(1:npti,:)   = 0._wp   ! ice algae must be >= 0
-         WHERE( iceno3gca_2d(1:npti,:) < 0._wp )    iceno3gca_2d(1:npti,:)   = 0._wp   ! ice no3 must be >= 0
-         WHERE( icenh4gca_2d(1:npti,:) < 0._wp )    icenh4gca_2d(1:npti,:)   = 0._wp   ! ice algae must be >= 0
+      IF( ln_csib ) THEN ! ice BGC
+         DO jn=1,jp_csib
+            WHERE( icetragca_2d(1:npti,:,jn) < 0._wp )    icetragca_2d(1:npti,:,jn)   = 0._wp   ! ice tracer must be >= 0
+         ENDDO
       ENDIF
       !
    END SUBROUTINE rdgrft_shift
@@ -933,7 +935,7 @@ CONTAINS
       !!-----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kn   ! 1= from 2D to 1D   ;   2= from 1D to 2D
       !
-      INTEGER ::   jl, jk   ! dummy loop indices
+      INTEGER ::   jl, jk,jn   ! dummy loop indices
       !!-----------------------------------------------------------------------
       !
       SELECT CASE( kn )
@@ -967,10 +969,10 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_dyn_1d    (1:npti), hfx_dyn    (:,:) )
          CALL tab_2d_1d( npti, nptidx(1:npti), wfx_snw_dyn_1d(1:npti), wfx_snw_dyn(:,:) )
          CALL tab_2d_1d( npti, nptidx(1:npti), wfx_pnd_1d    (1:npti), wfx_pnd    (:,:) )
-         IF ( ln_csib ) THEN
-            CALL tab_3d_2d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
-            CALL tab_3d_2d( npti, nptidx(1:npti), iceno3gca_2d(1:npti,1:jpl), iceno3_gca(:,:,:) )
-            CALL tab_3d_2d( npti, nptidx(1:npti), icenh4gca_2d(1:npti,1:jpl), icenh4_gca(:,:,:) )
+         IF ( ln_csib ) THEN ! ice BGC
+            DO jn=1,jp_csib
+               CALL tab_3d_2d( npti, nptidx(1:npti), icetragca_2d(1:npti,1:jpl,jn), icetra_gca(:,:,:,jn) )
+            ENDDO
          ENDIF
          !
          !                 !---------------------!
@@ -999,10 +1001,10 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_dyn_1d    (1:npti), hfx_dyn    (:,:) )
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_snw_dyn_1d(1:npti), wfx_snw_dyn(:,:) )
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_pnd_1d    (1:npti), wfx_pnd    (:,:) )
-         IF ( ln_csib ) THEN
-            CALL tab_2d_3d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
-            CALL tab_2d_3d( npti, nptidx(1:npti), iceno3gca_2d(1:npti,1:jpl), iceno3_gca(:,:,:) )
-            CALL tab_2d_3d( npti, nptidx(1:npti), icenh4gca_2d(1:npti,1:jpl), icenh4_gca(:,:,:) )
+         IF ( ln_csib ) THEN ! ice BGC
+            DO jn=1,jp_csib
+               CALL tab_2d_3d( npti, nptidx(1:npti), icetragca_2d(1:npti,1:jpl,jn), icetra_gca(:,:,:,jn) )
+            ENDDO
          ENDIF
          !
       END SELECT
