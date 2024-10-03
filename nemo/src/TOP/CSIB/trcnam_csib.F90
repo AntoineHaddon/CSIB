@@ -42,7 +42,7 @@ CONTAINS
       INTEGER ::   numonpbcsib      = -1          !! Logical unit for the above ref/cfg namelists output
 
       !!----------------------------------------------------------------------
-      NAMELIST/namicedia/ z_ia, mu_max, t_ia, r_pp, h_ni, vnh4, C2N_dia, b_ia, r_m1, r_m2, f_rm, r_ni, c_di, c_nu
+      NAMELIST/namicedia/ z_ia, mu_max, t_ia, r_pp, h_ni, vnh4, C2N_dia, C2CH_dia, b_ia, r_m1, r_m2, f_p2, f_rm, r_ni, c_di, c_nu
       
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_nam_csib : read CSIB namelists'
@@ -74,9 +74,11 @@ CONTAINS
          WRITE(numout,*) ' h_ni =',h_ni
          WRITE(numout,*) ' vnh4 =',vnh4
          WRITE(numout,*) ' C2N_dia =',C2N_dia
+         WRITE(numout,*) ' C2CH_dia =',C2CH_dia
          WRITE(numout,*) ' b_ia =',b_ia
          WRITE(numout,*) ' r_m1 =',r_m1
          WRITE(numout,*) ' r_m2 =',r_m2
+         WRITE(numout,*) ' f_p2 =',f_p2
          WRITE(numout,*) ' f_rm =',f_rm
          WRITE(numout,*) ' r_ni =',r_ni
          WRITE(numout,*) ' c_nu =',c_nu
@@ -86,6 +88,7 @@ CONTAINS
 
 
       N2C_dia = 1._wp / C2N_dia ! N to C ratio
+      CH2C_dia = 1._wp / C2CH_dia ! CH to C ratio
 
       ! convert time unit from /day to /sec
       mu_max = mu_max / 86400._wp 

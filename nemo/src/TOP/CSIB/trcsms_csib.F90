@@ -108,6 +108,8 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   vnh4                 ! half-saturation constant for preferential uptake of NH4 (mmol N m-3)
    REAL(wp), PUBLIC, SAVE ::   C2N_dia              ! Carbon to Nitrogen ratio for ice diatoms (-)
    REAL(wp), PUBLIC, SAVE ::   N2C_dia              ! Nitrogen to Carbon ratio for ice diatoms (-)
+   REAL(wp), PUBLIC, SAVE ::   C2CH_dia             ! Carbon to Chlorophyll ratio for ice diatoms (-)
+   REAL(wp), PUBLIC, SAVE ::   CH2C_dia              ! Chlorophyll to Carbon ratio for ice diatoms (-)
    REAL(wp), PUBLIC, SAVE ::   b_ia                 ! Mortality threshold for ice diatoms (mmol C m-3)
    REAL(wp), PUBLIC, SAVE ::   r_m1                 ! Linear Mortality rate for ice diatoms (d-1)  / sec per day
    REAL(wp), PUBLIC, SAVE ::   r_m2                 ! Quadratic Mortality rate for ice diatoms (mmol C m-3 d-1)  / sec per day
@@ -115,6 +117,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   r_ni                 ! Nitrification rate (d-1 W m-2)  / sec per day
    REAL(wp), PUBLIC, SAVE ::   c_di                 ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
    REAL(wp), PUBLIC, SAVE ::   c_nu                 ! Kinematic viscosity of seawater (m2/s)
+   REAL(wp), PUBLIC, SAVE ::   f_p2                 ! Seeding fraction (-)
   
   
    !!----------------------------------------------------------------------
@@ -136,12 +139,13 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt               ! ocean time-step index
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs   ! time level indices
       
-      INTEGER  :: ji,jj,jl,jn             ! dummy loop index
+      INTEGER  :: ji,jj,jl,jn          ! dummy loop index
       REAL(wp) :: zscale               ! scale factor between sea ice skeletal layer and ocean surface layer
       REAL(wp) :: if_below_bia=0._wp   ! mortality switch
       REAL(wp) :: zdtDif               ! temp variable for molecular diff
       REAL(wp) :: zmaxia               ! for diagnostics/debug
-      
+      REAL(wp) :: zln2 = 0.693147_wp   ! natural log ln(2)
+
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -316,7 +320,7 @@ CONTAINS
                   lim_nut_ice(ji,jj,jl) = (icetra_gca(ji,jj,jl,jrino3) + icetra_gca(ji,jj,jl,jrinh4) ) / ( h_ni + icetra_gca(ji,jj,jl,jrino3) + icetra_gca(ji,jj,jl,jrinh4) )
                   
                   ! Ice diatom growth rate 
-                  growth_dia(ji,jj,jl) = mu_max * 0.693_wp                            &
+                  growth_dia(ji,jj,jl) = mu_max * zln2                            &
                            &    * exp( t_ia * sst_m(ji,jj) )                          & ! temperature factor
                            &    * MIN( lim_lig(ji,jj,jl) , lim_nut_ice(ji,jj,jl) )    & ! PAR and N limitation
                            &    * icetra_gca(ji,jj,jl,jridia)
@@ -324,7 +328,7 @@ CONTAINS
                   ! Ice diatom mortality, off if below threshold b_ia
                   if_below_bia = MAX( 0._wp , SIGN(1._wp, icetra_gca(ji,jj,jl,jridia) - b_ia) )
                   ! Linear mortality
-                  mortlin_dia(ji,jj,jl) = if_below_bia * r_m1 * 0.693_wp * exp(t_ia* sst_m(ji,jj) ) * icetra_gca(ji,jj,jl,jridia)
+                  mortlin_dia(ji,jj,jl) = if_below_bia * r_m1 * zln2 * exp(t_ia* sst_m(ji,jj) ) * icetra_gca(ji,jj,jl,jridia)
                   ! Quadratic mortality
                   mortquad_dia(ji,jj,jl) = if_below_bia * r_m2 * icetra_gca(ji,jj,jl,jridia) * icetra_gca(ji,jj,jl,jridia)
 
@@ -445,21 +449,56 @@ CONTAINS
                   ! = sea ice area / (cell area * ocean surface layer height)
                   zscale = a_i(ji,jj,jl) / e3t_0(ji,jj,1)
 
-               ! Ocean surface phytoplankton seeding and removal
+               ! Ocean surface large phytoplankton C biomass
                   tr(ji,jj,1,jrdia,Krhs) = tr(ji,jj,1,jrdia,Krhs) +  (                    &
                            ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + flush_dia(ji,jj,jl) * z_ia * zscale                          & 
+                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & 
                            ! source: ice diatoms from lateral melting of ice
-                  &        + lamloss_dia(ji,jj,jl) * z_ia * zscale                        & 
+                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & 
                            ! sink: Uptake from bottom ice growth
                   &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdia,Kbb)                        &
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdia,Kbb)             &
                   )
 
+               ! Ocean surface large phytoplankton N biomass
+                  tr(ji,jj,1,jrdn,Krhs) = tr(ji,jj,1,jrdn,Krhs) + N2C_dia * (             &
+                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
+                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & 
+                           ! source: ice diatoms from lateral melting of ice
+                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & 
+                           ! sink: Uptake from bottom ice growth
+                  &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
+                           ! sink: Uptake from lateral ice growth
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdn,Kbb)              &
+                  )
 
-               ! Ocean surface NO3 dynamics
-                  tr(ji,jj,1,jqno3,Krhs) = tr(ji,jj,1,jqno3,Krhs) +  (             &
+               ! Ocean surface large phytoplankton Chl biomass
+                  tr(ji,jj,1,jrdch,Krhs) = tr(ji,jj,1,jrdch,Krhs) + CH2C_dia * (          &
+                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
+                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & 
+                           ! source: ice diatoms from lateral melting of ice
+                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & 
+                           ! sink: Uptake from bottom ice growth
+                  &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
+                           ! sink: Uptake from lateral ice growth
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdch,Kbb)             &
+                  )
+
+               ! Ocean surface large POC
+                  tr(ji,jj,1,jrgoc,Krhs) = tr(ji,jj,1,jrgoc,Krhs) + (                    &
+                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
+                  &        + (1.0_wp - f_p2) * flush_dia(ji,jj,jl) * z_ia * zscale                          & 
+                           ! source: ice diatoms from lateral melting of ice
+                  &        + (1.0_wp - f_p2) * lamloss_dia(ji,jj,jl) * z_ia * zscale                        & 
+                           ! source : linear mortality 
+                  &        + (1.0_wp - f_rm) * mortlin_dia(ji,jj,jl) * z_ia * zscale                        &
+                           ! source : quadratic mortality 
+                  &        + mortquad_dia(ji,jj,jl) * z_ia * zscale                        &
+                  )
+
+               ! Ocean surface NO3 
+                  tr(ji,jj,1,jqno3,Krhs) = tr(ji,jj,1,jqno3,Krhs) +  (                    &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_no3(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice NO3 from lateral melting of ice
@@ -467,12 +506,12 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup_no3(ji,jj,jl) * z_ia * zscale                          &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kbb)                        &
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kbb)             &
                   )
 
 
-               ! Ocean surface NH4 dynamics
-                  tr(ji,jj,1,jrnh4,Krhs) = tr(ji,jj,1,jrnh4,Krhs) + (             &
+               ! Ocean surface NH4 
+                  tr(ji,jj,1,jrnh4,Krhs) = tr(ji,jj,1,jrnh4,Krhs) + (                     &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flush_nh4(ji,jj,jl) * z_ia * zscale                          & 
                            ! source: ice NO3 from lateral melting of ice
@@ -480,7 +519,7 @@ CONTAINS
                            ! sink: Uptake from bottom ice growth
                   &        - bogup_nh4(ji,jj,jl) * z_ia * zscale                          &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kbb)                        &
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kbb)             &
                   )
 
                   
