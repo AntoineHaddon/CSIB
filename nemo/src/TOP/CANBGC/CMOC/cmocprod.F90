@@ -122,7 +122,7 @@ CONTAINS
             ! &               * exp ( - ( (0.04 + 0.03 * tr(ji,jj,1,jqnch,Kbb) * 1e6_wp) * gdept(ji,jj,jk,Kmm) ) )
             !
             ! O Riche Sept 13th 2022
-            ! use trc_opt_1band; can have a variable PAR/SW ratio (ln_varpar switch set in namelist_top_*).
+            ! use trc_opt_1band
             zetot(ji,jj,jk) = par_1band(ji,jj,jk)
               !
               !

@@ -29,8 +29,8 @@
       name = fname
       inquire (file=trim(name), exist=exists)
       if (.not. exists) then
-        call opennew (name, ncid)
-        return
+        print*,'error in opentime => file ',trim(name),' does not exist'
+        error stop 
       endif
       ntrec = 0
       call openchk (fname, ncid, notopen)
@@ -44,13 +44,16 @@
       endif
 
       i = nf_inq_varid (ncid, 'time', iv)
-!     return if no time variable
-      if (i .ne. nf_noerr) return
+      call checkerror (i,'opentime  nf_inq_vardimid'//trim(name))
       i = nf_inq_vardimid (ncid, iv, id)
       call checkerror (i,'opentime  nf_inq_vardimid'//trim(name))
       i = nf_inq_dimlen (ncid, id, ln)
       call checkerror (i,'opentime  nf_inq_dimlen'//trim(name))
-      if (ln .le. 0) return
+      if (ln .le. 0) then
+        print*, trim(name)
+        print*, 'error in opentime => time variable length is zero'
+        error stop 
+      endif
       allocate (time(ln))
 !     find ntrec of relyr or next if relyr is not found
       i = nf_get_var_double (ncid, iv, time)
@@ -94,8 +97,8 @@
       name = fname
       inquire (file=trim(name), exist=exists)
       if (.not. exists) then
-        call opennew (name, ncid)
-        return
+        print*,'error in opennext => file ',trim(name),' does not exist'
+        error stop 
       endif
 
       ntrec = 0
@@ -110,13 +113,16 @@
       endif
 
       i = nf_inq_varid (ncid, 'time', iv)
-!     return if no time variable
-      if (i .ne. nf_noerr) return
+      call checkerror (i, 'opennext '//trim(name))
       i = nf_inq_vardimid (ncid, iv, id)
       call checkerror (i,'opennext  nf_inq_vardimid'//trim(name))
       i = nf_inq_dimlen (ncid, id, ln)
       call checkerror (i,'opennext  nf_inq_dimlen'//trim(name))
-      if (ln .le. 0) return
+      if (ln .le. 0) then
+        print*, trim(name)
+        print*, 'Error in opentime => time variable length is zero'
+        error stop 
+      endif
 !     get next record or last if last is relyr
       i = nf_get_vara_double (ncid, iv, ln, 1, time)
       call checkerror (i,'opennext nf_get_vara_double time')
@@ -151,8 +157,8 @@
       name = fname
       inquire (file=trim(name), exist=exists)
       if (.not. exists) then
-        call opennew (name, ncid)
-        return
+        print*,'error in openfile => file ',trim(name),' does not exist'
+        error stop 
       endif
 
       call openchk (fname, ncid, notopen)
@@ -256,7 +262,7 @@
       num = num + 1
       if (num .gt. max_num_files) then
         print*, "=> Error: increase max_num_files in uvic_netcf.f"
-        stop
+        error stop
       endif
       list_names(num) = fname
       list_ncid(num) = ncid
@@ -380,7 +386,7 @@
       if (i .ne. nf_noerr) then
         print*, 'netcdf error: ', nf_strerror(i)
         print*, 'trace string: ', trace
-        stop
+        error stop
       endif
 
       return
@@ -510,8 +516,10 @@
       integer i
 
       i = nf_inq_dimid (ncid, name, id)
-!     if dimension is already defined, return
-      if (i .eq. nf_noerr) return
+      if (i .eq. nf_noerr) then
+        print*, '==> Error: Dimension ',trim(name),' already exist'
+        error stop
+      endif
 
       if (ln .gt. 0) then
         i = nf_def_dim (ncid, name, ln, id)
@@ -608,7 +616,7 @@
       endif
       if (len + is - 1 .gt. ln) then
         print*, 'error in getaxis => read axis not within global axis'
-        stop
+        error stop
       endif
       ie = is - 1 + len
       rs = 0.0
@@ -654,8 +662,10 @@
       real(kind=8) dvar(2)
 
       i = nf_inq_varid (ncid, name, iv)
-!     if variable is already defined, return
-      if (i .eq. nf_noerr) return
+      if (i .eq. nf_noerr) then
+        print*, '==> Error: Variable ',trim(name),' already exist'
+        error stop
+      endif
 
       if (type .eq. 'D') then
         i = nf_def_var (ncid, name, nf_double, nd, id, iv)
@@ -873,8 +883,8 @@
       fill_in=0.
       i = nf_inq_varid (ncid, name, iv)
       if (i .ne. nf_noerr) then
-        print*, '==> Warning: netcdf variable ',trim(name), ' not found'
-        return
+        print*, '==> Error: netcdf variable ',trim(name), ' not found'
+        error stop
       endif
       scale = 1.0
       offset = 0.0
@@ -957,11 +967,7 @@
       real(kind=8) din, offset, scale
 
       i = nf_inq_varid (ncid, name, iv)
-!     return zero for data if variable is not found
-      if (i .ne. nf_noerr) then
-        print*, '==> Warning: netcdf variable ',trim(name), ' not found'
-        return
-      endif
+      call checkerror(i,'getvars '//name)
       scale = 1.0
       offset = 0.0
       i = nf_get_att_double (ncid, iv, 'add_offset', offset)
@@ -1009,7 +1015,7 @@
         enddo
       else
         write (*,*) 'Error:  it = ',it, ' in edge_maker'
-        stop
+        error stop
       endif
 
       return

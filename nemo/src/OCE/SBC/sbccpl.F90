@@ -594,7 +594,7 @@ CONTAINS
          srcv(jpr_co2 )%laction = .TRUE.
          l_co2cpl = .TRUE.
          IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) '   Atmospheric pco2 received from oasis '
+         IF(lwp) WRITE(numout,*) '   Atmospheric pco2 received from the coupler '
          IF(lwp) WRITE(numout,*)
       ENDIF
       !
@@ -604,11 +604,10 @@ CONTAINS
       srcv(jpr_mslp)%clname = 'O_MSLP'     ;   
       IF( TRIM(sn_rcv_mslp%cldes  ) == 'coupled' ) THEN
           srcv(jpr_mslp)%laction = .TRUE.
-          IF (ln_apr_dyn) THEN
-              l_aprcpl           = .TRUE.                      ! -> no need to read mslp in sbcapr
-              IF(lwp) WRITE(numout,*)
-              IF(lwp) WRITE(numout,*) '   Sea level pressure received from the coupler, ln_apr_dyn = ', ln_apr_dyn
-          ENDIF
+          l_aprcpl           = .TRUE.                      ! -> no need to read mslp in sbcapr or patm in trc_flx
+          IF(lwp) WRITE(numout,*)
+          IF(lwp) WRITE(numout,*) '   Sea level pressure received from the coupler'
+          IF (.NOT.ln_apr_dyn) allocate( apr (jpi,jpj) )  ! if ln_alr_dyn, apr allocaterd in sbcapr 
       ELSEIF (ln_apr_dyn) THEN
           CALL ctl_warn( 'sbc_apr: ln_apr_dyn=T but no Sea level pressure received from the coupler,', &
                &         '===> ln_apr_dyn forced to .FALSE.' )
@@ -1369,15 +1368,18 @@ CONTAINS
       !                                                      ! ========================= !
       !                                                      ! Mean Sea Level Pressure   !   (Pa)
       !                                                      ! ========================= !
-      IF( srcv(jpr_mslp)%laction.and.ln_apr_dyn ) THEN                    ! UKMO SHELF effect of atmospheric pressure on SSH
-          IF( kt /= nit000 )   ssh_ibb(:,:) = ssh_ib(:,:)    !* Swap of ssh_ib fields
+      IF( srcv(jpr_mslp)%laction ) THEN                    ! UKMO SHELF effect of atmospheric pressure on SSH
 
-          r1_grau = 1.e0 / (grav * rho0)               !* constant for optimization
-          ssh_ib(:,:) = - ( frcv(jpr_mslp)%z3(:,:,1) - rpref ) * r1_grau    ! equivalent ssh (inverse barometer)
           apr   (:,:) =     frcv(jpr_mslp)%z3(:,:,1)                         !atmospheric pressure (Pa)
 
-          IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
-          CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
+          IF (ln_apr_dyn) THEN
+              IF( kt /= nit000 )   ssh_ibb(:,:) = ssh_ib(:,:)    !* Swap of ssh_ib fields
+              r1_grau = 1.e0 / (grav * rho0)               !* constant for optimization
+              ssh_ib(:,:) = - ( frcv(jpr_mslp)%z3(:,:,1) - rpref ) * r1_grau    ! equivalent ssh (inverse barometer)
+              IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
+              CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
+          ENDIF
+
       END IF
       !
       IF( ln_sdw ) THEN  ! Stokes Drift correction activated
@@ -2616,9 +2618,9 @@ CONTAINS
 #endif
 
       !                                                      ! ------------------------- !
-      !                                                      !  CO2 flux from PISCES     !
+      !                                                      !  CO2 flux from BGC        !
       !                                                      ! ------------------------- !
-      IF( ssnd(jps_co2)%laction .AND. l_co2cpl )   THEN
+      IF( ssnd(jps_co2)%laction )   THEN
          ztmp1(:,:) = oce_co2(:,:) * 1000.  ! conversion in molC/m2/s
          CALL cpl_snd( jps_co2, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ) , info )
       ENDIF

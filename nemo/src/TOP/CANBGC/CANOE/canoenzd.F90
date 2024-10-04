@@ -5,12 +5,13 @@ MODULE canoenzd
 
    USE sms_top_canbgc     ! TOP Source Minus Sink variables
    USE sms_canoe          ! CanOE specific parameters declaration
-   USE canoetemp          ! CanOE temperature dependencies module
-   USE trcopt_canbgc      ! PAR attenuation
-
    USE trc_closea_canbgc  !  tmask_bgc_closea
+   USE trcopt_canbgc      ! PAR attenuation
+   USE canoetemp          ! CanOE temperature dependencies module
 
    USE prtctl          !  print control for debugging
+   USE lib_mpp         !  ctl_stop on failed mem allocate check
+   USE lib_fortran     !  access glob_sum function
    USE iom             !  I/O manager
 
    ! timing modules
@@ -27,6 +28,7 @@ MODULE canoenzd
    PUBLIC canoe_mort2
    PUBLIC canoe_rem
    PUBLIC canoe_nzd_init
+   PUBLIC canoe_nzd_alloc
  
    REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
    REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
@@ -47,16 +49,20 @@ MODULE canoenzd
    REAL(wp), PUBLIC :: zsr2    = 0.3_wp     !: specific respiration rate
    REAL(wp), PUBLIC :: lambda2 = 0.8_wp     !: assimilation efficiency
    REAL(wp), PUBLIC :: xremik = 0.25_wp     !: remineralisation rate of POC 
-   REAL(wp), PUBLIC :: xremip = 0.025_wp    !: remineralisation rate of DOC
+   REAL(wp), PUBLIC :: xremip = 0.025_wp    !: remineralisation rate of DOC (not used)
    REAL(wp), PUBLIC :: nitrif = 0.05_wp     !: NH4 nitrification rate 
    REAL(wp), PUBLIC :: xlam1  = 0.0001_wp   !: scavenging rate of iron (low concentrations)
    REAL(wp), PUBLIC :: xlam2  = 2.5_wp      !: scavenging rate of iron (high concentrations)
    REAL(wp), PUBLIC :: ligand = 6.0E+2_wp   !: ligand concentration
-   REAL(wp), PUBLIC :: pocfctr= 0.65574_wp  !: multiplier for POC-dependent scavenging
-   REAL(wp), PUBLIC :: o2thresh  = 6._wp    !: O2 threshold for denitrification
+   REAL(wp), PUBLIC :: pocfctr = 0.65574_wp !: multiplier for POC-dependent Fe scavenging
+   REAL(wp), PUBLIC :: o2thresh = 6._wp     !: O2 threshold for denitrification
    REAL(wp), PUBLIC :: nh4frx = 0.25_wp     !: anammox fraction of denitrification
-   REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for anoxia 
+   REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for O2 inhibition of nitrification
    REAL(wp), PUBLIC :: nyld   = 0.8_wp      !: denitrification stoichiometric coefficient
+   REAL(wp), PUBLIC :: kdca   = 0.0074_wp   !: dissolution rate of CaCO3
+   REAL(wp), PUBLIC :: nca    = 1._wp       !: order of dissolution reaction (not used)
+
+   !REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
 
 #  include "vectopt_loop_substitute.h90"
 
@@ -156,14 +162,12 @@ CONTAINS
          END DO
       END DO
       !
-!      IF( ln_diatrc .AND. lk_iomput ) THEN
-!         zrfact2 = 1.e-3 * rfact2r
-!!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Total grazing of phyto by zoo
-!         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Calcite production
-!         IF( jnt == nrdttrc ) THEN
+!      IF( lk_iomput ) THEN
+!         zrfact2 = 1.e-3 * qfact2r
+!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Total grazing of phyto by zoo
+!         IF( jnt == qnrdttrc ) THEN
 !            CALL iom_put( "GRAZ2" , grazing2 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of large phytoplankton
 !            CALL iom_put( "GRAZ3" , grazing3 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of microzooplankton
-!            CALL iom_put( "PCAL" , prodcal  )  ! Calcite production
 !         ENDIF
 !      ENDIF
 !      !
@@ -268,9 +272,9 @@ CONTAINS
          END DO
       END DO
       !
-!      IF( ln_diatrc ) THEN
+!      IF( lk_iomput ) THEN
 !         zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
-!         IF( jnt == nrdttrc ) THEN
+!         IF( jnt == qnrdttrc ) THEN
 !          CALL iom_put( "GRAZ1"   , grazing1(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! microzooplankton grazing on nanophytoplankton
 !         ENDIF
 !      ENDIF
@@ -301,10 +305,12 @@ CONTAINS
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n,thetac
       REAL(wp) :: cxs,nxs1,nxs2,fexs1,fexs2
       REAL(wp) :: csw1,csw2
+      REAL(wp) :: zrfact2
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prodcal
       CHARACTER (len=25) :: charout
 
-      ALLOCATE( zmortpn(  jpi, jpj, jpk ) )
+      ALLOCATE( zmortpn(  jpi, jpj, jpk ), prodcal(  jpi, jpj, jpk ) )
       zmortpn(:,:,:) = 0._wp
 
       !!---------------------------------------------------------------------
@@ -312,7 +318,7 @@ CONTAINS
       !IF( nn_timing == 1 )  CALL timing_start('canoe_mort1')
       !
 
-      !prodcal(:,:,:) = 0.  !: calcite production variable set to zero
+      prodcal(:,:,:) = 0.  !: calcite production variable set to zero
 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -378,12 +384,20 @@ CONTAINS
                tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) - picfrx*(zmortp + zmortz)*1.E-6
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - 2.*picfrx*(zmortp + zmortz)*1.E-6
                tr(ji,jj,jk,jrcal, Krhs) = tr(ji,jj,jk,jrcal, Krhs) + picfrx*(zmortp + zmortz)
-               !prodcal(ji,jj,jk) = picfrx*(zmortp + zmortz)         ! diagnostic array should be in mmol/m^-3/s but conversion is in p4zmeso for now
+               prodcal(ji,jj,jk) = picfrx*(zmortp + zmortz)         ! diagnostic array should be in mmol/m^-3/s but conversion is in p4zmeso for now
             END DO
          END DO
       END DO
       !
-      DEALLOCATE( zmortpn )
+      IF( lk_iomput ) THEN
+         zrfact2 = 1.e-3 * qfact2r
+         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Calcite production
+         IF( jnt == qnrdttrc ) THEN
+            CALL iom_put( "PCAL" , prodcal  )  ! Calcite production
+         ENDIF
+      ENDIF
+!      !
+      DEALLOCATE( zmortpn, prodcal )
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('nano')")
@@ -504,7 +518,7 @@ CONTAINS
       !!
       !! ** Method  : - ???
       !!---------------------------------------------------------------------
-      !
+
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !
@@ -516,13 +530,17 @@ CONTAINS
       REAL(wp) ::   zscave, zscavex, fexs, zcoag
       REAL(wp) ::   zlamfac, zonitr, zstep, znitro2dep
       REAL(wp) ::   zrfact2
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nh4ox
       CHARACTER (len=25) :: charout
+
+      ALLOCATE( nh4ox(  jpi, jpj, jpk ) )
       !REAL(wp), POINTER, DIMENSION(:,:,:) :: zolimi, zolimi2, zwork
       !!---------------------------------------------------------------------
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_rem')
       !
-      !nh4ox(:,:,:)=0.
+
+      nh4ox(:,:,:)=0.
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -541,7 +559,7 @@ CONTAINS
                tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) + zonitr
                tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - 2. * zonitr
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - 2.e-6 * zonitr
-               !nh4ox(ji,jj,jk) = zonitr
+               nh4ox(ji,jj,jk) = zonitr
             END DO
          END DO
       END DO
@@ -558,7 +576,7 @@ CONTAINS
          CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
 
-      !denitr(:,:,:)=0.
+      denitr(:,:,:)=0.
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -569,7 +587,7 @@ CONTAINS
                zorem2 = xremik * xstepb * Tf * tr(ji,jj,jk,jrgoc,Kmm)
                zofer2 = zorem2 * rr_fe2c
 
-! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<10 uM
+! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<6 uM
 ! NO3 fraction is then divided between NO3 and NH4 according to the parameter nh4frx (for anammox 50% of N comes from NO3 and 50% from NH4)
                zonitr=1.-MIN(tr(ji,jj,jk,jqoxy,Kmm),o2thresh)/o2thresh
                tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) + (zorem + zorem2)*rr_n2c - (zorem + zorem2)*nyld*zonitr*0.5*nh4frx
@@ -581,7 +599,13 @@ CONTAINS
                tr(ji,jj,jk,jrgoc, Krhs) = tr(ji,jj,jk,jrgoc, Krhs) - zorem2
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*rr_n2c                         ! 1 mol of alkalinity per mol of N
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*nyld*zonitr*(1.-nh4frx)        ! +1 mol if denitrification, 0 if anammox
-               !denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
+               denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
+
+! CaCO3 dissolution
+               zorem2 = kdca * xstepb * tr(ji,jj,jk,jrcal,Kmm)
+               tr(ji,jj,jk,jrcal, Krhs) = tr(ji,jj,jk,jrcal, Krhs) - zorem2 
+               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + zorem2 * 1.e-6
+               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + zorem2 * 2.e-6
 
             END DO
          END DO
@@ -623,15 +647,15 @@ CONTAINS
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
 
-!      IF( ln_diatrc ) THEN
-!         zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
-!         denitr(:,:,:) = denitr(:,:,:) * zrfact2
-!         nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
-!         IF( jnt == nrdttrc ) THEN
-!       !   CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
-!          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
-!         ENDIF
-!      ENDIF
+      IF( lk_iomput ) THEN
+         zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
+         IF( jnt == qnrdttrc ) THEN
+           CALL iom_put( "Denitr"   , denitr(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+           CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
+         ENDIF
+      ENDIF
+
+      DEALLOCATE( nh4ox )
 
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('rem6')")
@@ -653,12 +677,13 @@ CONTAINS
       !!                called at the first timestep
       !!
       !!----------------------------------------------------------------------
-      INTEGER ::   ios       ! Local integer
+      INTEGER ::   ios, ierr ! Local integers
       NAMELIST/namcanmort/ mpqua, mpquad, mprat, mprat2, mpratm, chldegr, picfrx, xminp
       NAMELIST/namcanzoo/ part, gmax1, aps, zsr1, lambda1
       NAMELIST/namcanmes/ part2, gmax2, apl, zsr2, lambda2
       NAMELIST/namcanrem/ xremik, xremip, nitrif, xlam1, xlam2, ligand, pocfctr, o2thresh, &
                         & nh4frx, oxymin
+      NAMELIST/namcancal/ kdca, nca
 
       !!----------------------------------------------------------------------
 
@@ -693,6 +718,14 @@ CONTAINS
       READ  ( numnatp_cfgb, namcanrem, IOSTAT = ios, ERR = 908 )
 908   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanrem in configuration namelist_canoe' )
       IF(lwp) WRITE( numonpb, namcanrem )
+
+      REWIND( numnatp_refb )              ! Namelist namcancal in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcancal, IOSTAT = ios, ERR = 909)
+909   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcancal in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcancal in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcancal, IOSTAT = ios, ERR = 910 )
+910   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcancal in configuration namelist_canoe' )
+      IF(lwp) WRITE( numonpb, namcancal )
 
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' '
@@ -738,9 +771,28 @@ CONTAINS
          WRITE(numout,*) '    Annamox fraction of denitrification       nh4frx    =', nh4frx
          WRITE(numout,*) '    O2 dependence of nitrification            oxymin    =', oxymin
 
+         WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for CaCO3 dissolution'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    calcite dissolution rate constant in d^-1           =', kdca
+         WRITE(numout,*) '    order of dissolution reaction (not used)            =', nca
+
       ENDIF
 
    END SUBROUTINE canoe_nzd_init
+
+   INTEGER FUNCTION canoe_nzd_alloc()
+      !!----------------------------------------------------------------------
+      !!              ***  ROUTINE trc_sms_canoe_alloc  ***
+      !!----------------------------------------------------------------------
+      !
+      ! ALLOCATE here the arrays specific to CANOE
+      ! ALLOCATE( tab(...) , STAT=trc_sms_canoe_alloc )
+      !
+      ALLOCATE( denitr(  jpi, jpj, jpk ) , STAT=canoe_nzd_alloc )
+      IF( canoe_nzd_alloc /= 0 ) CALL ctl_stop( 'STOP', 'canoe_nzd_alloc : failed to allocate denitr array' )
+
+   END FUNCTION canoe_nzd_alloc
 
 END MODULE canoenzd
 

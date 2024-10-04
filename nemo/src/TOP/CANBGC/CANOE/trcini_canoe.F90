@@ -150,6 +150,7 @@ CONTAINS
       ! call all the BGC initialization subroutines in TOP tier
       !
       CALL trc_che_init_2D( Kmm )
+      CALL trc_che_init_3D( Kmm )
       !
       CALL trc_flx_init
       !
@@ -196,8 +197,9 @@ CONTAINS
       ierr = ierr + sms_top_alloc()
       ierr = ierr + trc_che_alloc()
       ierr = ierr + trc_flx_alloc()
-      ierr = ierr +   canoe_sink_alloc()
-      ierr = ierr +trc_sms_canoe_alloc()      
+      ierr = ierr + canoe_sink_alloc()
+      ierr = ierr + trc_sms_canoe_alloc()      
+      ierr = ierr + canoe_nzd_alloc()      
       !
       IF( lk_mpp    )   CALL mpp_sum( 'canoe_alloc', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'canoe_alloc: unable to allocate CANOE arrays' )

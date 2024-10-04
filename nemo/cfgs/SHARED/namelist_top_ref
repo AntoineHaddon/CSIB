@@ -114,14 +114,10 @@
 !              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
    sn_par      = 'par.orca'       ,     24            , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
    cn_dir      = './'        ! root directory for the location of the dynamical files
-   ln_varpar   =  .true.     ! Read PAR from file
    parlux      =  0.43       ! Fraction of shortwave as PAR
 ! 1-band PAR
    kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
    kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
-! par stairs profile for test purposes
-   parval      = 100.           ! surface PAR constant
-   zlevel      = 5              ! vertical level where PAR is non-zero
 /
 !-----------------------------------------------------------------------
 &namtrc_dmp      !   passive tracer newtonian damping                   (ln_trcdmp=T)
@@ -192,3 +188,31 @@
                              !    = 1 prescribed concentrations
    rn_icbdep     =  120.     ! Mean underwater depth of iceberg (m)
 /
+!-----------------------------------------------------------------------
+&nambgcext     !   air-sea exchange
+!-----------------------------------------------------------------------
+   nn_co2int  =  0 ! =0, co2 constant (nn_atmco2) 
+                   ! =1, read atm co2 conc. from an annual file with no spatialized fields (clname)
+                   ! =2, read atm co2 conc. from files with spatialized fields (sn_atmco2)
+                   ! =3, get the fields from the coupler (sn_rcv_co2 must be 'coupled')
+   nn_atmco2     =  288.0      ! Constant CO2 value in ppm (nn_co2int=0)
+   clname     =  'atcco2.txt'  ! atm pCO2 file (nn_co2int=1)
+      nn_offset  =  0          ! Offset model-data start year (nn_co2int=1)
+                               ! If your model year is iyy, then the record read 
+                               ! in the file will be CO2(N)=iyy-nn_offset
+!-----------------------------------------------------------------------
+   nn_patmint  =  0 ! =0, air pressure constant (nn_patm) 
+                    ! =1, use the Patm gradient added in ocean & ice Eqs.   (with ln_apr_dyn = .true. )
+                    ! =2, read patm from files with spatialized fields (sn_patm)
+                    ! =3, get the fields from the coupler (sn_rcv_mslp must be 'coupled')
+   nn_patm     =  101325. ! Constant atmospheric pressure in Pa (nn_patmint=0)
+!-----------------------------------------------------------------------
+!              !  file name   ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
+!              !              !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
+   sn_patm     = 'presatm'    ,     24.           , 'presatm' ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
+   sn_atmco2   = 'presatmco2' ,     -1.           , 'co2'     ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
+   cn_dir      = './'     !  root directory for the location of the dynamical files
+
+   nn_no3_sf  = 1.          ! scaling factor for NO3 (for estimation of PO4)
+/
+

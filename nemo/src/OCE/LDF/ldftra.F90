@@ -747,7 +747,6 @@ CONTAINS
          ENDIF  
       END_2D
       IF( nn_hls == 1 )   CALL lbc_lnk( 'ldftra', zaeiw(:,:), 'W', 1.0_wp )   ! lateral boundary condition
-      CALL iom_put( "kgm", zaeiw )
       !
       DO_2D( 0, 0, 0, 0 )
          paeiu(ji,jj,1) = 0.5_wp * ( zaeiw(ji,jj) + zaeiw(ji+1,jj  ) ) * umask(ji,jj,1)
@@ -823,6 +822,10 @@ CONTAINS
          pw(ji,jj,jk) = pw(ji,jj,jk) + (  zpsi_uw(ji,jj,jk) - zpsi_uw(ji-1,jj  ,jk)   &
             &                           + zpsi_vw(ji,jj,jk) - zpsi_vw(ji  ,jj-1,jk) )
       END_3D
+      IF( .NOT.l_ldfeiv_time ) THEN
+         CALL iom_put( "aeiuc_2d", aeiu(:,:,1) )   ! surface u-EIV coeff.
+         CALL iom_put( "aeivc_2d", aeiv(:,:,1) )   ! surface v-EIV coeff.
+      ENDIF
       !
       !                              ! diagnose the eddy induced velocity and associated heat transport
       IF( ln_ldfeiv_dia .AND. cdtype == 'TRA' )   CALL ldf_eiv_dia( zpsi_uw, zpsi_vw, Kmm )

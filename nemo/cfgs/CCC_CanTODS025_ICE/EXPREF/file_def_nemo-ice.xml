@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+    <!-- $id$ -->
+    
+ <!--
+============================================================================================================
+=                                           output files definition                                        =
+=                                      Define your own files for sea ice                                   =
+=                                         put the variables you want...                                    =
+============================================================================================================
+ -->
+    
+ <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
+   
+   <file_group id="5d" output_freq="5d" enabled=".TRUE.">  <!-- real monthly files -->   	
+     <file id="file51" name_suffix="_icemod" description="ice variables">
+       <field field_ref="icepres"         name="sitimefrac"     level="0"  /> <!-- (SImon*) -->
+       <field field_ref="iceconc_pct"     name="siconc"         level="0"  /> <!-- (SImon*) -->
+       <field field_ref="snwthic_cmip"    name="sisnthick"      level="0"  /> <!-- (SImon*) -->
+       <field field_ref="icethic_cmip"    name="sithick"        level="0"  /> <!-- (SImon*) -->
+       <field field_ref="icetemp"         name="iicetemp"       level="0"  /> <!-- only rtd -->
+       <field field_ref="uice_cmip"       name="siu"            level="0"  /> <!-- (SImon*) -->
+       <field field_ref="vice_cmip"       name="siv"            level="0"  /> <!-- (SImon*) -->
+       <field field_ref="utau_ai_cmip"    name="sistrxdtop"     level="0"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="vtau_ai_cmip"    name="sistrydtop"     level="0"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="qtr_ice_bot"     name="qtr_ice_bot"    level="0"  /> <!-- only rtd -->
+       <field field_ref="qt_ice_oce"      name="qt_ice_oce"     level="0"  /> <!-- only rtd -->
+       <field field_ref="hfxsensib"       name="hfxsensib"      level="0" /> <!-- (Omon*) -->
+       <field field_ref="qns_ice"         name="qns_ice"        level="0" /> <!-- only rtd -->
+       <field field_ref="qsr_ice"         name="qsr_ice"        level="0" /> <!-- only rtd -->
+       <field field_ref="hfxerr"         name="hfxerr"        level="0" /> <!-- only rtd -->
+       <field field_ref="hflx_snow_ai_cea" name="hflx_snow_ai_cea"  level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
+       <!-- ==============
+            SIMIP monthly fields (that are not in level =0) -->
+       <!-- Sea-ice state variables -->
+       <field field_ref="icemass_cmip"     name="simass"        level="1"  /> <!-- (SImon*) -->
+       <field field_ref="icevolu"          name="sivol"         level="1"  /> <!-- (SImon*) -->
+       <field field_ref="snwmass_cmip"     name="sisnmass"      level="1"  /> <!-- (SImon*) -->
+       <field field_ref="sncover_cmip"     name="sisnconc"      level="1"  /> <!-- (SImon*) <!--Was not in NEMO4, codded  -->
+	  
+       <!-- additional state variables-->
+       <field field_ref="icettop_cmip"     name="sitemptop"     level="1"  /> <!-- (SImon*) -->
+       <field field_ref="icetsni_cmip"     name="sitempsnic"    level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icetbot_cmip"     name="sitempbot"     level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="iceage_cmip"      name="siage"         level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icesalm"          name="sisaltmass"    level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icesalt_cmip"     name="sisali"        level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icefrb_cmip"      name="sifb"          level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icehc_cmip"       name="sihc"          level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="snwhc_cmip"       name="sisnhc"        level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+
+       <!-- meltpond --> <!-- (preliminary implementation in 4.0, not in CanESM, to be check, NL) 
+       <field field_ref="iceapnd_pct"      name="simpconc"       level="3"  />
+       <field field_ref="icehpnd"          name="simpmass"       level="3"  />
+       <field field_ref="icevpnd"          name="simprefrozen"   level="3"  />
+       -->
+        <!-- Ridging --> <!-- (implementation in 4.0, not iom_put, in CanESM, to be check, NL) 
+       <field field_ref="sirdgconc"        name="sirdgconc"      level="3"  />
+       <field field_ref="sirdgthick"       name="sirdgthick"     level="3"  />
+       -->
+        <!-- freshwater fluxes -->
+       <field field_ref="vfxice_cmip"      name="siflfwbot"     level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="vfxsum_cmip"      name="siflfwdrain"   level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+        <!-- area balance -->
+       <field field_ref="afxthd"           name="sidconcth"     level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="afxdyn"           name="sidconcdyn"    level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+        <!-- mass balance -->
+       <field field_ref="dmithd"           name="sidmassth"         level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmidyn"           name="sidmassdyn"        level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmiopw"           name="sidmassgrowthwat"  level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmibog"           name="sidmassgrowthbot"  level="2"  /> <!-- (SImon*) -->
+       <field field_ref="dmisni"           name="sidmasssi"         level="2"  /> <!-- (SImon*) -->
+       <field field_ref="dmisub"           name="sidmassevapsubl"   level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmisum"           name="sidmassmelttop"    level="2"  /> <!-- (SImon*) -->
+       <field field_ref="dmibom"           name="sidmassmeltbot"    level="2"  /> <!-- (SImon*) -->
+       <!-- <field field_ref="dmilam"           name="sidmassmeltlat"    level="2"  /> <!-- (SImon) <!-- Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmssub"           name="sndmasssubl"       level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmsdyn"           name="sndmassdyn"        level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dmsssi"           name="sndmasssi"         level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+        <!-- heat balance -->
+       <field field_ref="hfxsensib_cmip"        name="siflsensupbot"     level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="hfxcndtop_cmip"        name="siflcondtop"       level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="hfxcndbot_cmip"        name="siflcondbot"       level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <!-- In SIMIP, but not in field_def, NL : sndmasswindrif,siflswdtop,siflswutop,siflswdbot,sifllwdtop,sifllwutop,siflsenstop,sifllatstop,sipr,sfdsi,siflsaltbot -->
+        <!-- sea-ice dynamics -->
+       <field field_ref="icevel_cmip"      name="sispeed"           level="1"  /> <!-- (SImon*) -->
+       <field field_ref="utau_oi"          name="sistrxubot"        level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="vtau_oi"          name="sistryubot"        level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icestr"           name="sicompstren"       level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dssh_dx"          name="siforcetiltx"      level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="dssh_dy"          name="siforcetilty"      level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="corstrx"          name="siforcecoriolx"    level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="corstry"          name="siforcecorioly"    level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="intstrx"          name="siforceintstrx"    level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="intstry"          name="siforceintstry"    level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="normstr"          name="sistresave"       operation="instant"  level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="sheastr"          name="sistremax"        operation="instant"  level="3"  /> <!-- (SImon*) <!-- Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="icediv"           name="sidivvel"         operation="instant"  level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="iceshe"           name="sishevel"         operation="instant"  level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <!-- In SIMIP, but not in field_def, NL : sidragbot,sidragtop -->
+
+       <!-- category-dependent fields -->
+       <field field_ref="iceconc_cat_pct_cmip" name="siitdconc"     level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="sncover_cat_cmip"     name="siitdsnconc"   level="3" />  <!-- (SImon*) <!-- In SIMIP, coded in SI3, NL -->
+       <field field_ref="icethic_cat_cmip"     name="siitdthick"    level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="snwthic_cat_cmip"     name="siitdsnthick"  level="3"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <!-- Integrated quantities -->
+       <field field_ref="NH_iceextt"           name="siextentn"    level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="SH_iceextt"           name="siextents"    level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="NH_icevolu"           name="sivoln"       level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="SH_icevolu"           name="sivols"       level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="NH_icearea"           name="siarean"      level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <field field_ref="SH_icearea"           name="siareas"      level="2"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
+       <!-- ============== -->
+     </file>
+     
+   </file_group>
+
+   <file_group id="1ts" output_freq="1ts" enabled=".TRUE."/> <!-- 1 time step files -->
+   <file_group id="1h"  output_freq="1h"  enabled=".TRUE."> <!-- 1h files -->
+     <file id="file52" name_suffix="_icemod" description="ice variables" >
+       <field field_ref="iceconc_pct"   name="siconc"       level="8" /> <!-- changed to level="8", 1h freq not in SIMIP -->
+     </file>
+   </file_group>
+   <file_group id="2h"  output_freq="2h"  enabled=".TRUE."/> <!-- 2h files -->
+   <file_group id="3h"  output_freq="3h"  enabled=".TRUE."/> <!-- 3h files -->     
+   <file_group id="4h"  output_freq="4h"  enabled=".TRUE."/> <!-- 4h files -->
+   <file_group id="6h"  output_freq="6h"  enabled=".TRUE."/> <!-- 6h files -->        
+   <file_group id="1d"  output_freq="1d"  enabled=".TRUE."> <!-- 1d files -->        
+     <file id="file53" name_suffix="_icemod" description="ice variables" >
+          <field field_ref="icepres"          name="sitimefrac"  level="1" /> <!-- (SIday*) -->
+          <field field_ref="iceconc_pct"      name="siconc"      level="1" /> <!-- (SIday*) -->
+          <field field_ref="icethic_cmip"     name="sithick"     level="1" />  <!-- (SIday*) -->
+          <field field_ref="snwthic_cmip"     name="sisnthick"   level="1" /> <!-- (SIday*) -->
+          <field field_ref="icettop_cmip"     name="sitemptop"   level="1" /> <!-- (SIday*) -->
+          <field field_ref="uice_cmip"        name="siu"         level="1" /> <!-- (SIday*) <!-- move from 1d_grid_U_ar6 to here-->
+          <field field_ref="vice_cmip"        name="siv"         level="1" /> <!-- (SIday*) <!-- move from 1d_grid_V_ar6 to here-->
+          <field field_ref="icevel_cmip"      name="sispeed"     level="1" /> <!-- (SIday*) -->
+     </file>
+   </file_group>
+
+   <file_group id="2m"  output_freq="2mo" enabled=".TRUE."/> <!-- real 2m files -->
+   <file_group id="3m"  output_freq="3mo" enabled=".TRUE."/> <!-- real 3m files -->
+   <file_group id="4m"  output_freq="4mo" enabled=".TRUE."/> <!-- real 4m files -->
+   <file_group id="6m"  output_freq="6mo" enabled=".TRUE."/> <!-- real 6m files -->
+   <file_group id="1y"  output_freq="1y"  enabled=".TRUE."/> <!-- real yearly files -->
+   <file_group id="2y"  output_freq="2y"  enabled=".TRUE."/> <!-- real 2y files -->
+   <file_group id="5y"  output_freq="5y"  enabled=".TRUE."/> <!-- real 5y files -->
+   <file_group id="10y" output_freq="10y" enabled=".TRUE."/> <!-- real 10y files -->
+   
+ </file_definition>
+ 

@@ -31,6 +31,7 @@ MODULE trcsink_canbgc
    USE sms_cmoc
    USE sms_canoe
    USE trc_closea_canbgc ! tmask_bgc_closea
+   USE trcche_canbgc
 
    IMPLICIT NONE
    PRIVATE
@@ -434,9 +435,9 @@ CONTAINS
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       INTEGER  ::   ji, jj, jk
-      REAL(wp) ::   zfact, zwsmax, zmax, zstep
+      REAL(wp) ::   zfact, zwsmax, zmax, zstep, zcalbotflx, zfactcal
       REAL(wp) ::   zrfact2
-      INTEGER  ::   ik1
+      INTEGER  ::   ik1, ikt
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
@@ -445,6 +446,7 @@ CONTAINS
       !  Initialize to zero all the sinking arrays 
       !   -----------------------------------------
       !
+
       sinking (:,:,:) = 0.e0
       sinking2(:,:,:) = 0.e0
       sinkcal (:,:,:) = 0.e0
@@ -456,18 +458,30 @@ CONTAINS
       CALL trc_sink0( wsbio4, sinking2, Kbb, Kmm, jrgoc )
       CALL trc_sink0( wscal , sinkcal, Kbb, Kmm , jrcal )
       !
-      ! zrfact2 = 1.e-3 * qfact2r
-      ! ik1  = iksed + 1
-      ! IF( lk_iomput ) THEN
-       ! IF( jnt == qnrdttrc ) THEN
-          ! CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
-          ! CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
-       ! ENDIF
-      ! ELSE
-       ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-       ! trc2d(:,:,jp_pcs0_2d + 5) = sinking2(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-       ! trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-      ! ENDIF
+      ! Bottom sedimentation of calcite. Dissolution IFF Omega_C<1
+      !
+      DO jj = 1, jpj
+         DO ji = 1,jpi
+            ikt = mbkt(ji,jj)
+            zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
+            zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
+            tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
+            ! add DIC/TA to bottom layer if dissolution and to surface layer if burial
+            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + zcalbotflx * (1.-zfactcal) * 1.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zcalbotflx * zfactcal * 1.E-6 / e3t(ji,jj,1, Kmm)
+            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + zcalbotflx * (1.-zfactcal) * 2.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
+         ENDDO
+      ENDDO
+      !
+      zrfact2 = 1.e-3 * qfact2r
+      ik1  = iksed + 1
+      IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+        CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100 m
+        CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite at 100 m
+       ENDIF
+      ENDIF
       !
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
