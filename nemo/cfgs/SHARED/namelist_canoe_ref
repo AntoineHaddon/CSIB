@@ -3,9 +3,6 @@
 !-----------------------------------------------------------------------
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! CANOE namelists:   
-!!              &namcanoemass    !   mass conservation
-!!              &namcanext       !   air-sea exchange
-!!              &namcanatm       !   atmospheric pressure 
 !!              &namcanws        !   particle sinking parameters
 !!              &namcanoetf      !   parameters for temperature-dependence of various rates
 !!              &namcanoeprod    !   parameters for phytoplankton growth
@@ -17,13 +14,8 @@
 !!              &namcancal       !   parameters for CaCO3 dissolution
 !!              &namcansed       !   parameters for external nutrient inputs
 !!              &namcanoenegtr   !   switch on/off the negative tracer check
-!-----------------------------------------------------------------------
-&namcanoemass    !   mass conservation
-!-----------------------------------------------------------------------
-   ln_check_mass =  .true.     !  Check mass conservation
-/
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanws     !   particule sinking parameters
+&namcanws     !   particle sinking parameters
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    ws_canoe   =  2.       ! POC sinking speed
    ws_canoe2  =  30.      ! Big particles sinking speed

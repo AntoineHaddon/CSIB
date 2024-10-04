@@ -6,7 +6,7 @@
 # lib/jobdefs/canesm_nemo_diag_jobdef
 #########################################################
 
-set -x
+set -e
 
 # Note that nemo_rtd_mons used below is first month of the time chunk. 
 # nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
@@ -26,15 +26,20 @@ set -x
     lyear=$year
     lmon=`echo $fmon | awk '{printf "%02d", $1 - 1}'`
   fi
-  #last month of the first chunk (for istate)
-  if [ $nmon -eq 1 ];then
-    lmon0=$lmon
-  else
-    lmon0=`echo $nemo_rtd_mons | awk '{printf "%02d", $2 - 1}'`
-  fi
 
 # Previous year
-  yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+  if [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
+    # use the current year because output.init.nc is used in that case (below)
+    yearm1=`echo $year | awk '{printf "%04d", $1}'`
+    file_state="initial"
+    t_state="votemper"
+    s_state="vosaline"
+  else
+    yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+    file_state="restart"
+    t_state="tn"
+    s_state="sn"
+  fi
 
 # copy in the nemo diag executable
   diag_exe=nemo_diag.exe
@@ -43,10 +48,10 @@ set -x
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $1}')  # get last element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
-  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info nocp=no
+  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info || bail "Failed to access $orca_grid_info"
 
 # Access file containing mfo line mask
-  [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
+  [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask || bail "Failed to access $mfo_line_mask"
 
 # suffix list for sub-yearly nemo historical files.
   nemo_diag_file_suffix_list=${nemo_diag_file_suffix_list}
@@ -54,123 +59,187 @@ set -x
 # suffix list for yearly nemo historical files.
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
-# Append yearly diagnostics
-  if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
-    nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-  fi
-
-# access to time series
+# Access the history files
   for sfx in $nemo_diag_file_suffix_list ; do
-    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-    access ${sfx}_${fmon} $diag_hist na
+    yr=$fyear
+    mp=0
+    for mm in $nemo_rtd_mons ; do
+      if [ $mm -lt $mp ] ; then
+        # increment year by 1 if the current month is smaller than the previous month
+        yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
+      fi
+      diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
+      access ${sfx}_${mm} $diag_hist na
+      mp=$mm
+    done
+# Merge sub-yearly files
+    if [ $nmon -gt 1 ] ; then
+      cdo mergetime ${sfx}_?? ${sfx}_m$fmon
+      rm -f ${sfx}_??
+      mv ${sfx}_m$fmon ${sfx}_$fmon
+    fi
   done
 
-# Execute the following lines when output_level -ge 1
-  if [ $output_level -ge 1 ] ; then
+##########################################################################
+# 1. Access input files/variables                                        #
+# 2. Run the Fortran executable to compute the CMIP6 offline diagnostics #
+# 3. Process *diaptr* files                                              #
+##########################################################################
+#
+# Note that the following two "for and case" structures translates 
+# "output_leve" to "level" that represent the variable priority levels. 
+# For example, output_leve=3 means variable priority levels 1, 2 and 3.
+#
+# Execute the following lines when output_level -ge 1;
+  for level in $(seq 1 $output_level); do	  
+    case $level in
+      # output_level=1 and only if starting from January
+      1)
+        # access input variables for computing vars with priority level 1
+        
+        if [[ $fmon -eq 1 && $nemo_calc_diag == 1 ]] ; then
+          ln -sf 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
+          ln -sf 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
+          ln -sf 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
 
-      # Run offline computation only if starting from January 
-      if [ $fmon -eq 1 ] ; then 
-# Access the nemo restart files
-        diag_rs1="mc_${runid}_${fyear}_m${lmon0}_nemors" # First restart of that year (for init.nc)
-        diag_rs2="mc_${runid}_${lyear}_m${lmon}_nemors" # last restart of that year (for restart.nc)
-        access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
-        access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
-
-# Get tn and sn from the last step of previous year
-        if [ -L rsp ] ; then
-          cd rsp
-          cdo select,name=votemper,timestep=-1 *_istate.nc tnp.nc
-          cdo select,name=vosaline,timestep=-1 *_istate.nc snp.nc
-          ncrename -O -v votemper,tn tnp.nc tnp.nc
-          ncrename -O -v vosaline,sn snp.nc snp.nc
-          cd ..
-          mv rsp/tnp.nc rsp/snp.nc ./
-          release rsp
-          rm -f -r dir_rsp
-        fi
-
-# Get tn and sn from the last step of current year
-        if [ -L rsc ] ; then
-          cd rsc
-          cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc tnc.nc
-          cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc snc.nc
-          cd ..
-          mv rsc/tnc.nc rsc/snc.nc ./
-          release rsc
-          rm -f -r dir_rsc
-        fi
-
-##############################
-# Run CMIP6 nemo diagnostics #
-##############################
-        ln -s 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
-        ln -s 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
-        ln -s 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
-
-        # make sure inputs exist, and run!
-        if [[ -L grid_t ]] && [[ -s tnp.nc ]]; then
-          $diag_exe
-        else
-          bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
-        fi
-
-        [ -s mfo.nc ] && chmod u+w mfo.nc || bail "mfo.nc does not exist"
-        [ -s msftbarot.nc ] && chmod u+w msftbarot.nc || bail "msftbarot.nc does not exist"
-        [ -s tstend.nc ] && chmod u+w tstend.nc || bail "tstend.nc does not exist"
-
-# Append mfo.nc to 1m_scalar_ar6_${fmon}
-        if [ -e 1m_scalar_ar6_${fmon} ]; then
-          cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
-          ncks -A mfo.nc 1m_scalar_ar6.nc
-          rm -f 1m_scalar_ar6_${fmon}
-          mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
-        else
-          echo  "1m_scalar_ar6_${fmon} does not exist"
-        fi
-
-# Append msftbarot.nc to 1m_grid_u_ar6_${fmon}
-        if [ -e 1m_grid_u_ar6_${fmon} ]; then
-          cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
-          ncks -A msftbarot.nc 1m_grid_u_ar6.nc
-          rm -f 1m_grid_u_ar6_${fmon}
-          mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
-        else
-          echo  "1m_grid_u_ar6_${fmon} does not exist, created with msftbarot.nc"
-          mv msftbarot.nc 1m_grid_u_ar6_${fmon}
-        fi
-
-# Append tstend.nc to 1y_grid_t_ar6_${fmon}
-        if [ -e 1y_grid_t_ar6_${fmon} ]; then
-          if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
-            cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
-            ncks -A tstend.nc 1y_grid_t_ar6.nc
-            rm -f 1y_grid_t_ar6_${fmon}
-            mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
+          ################################################################
+          # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
+          ################################################################
+          # make sure inputs exist and run!
+          if [[ -L grid_t && $output_level -eq 1 ]]; then
+            $diag_exe
+          elif [ ! -L grid_t ]; then
+            bail "Inputs for $diag_exe (grid_t) don't exist!"
           fi
-        else
-          echo "1y_grid_t_ar6_${fmon} does not exist"
         fi
-      fi
+        ######################################
+        # Time mean (1d_diaptr -> 1m_diaptr) #
+        ######################################
+        [[ -L 1d_diaptr_${fmon} || -s 1d_diaptr_${fmon} ]] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
+        # Replace 1d_diaptr with 1m_diaptr after doing time mean
+        nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
+        ;;
+      # output_level=3 and only if starting from January
+      3)
+        if [ $nemo_calc_diag -eq 1 ] ; then
+          # access input variables for computing tstend (yearly) with priority level 3
+          if [[ $nmon -eq 1 && $fmon -eq 1 ]] ; then
+            for sfx in $nemo_diag_file_1y_suffix_list ; do
+              diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+              access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
+            done
+          fi
+          if [ $fmon -eq 1 ] ; then
+            # Run offline computation of tendency terms only if starting from January and yearly chunk
+            # Access the nemo restart files
+            diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
+            diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
+            access rsp $diag_rs1 || bail "Failed to access $diag_rs1"
+            access rsc $diag_rs2 || bail "Failed to access $diag_rs2"
 
-  fi # end of "output_level -ge 1"
+            # Get tn and sn from the last step of previous year
+            if [ -L rsp ] ; then
+              work_dir=$(pwd)
+              cd rsp
+              cdo select,name=$t_state,timestep=-1 *_$file_state.nc ${work_dir}/tnp.nc
+              cdo select,name=$s_state,timestep=-1 *_$file_state.nc ${work_dir}/snp.nc
+              cd $work_dir
+              release rsp
+            fi
 
-#########################################
-# Split historical files to time series #
-#########################################
+            # Get tn and sn from the last step of current year
+            if [ -L rsc ] ; then
+              work_dir=$(pwd)
+              cd rsc
+              cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/tnc.nc
+              cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/snc.nc
+              cd $work_dir
+              release rsc
+            fi
+            ################################################################
+            # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
+            ################################################################
+            # make sure inputs exist and run!
+            if [[ -L grid_t && -s tnp.nc ]]; then
+              $diag_exe
+            else
+              bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
+            fi
+          fi
+        fi
+        ;;
+    esac
+  done
 
+  if [ $nemo_calc_diag -eq 1 ] ; then
+    for level in $(seq 1 $output_level); do
+      case $level in
+        1)
+          if [ $fmon -eq 1 ] ; then
+          # Append mfo.nc to 1m_scalar_ar6_${fmon} if existing
+            if [ -s mfo.nc ]; then
+              chmod u+w mfo.nc
+              cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
+              ncks -A mfo.nc 1m_scalar_ar6.nc
+              rm -f 1m_scalar_ar6_${fmon}
+              mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
+            else
+              bail "mfo.nc does not exist"
+            fi
+            # Append msftbarot.nc to 1m_grid_u_ar6_${fmon} if existing
+            if [ -s msftbarot.nc ]; then
+              chmod u+w msftbarot.nc
+              cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
+              ncks -A msftbarot.nc 1m_grid_u_ar6.nc
+              rm -f 1m_grid_u_ar6_${fmon}
+              mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
+            else
+              bail "msftbarot.nc does not exist"
+            fi
+          fi 
+          ;;
+        3)
+          if [[ ${nmon} -eq 1 && $fmon -eq 1 ]] ; then
+            # Append tstend.nc to 1y_grid_t_ar6_${fmon} if existing
+            if [ -s tstend.nc ]; then
+              chmod u+w tstend.nc
+              #cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
+              #ncks -A tstend.nc 1y_grid_t_ar6.nc
+              #rm -f 1y_grid_t_ar6_${fmon}
+              #mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
+              # Append yearly diagnostics suffix list
+              chmod u+w 1y_grid_t_ar6_${fmon}
+              ncks -A tstend.nc 1y_grid_t_ar6_${fmon}
+              nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+            else
+              bail "tstend.nc does not exist"
+            fi
+          fi
+          ;;
+      esac 
+    done
+  fi
 
-# Split to time series
+##################################################
+# Split historical files to time series and save #
+##################################################
+  # split to time series
   for sfx in $nemo_diag_file_suffix_list ; do
     [ ! -e ${sfx}_${fmon} ] && continue
-    ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
-    # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
-    if [ "${sfx}_${fmon}" == "1m_diaptr_01" ]; then
-      ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc || true
-      ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc || true
-      ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc || true
-      ncks -v msftyz  ${sfx}_${fmon} xxx-${sfx}_msftyz.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_msftyz.nc xxx-${sfx}_msftyz.nc || true
 
+    # UGLY PATCH: cdo split name of 1m_diad_t failed because of the pH (I don't knoe why). Try again here by removing the pH. 
+    if [ "${sfx}" == "1m_diad_t" ]; then
+      ncks -O -v pH  ${sfx}_${fmon} xxx-${sfx}_pH.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_pH.nc xxx-${sfx}_pH.nc
+      ncks -O -x -v pH ${sfx}_${fmon} ${sfx}_${fmon}
+      cdo splitname ${sfx}_${fmon} xxx-${sfx}_ 
+    fi
+    # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
+    if [ "${sfx}" == "1m_diaptr" ]; then
+      ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc
+      ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc
+      ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc
+      ncks -v msftyz  ${sfx}_${fmon} xxx-${sfx}_msftyz.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_msftyz.nc xxx-${sfx}_msftyz.nc
     fi
     rm  ${sfx}_${fmon}
   done
@@ -183,5 +252,7 @@ set -x
     release $ts
   done
 
-# Save orca grid mask with consistent name as TS files
+  # Save orca grid mask with consistent name as TS files
   save orca_mesh_mask sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_mesh_mask.nc
+
+exit 0

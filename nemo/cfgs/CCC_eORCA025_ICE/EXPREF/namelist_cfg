@@ -278,7 +278,7 @@
 !-----------------------------------------------------------------------
 &nameos        !   ocean Equation Of Seawater                           (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_eos80    = .true.          !  = Use EOS80
+   ln_teos10   = .true.         !  = Use TEOS-10
 /
 !-----------------------------------------------------------------------
 &namtra_adv    !   advection scheme for tracer                          (default: NO selection)
@@ -392,7 +392,7 @@
 !-----------------------------------------------------------------------
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
-      nn_evdm  =    0            !  evd apply on tracer (=0) or on tracer and momentum (=1)
+      nn_evdm  =    1            !  evd apply on tracer (=0) or on tracer and momentum (=1)
       rn_evd   =   10.           !  evd mixing coefficient [m2/s]
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
@@ -420,9 +420,18 @@
 !-----------------------------------------------------------------------
 &namzdf_iwm    !    internal wave-driven mixing parameterization        (ln_zdfiwm =T)
 !-----------------------------------------------------------------------
-   nn_zpyc     = 2         !  pycnocline-intensified dissipation scales as N (=1) or N^2 (=2)
    ln_mevar    = .true.    !  variable (T) or constant (F) mixing efficiency
    ln_tsdiff   = .true.    !  account for differential T/S mixing (T) or not (F)
+   cn_dir      = './'      !  root directory for the iwm data location
+   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
+   sn_mpb      = 'zdfiwm_forcing'        , -12.              , 'power_bot' , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_mpc      = 'zdfiwm_forcing'        , -12.              , 'power_cri' , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_mpn      = 'zdfiwm_forcing'        , -12.              , 'power_nsq' , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_mps      = 'zdfiwm_forcing'        , -12.              , 'power_sho' , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_dsb      = 'zdfiwm_forcing'        , -12.              , 'scale_bot' , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_dsc      = 'zdfiwm_forcing'        , -12.              , 'scale_cri' , .false.  , .true. , 'yearly' , '' , ''  , ''
 /
 !-----------------------------------------------------------------------
 &namzdf_tmx    !   tidal mixing parameterization                        ("ln_zdftmx = T")
