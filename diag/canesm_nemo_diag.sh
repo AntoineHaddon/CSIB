@@ -227,8 +227,15 @@ set -e
   for sfx in $nemo_diag_file_suffix_list ; do
     [ ! -e ${sfx}_${fmon} ] && continue
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
+
+    # UGLY PATCH: cdo split name of 1m_diad_t failed because of the pH (I don't knoe why). Try again here by removing the pH. 
+    if [ "${sfx}" == "1m_diad_t" ]; then
+      ncks -O -v pH  ${sfx}_${fmon} xxx-${sfx}_pH.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_pH.nc xxx-${sfx}_pH.nc
+      ncks -O -x -v pH ${sfx}_${fmon} ${sfx}_${fmon}
+      cdo splitname ${sfx}_${fmon} xxx-${sfx}_ 
+    fi
     # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
-    if [ "${sfx}_${fmon}" == "1m_diaptr_01" ]; then
+    if [ "${sfx}" == "1m_diaptr" ]; then
       ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc
       ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc
       ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc

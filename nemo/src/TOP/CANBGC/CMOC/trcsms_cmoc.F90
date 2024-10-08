@@ -127,9 +127,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
-          ! initialize the chemical constants
-          ! JC's 2D carbon chem mode 
+          CALL trc_che_2D( kt, Kmm )   ! initialize the carbon chemistry constants
           !
         !  
         ELSE
@@ -155,8 +153,6 @@ CONTAINS
         IF(lwp) write(numout,*) '~~~~~~'
 
         CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
-        ! initialize the chemical constants
-        ! JC's 2D carbon chem mode 
         !
       ENDIF
       !
@@ -211,7 +207,7 @@ CONTAINS
         ! Formely p4z_sbc in p4zsed.F90
         !! OR Jan19 23 ! IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt, Krhs )
         ! POC bottom instant. rem
-        !! OR Jan 24th 2023 ! CALL trc_bott_cmoc( Kmm, Krhs)
+        CALL trc_bott_cmoc( Kmm, Krhs)
         ! n2 fixation/denitrification
         !! OR Jan19 23 ! CALL cmoc_rem_denit
         CALL cmoc_rem_denit( Kmm )
