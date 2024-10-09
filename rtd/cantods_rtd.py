@@ -2,7 +2,7 @@
 Computes diagnostics of the most recent CanTODS run.
 Requires the py3_analysis_v2 environment.
 
-Can be called stand-alone (a posteriori), or at runtime from
+Can be called stand-alone (post-run), or at runtime from
 maestro (in CanNemo/rtd/canesm_nemo_runtime_diag.sh)
 
 Simple plots are created by this script (showing entire time
