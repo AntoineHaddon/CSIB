@@ -559,12 +559,12 @@ def calcPhys(args):
                             except:
                                 reg='domain'
                             if rmasks[reg] is not None:
-                                if args.phys==0 or ('T' in var and args.phys==1):
+                                if 'T' in var and (args.phys in [0,1]):
                                     if '3D' in var:
                                         lvars[var]['data'][tcount]=volMean(ds['thetao'].isel(time_counter=tid).values,-1,meshAll,rmasks[reg])
                                     else:
                                         lvars[var]['data'][tcount]=volMean(ds['thetao'].isel(time_counter=tid,deptht=levZ[iV]).values,0,meshSurf,rmasks[reg])
-                                if args.phys==0 or ('S' in var and args.phys==2):
+                                elif 'S' in var and (args.phys in [0,2]):
                                     if '3D' in var:
                                         lvars[var]['data'][tcount]=volMean(ds['so'].isel(time_counter=tid).values,-1,meshAll,rmasks[reg])
                                     else:
