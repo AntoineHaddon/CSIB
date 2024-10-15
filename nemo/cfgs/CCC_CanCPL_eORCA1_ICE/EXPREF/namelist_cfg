@@ -237,7 +237,17 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
 &namberg       !   iceberg parameters                                   (default: OFF)
 !-----------------------------------------------------------------------
    ln_icebergs = .false.    ! activate iceberg floats (force =F with "key_agrif")
-   ln_use_calving= .false. ! Use calving data even when nn_test_icebergs > 0
+   !                          ! restart
+   cn_icbrst_in     = "restart_icb_in" !  suffix of iceberg restart name (input)
+   cn_icbrst_out    = "restart_icb"    !  suffix of ocean restart name (output)
+   !
+   ln_use_calving= .false.  ! Use calving data even when nn_test_icebergs > 0
+   nn_test_icebergs = -1    ! Create test icebergs of this class (-1 = no)
+   nn_verbose_level  = 4             ! Turn on more verbose output if level > 0
+   !
+   ! nn_verbose_write and nn_sample_rate need to be a multiple of nn_fsbc
+   nn_verbose_write  = 16            ! Timesteps between verbose messages
+   nn_sample_rate    = 16            ! Timesteps between sampling for trajectory storage
 
    cn_dir = './'  !  root directory for the location of drag coefficient files
    !______!___________!___________________!______________!______________!_________!___________!__________!__________!_______________!
