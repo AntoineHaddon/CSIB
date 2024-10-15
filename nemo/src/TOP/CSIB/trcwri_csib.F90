@@ -48,6 +48,9 @@ CONTAINS
       CALL iom_put( 'PHY2c_os'         , tr(:,:,1,jrdia,Kmm) )
       CALL iom_put( 'NO3_os'           , tr(:,:,1,jqno3,Kmm) )
       CALL iom_put( 'NH4_os'           , tr(:,:,1,jrnh4,Kmm) )
+      CALL iom_put( 'PHY2N_os'         , tr(:,:,1,jrdn,Kmm) )
+      CALL iom_put( 'PHY2CHL_os'       , tr(:,:,1,jrdch,Kmm) )
+      CALL iom_put( 'GOC_os'           , tr(:,:,1,jrgoc,Kmm) )
 
       ! ! sea ice ocean exchanges
       CALL iom_put( 'flushrate'        , flushrate(:,:,:) )
