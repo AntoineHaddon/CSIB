@@ -62,10 +62,21 @@
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
   cn_trcrst_out=${nemo_cn_trcrst_out:="restart_trc"}
 
+  # Part of input icb restart name (default restart_icb_in)
+  # The input icb restart file name will be ${cn_icb_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_icbrst_in=${nemo_cn_icbrst_in:="restart_icb_in"}
+
+  # Part of output icb restart name (default restart_icb)
+  # The output icb restart file name will be ${cn_exp}_NNNNNNNN_${cn_icbrst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_icbrst_out=${nemo_cn_icbrst_out:="restart_icb"}
+
   # After the job has run remove input restart files (if any)
   [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
   [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
   [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
+  [ -s input_icb_restart_file_names ] && cat input_icb_restart_file_names | xargs rm -f
 
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
@@ -188,6 +199,18 @@
          else
             mv $found_rs NEXT_RESTART_ARC
          fi
+    fi
+
+    if [ "$nemo_ln_use_calving" = "on" ]; then
+          # Look for icb restart files matching the pattern below
+          eval pfnpatt=${cn_exp}_${end_step}_${cn_icbrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+          if [ -z "$found_rs" ]; then
+            # No icb restart files exist
+            bail "Attempting to save restarts but no icb restart files exist. Looking for $pfnpatt"
+          else
+            mv $found_rs NEXT_RESTART_ARC
+          fi
     fi
 
     # ADD ADDITIONAL FILES
