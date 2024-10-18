@@ -177,6 +177,7 @@
       <field id="hfxres"       long_name="heat fluxes from undiagnosed processes"                       unit="W/m2" />
       <field id="hfxsub"       long_name="heat fluxes from ice-atm. mass exchange during sublimation"   unit="W/m2" />
       <field id="hfxspr"       long_name="heat fluxes from ice-atm. mass exchange during snow precip"   unit="W/m2" />
+      <field id="hfxevp"       long_name="heat fluxes from ice evaporation"   unit="W/m2" />
 
       <field id="hfxsensib"    long_name="Net sensible heat flux under sea ice (neg = ice cooling)"         standard_name="ice_ocean_heat_flux"                        unit="W/m2" />
       <field id="hfxcndtop"    long_name="Net conductive heat flux at the ice surface (neg = ice cooling)"  standard_name="conductive_heat_flux_at_sea_ice_surface"    unit="W/m2" />
