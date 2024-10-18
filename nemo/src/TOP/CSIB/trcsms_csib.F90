@@ -19,8 +19,9 @@ MODULE trcsms_csib
    USE ice              ! ice variables
    USE phycst           ! physical constants: rhoi, rhos
    USE sbc_oce , ONLY : ssu_m, ssv_m         ! sea surface velocity, for computation of friction velocity
-   USE sbc_oce , ONLY : tprecip, sprecip    ! total and solid precipitation
-   USE sbc_oce , ONLY : sst_m   ! sea surface temperature (Celsius)
+   USE sbc_oce , ONLY : tprecip, sprecip     ! total and solid precipitation
+   USE sbc_oce , ONLY : sst_m                ! sea surface temperature (Celsius)
+   USE zdfmxl  , ONLY : nmln                 ! level of mixed layer depth for dic/tak fluxes
 
    USE par_canoe        ! indices of CanOE model variables, e.g. jrdia: diatoms
 
@@ -101,6 +102,7 @@ MODULE trcsms_csib
 
    ! model parameters
    REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer
+   ! ice diatoms
    REAL(wp), PUBLIC, SAVE ::   mu_max               ! Maximum specific growth rate  (d)-1 / sec per day
    REAL(wp), PUBLIC, SAVE ::   t_ia                 ! Temperature sensitivity coefficient for the ice algal growth (C)-1
    REAL(wp), PUBLIC, SAVE ::   r_pp                 ! ratio of photosynthetic parameters (W m-2)-1
@@ -109,16 +111,23 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   C2N_dia              ! Carbon to Nitrogen ratio for ice diatoms (-)
    REAL(wp), PUBLIC, SAVE ::   N2C_dia              ! Nitrogen to Carbon ratio for ice diatoms (-)
    REAL(wp), PUBLIC, SAVE ::   C2CH_dia             ! Carbon to Chlorophyll ratio for ice diatoms (-)
-   REAL(wp), PUBLIC, SAVE ::   CH2C_dia              ! Chlorophyll to Carbon ratio for ice diatoms (-)
+   REAL(wp), PUBLIC, SAVE ::   CH2C_dia             ! Chlorophyll to Carbon ratio for ice diatoms (-)
    REAL(wp), PUBLIC, SAVE ::   b_ia                 ! Mortality threshold for ice diatoms (mmol C m-3)
    REAL(wp), PUBLIC, SAVE ::   r_m1                 ! Linear Mortality rate for ice diatoms (d-1)  / sec per day
    REAL(wp), PUBLIC, SAVE ::   r_m2                 ! Quadratic Mortality rate for ice diatoms (mmol C m-3 d-1)  / sec per day
+   REAL(wp), PUBLIC, SAVE ::   f_p2                 ! Seeding fraction (-)
+   ! ice N
    REAL(wp), PUBLIC, SAVE ::   f_rm                 ! Remineralization fraction (-)
    REAL(wp), PUBLIC, SAVE ::   r_ni                 ! Nitrification rate (d-1 W m-2)  / sec per day
    REAL(wp), PUBLIC, SAVE ::   c_di                 ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
    REAL(wp), PUBLIC, SAVE ::   c_nu                 ! Kinematic viscosity of seawater (m2/s)
-   REAL(wp), PUBLIC, SAVE ::   f_p2                 ! Seeding fraction (-)
-  
+  ! sea ice C pump
+   LOGICAL , PUBLIC, SAVE ::   sicpump              ! Flag for activation of sea ice C pump
+   REAL(wp), PUBLIC, SAVE ::   icedicref            ! Sea ice reference DIC (mmol C m-3?)
+   REAL(wp), PUBLIC, SAVE ::   icetalref            ! Sea ice reference TA (mmol C m-3?)
+   REAL(wp), PUBLIC, SAVE ::   f_dicsw              ! fraction of DIC rejected into seawater during growth (-)
+   REAL(wp), PUBLIC, SAVE ::   f_dicsw_melt         ! fraction of DIC rejected into seawater during melt (-)
+
   
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -145,6 +154,7 @@ CONTAINS
       REAL(wp) :: zdtDif               ! temp variable for molecular diff
       REAL(wp) :: zmaxia               ! for diagnostics/debug
       REAL(wp) :: zln2 = 0.693147_wp   ! natural log ln(2)
+      REAL(wp) :: zsigup_tot           ! total water uptake from sea ice growth per ice area
 
       !!----------------------------------------------------------------------
       !
@@ -431,6 +441,24 @@ CONTAINS
                   ! D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
                   moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - icetra(ji,jj,jl,jrino3) ) /z_ia
                   moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icetra(ji,jj,jl,jrinh4) ) /z_ia
+
+
+
+            ! Sea ice C pump
+                  IF( sicpump ) THEN
+                     ! total water uptake from ice growth: sea ice conc * ( seawater volume uptake from bottom + lateral ice growth per ice area) (m/s)
+                     zsigup_tot = a_i(ji,jj,jl) * ( bogup(ji,jj,jl) + lagup(ji,jj,jl) ) 
+                     
+                     ! DIC flux from ice growth
+                     tr(ji,jj,nmln(ji,jj)-1,jqdic, Krhs) = tr(ji,jj,nmln(ji,jj)-1,jqdic, Krhs) + zsigup_tot * ( tr(ji,jj,nmln(ji,jj)-1,jqdic, Kbb) - icedicref ) * f_dicsw / e3t_0(ji,jj,nmln(ji,jj)-1)
+                     ! DIC flux from ice melt
+                     tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + a_i(ji,jj,jl) * flushrate(ji,jj,jl) * (tr(ji,jj,1,jqdic, Kbb) - icedicref ) * f_dicsw_melt / e3t_0(ji,jj,1)
+                     
+                     ! TA flux from ice growth
+                     tr(ji,jj,nmln(ji,jj)-1,jqtal, Krhs) = tr(ji,jj,nmln(ji,jj)-1,jqtal, Krhs) + zsigup_tot * ( tr(ji,jj,nmln(ji,jj)-1,jqtal, Kbb) - icetalref ) / e3t_0(ji,jj,nmln(ji,jj)-1)
+                     ! TA flux from ice melt
+                     tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + a_i(ji,jj,jl) * flushrate(ji,jj,jl) * (tr(ji,jj,1,jqtal, Kbb) - icetalref ) / e3t_0(ji,jj,1)
+                  ENDIF ! if sea ice C pump
 
                ENDIF ! if ice
                
