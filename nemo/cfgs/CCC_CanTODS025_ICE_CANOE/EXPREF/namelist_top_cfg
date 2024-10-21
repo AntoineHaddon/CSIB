@@ -48,13 +48,13 @@
    !
    jp_dia3d      = 0 ! 3 ! 5  !7 ! Number of 3D diagnostic variables
    jp_dia2d      = 0 ! 2 ! 10    ! Number of 2D diagnostic variables
-   !_____________!___________!_________________________________________!____________!________________!
-   !             !    name   !           title of the field            !   units    ! init from file ! 
-!  sn_tracer(1)  = 'tracer  ', 'Tracer  Concentration                 ',   ' - '    ,   .false.
-   sn_tracer(1)   = 'DIC     ' , 'Dissolved inorganic Concentration      ',  'mmol-C/L' ,  .true.
-   sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration         ',  'mmoleq/L ',  .true.
-   sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration         ',  'mmol-O2/L',  .true.
-   sn_tracer(4)   = 'NO3     ' , 'Nitrate Concentration                  ',  'mmol-N/L' ,  .true.
+   !_____________!____________!__________________________________________!_______!________________!_________!_________!_________!________!
+   !             !    name    !           title of the field             ! units ! init from file ! sbc     !  cbc    !  obc    !  ais 
+!  sn_tracer(1)  = 'tracer  ' , 'Tracer  Concentration                 ' ,  ' - '     ,   .false. , .false. , .false. , .false. , .false.
+   sn_tracer(1)  = 'DIC     ' , 'Dissolved inorganic Concentration      ', 'mmol-C/L' ,  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(2)  = 'Alkalini' , 'Total Alkalinity Concentration         ', 'mmoleq/L ',  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(3)  = 'O2      ' , 'Dissolved Oxygen Concentration         ', 'mmol-O2/L',  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(4)  = 'NO3     ' , 'Nitrate Concentration                  ', 'mmol-N/L' ,  .true.   , .false. , .false. , .false. , .false.
    !_____________!___________!_________________________________________!____________!________________!
    !  CanOE-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
@@ -62,37 +62,37 @@
 ! OR Feb 7th 2023 ! Deactivate init from file as regridded/vert. interpolated data file and source files have both negative values in the last vertical levels (42-46 in source file). 
 ! values are huge too: -1.27425e+33 ! This translates to -5.00453e+33 in the regridded /vert. interpolated file used here.
    jp_canoe = 15   
-   !             !    name   !           title of the field            !   units    ! init from file !
-   canoe_tracer(1)   = 'Fer   ' , 'Dissolved Iron Concentration          ',  'nmol/m3',    .false.
-   canoe_tracer(2)   = 'POC   ' , 'Small Particulate Organic Carbon      ',  'mmol/m3' ,   .false.    
-   canoe_tracer(3)   = 'ZOO   ' , 'Zooplankton Concentration             ',  'mmolC/m3' ,  .false.
-   canoe_tracer(4)   = 'NCHL  ' , 'Nanophy Chlorophyll Concentration     ',  'mg/m3' ,     .false.
-   canoe_tracer(5)   = 'CaCO3 ' , 'Calcite Concentration                 ',  'mmolC/m3' ,  .false.
-   canoe_tracer(6)   = 'PHYC  ' , 'Nanophytoplankton C Concentration     ',  'mmol/m3' ,   .false.
-   canoe_tracer(7)   = 'PHYN  ' , 'Nanophytoplankton N Concentration     ',  'mmol/m3' ,   .false.
-   canoe_tracer(8)   = 'PHYFe ' , 'Nanophytoplankton Fe Concentration    ',  'nmol/m3',    .false.
-   canoe_tracer(9)   = 'PHY2C ' , 'Diatoms C Concentration               ',  'mmol/m3' ,   .false.
-   canoe_tracer(10)  = 'PHY2N ' , 'Diatoms N Concentration               ',  'mmol/m3' ,   .false.
-   canoe_tracer(11)  = 'PHY2Fe' , 'Diatoms Fe Concentration              ',  'nmol/m3',    .false.
-   canoe_tracer(12)  = 'DCHL  ' , 'Diatoms chlorophyll Concentration     ',  'mg/m3' ,     .false.
-   canoe_tracer(13)  = 'ZOO2  ' , 'Mesozooplankton Concentration         ',  'mmolC/m3' ,  .false.
-   canoe_tracer(14)  = 'GOC   ' , 'Large particulate organic carbon      ',  'mmol/m3' ,   .false.
-   canoe_tracer(15)  = 'NH4   ' , 'Ammonium Concentration                ',  'mmol/m3' ,   .false.
+   !             !    name   !           title of the field               ! units ! init from file ! sbc     !  cbc    !  obc    !  ais
+   canoe_tracer(1)   = 'Fer   ' , 'Dissolved Iron Concentration          ',  'nmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(2)   = 'POC   ' , 'Small Particulate Organic Carbon      ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(3)   = 'ZOO   ' , 'Zooplankton Concentration             ',  'mmolC/m3' ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(4)   = 'NCHL  ' , 'Nanophy Chlorophyll Concentration     ',  'mg/m3'    ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(5)   = 'CaCO3 ' , 'Calcite Concentration                 ',  'mmolC/m3' ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(6)   = 'PHYC  ' , 'Nanophytoplankton C Concentration     ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(7)   = 'PHYN  ' , 'Nanophytoplankton N Concentration     ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(8)   = 'PHYFe ' , 'Nanophytoplankton Fe Concentration    ',  'nmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(9)   = 'PHY2C ' , 'Diatoms C Concentration               ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(10)  = 'PHY2N ' , 'Diatoms N Concentration               ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(11)  = 'PHY2Fe' , 'Diatoms Fe Concentration              ',  'nmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(12)  = 'DCHL  ' , 'Diatoms chlorophyll Concentration     ',  'mg/m3'    ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(13)  = 'ZOO2  ' , 'Mesozooplankton Concentration         ',  'mmolC/m3' ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(14)  = 'GOC   ' , 'Large particulate organic carbon      ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(15)  = 'NH4   ' , 'Ammonium Concentration                ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
    
    !_____________!___________!_________________________________________!____________!________________!
    !  CMOC-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
-   !             !    name   !           title of the field            !   units    ! init from file !
+   !             !    name   !           title of the field                ! units ! init from file ! sbc     !  cbc    !  obc    !  ais
    jp_cmoc = 0
-   ! cmoc_tracer(1) = 'POC     ' , 'Particulate Organic Carbon             ',  'mmol-C/L' , .false.    
-   ! cmoc_tracer(2) = 'PHY     ' , 'Phytoplankton Concentration CMOC       ',  'mmolN/m3' , .false.
-   ! cmoc_tracer(3) = 'ZOO     ' , 'Zooplankton Concentration CMOC         ',  'mmolN/m3' , .false.
-   ! cmoc_tracer(4) = 'NCHL    ' , 'Chlorophyll Concentration CMOC         ',  'mgChl/m3' , .false.
-   ! cmoc_tracer(5) = 'DICabio ' , 'Abiotic DIC                            ',  'mmolC/m3' , .false.
-   ! cmoc_tracer(6) = 'ALKabio ' , 'Abiotic Alkalinity                     ',  'mmoleq/m3', .false.
-   ! cmoc_tracer(7) = 'O2abio  ' , 'Abiotic Oxygen                         ',  'umolO2/L' , .false.
-   ! cmoc_tracer(8) = 'DICnat  ' , 'Natural DIC                            ',  'mmolC/m3' , .false.
-   ! cmoc_tracer(9) = 'DI14C   ' , 'Radiocarbon DIC                        ',  'mmolC/m3' , .false.
+   ! cmoc_tracer(1) = 'POC     ' , 'Particulate Organic Carbon             ',  'mmol-C/L' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(2) = 'PHY     ' , 'Phytoplankton Concentration CMOC       ',  'mmolN/m3' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(3) = 'ZOO     ' , 'Zooplankton Concentration CMOC         ',  'mmolN/m3' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(4) = 'NCHL    ' , 'Chlorophyll Concentration CMOC         ',  'mgChl/m3' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(5) = 'DICabio ' , 'Abiotic DIC                            ',  'mmolC/m3' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(6) = 'ALKabio ' , 'Abiotic Alkalinity                     ',  'mmoleq/m3', .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(7) = 'O2abio  ' , 'Abiotic Oxygen                         ',  'umolO2/L' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(8) = 'DICnat  ' , 'Natural DIC                            ',  'mmolC/m3' , .false. , .false. , .false. , .false. , .false. 
+   ! cmoc_tracer(9) = 'DI14C   ' , 'Radiocarbon DIC                        ',  'mmolC/m3' , .false. , .false. , .false. , .false. , .false. 
 /
 !-----------------------------------------------------------------------
 &namage          !   AGE 
@@ -196,9 +196,9 @@
 &namtrc_bdy      !   Setup of tracer boundary conditions
 !-----------------------------------------------------------------------
    cn_trc_dflt   = 'neumann' !  OBC applied by default to all tracers
-   cn_trc        = 'none'    !  Boundary conditions used for tracers with data files (selected in namtrc)
+   cn_trc        = 'frs', 'frs'  !  Boundary conditions used for tracers with data files (selected in namtrc)
 
-   nn_trcdmp_bdy = 0         !  Use damping timescales defined in nambdy of namelist
+   nn_trcdmp_bdy = 0, 0      !  Use damping timescales defined in nambdy of namelist
                              !  = 0 NO damping of tracers at open boudaries
                              !  = 1 Only for tracers forced with external data
                              !  = 2 Damping applied to all tracers
