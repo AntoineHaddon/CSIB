@@ -48,13 +48,13 @@
    !
    jp_dia3d      = 0 ! 3 ! 5  !7 ! Number of 3D diagnostic variables
    jp_dia2d      = 0 ! 2 ! 10    ! Number of 2D diagnostic variables
-   !_____________!____________!__________________________________________!_______!________________!_________!_________!_________!________!
+   !_____________!____________!__________________________________________!_______!__changebacktoT_!_________!_________!_________!________!
    !             !    name    !           title of the field             ! units ! init from file ! sbc     !  cbc    !  obc    !  ais 
 !  sn_tracer(1)  = 'tracer  ' , 'Tracer  Concentration                 ' ,  ' - '     ,   .false. , .false. , .false. , .false. , .false.
-   sn_tracer(1)  = 'DIC     ' , 'Dissolved inorganic Concentration      ', 'mmol-C/L' ,  .true.   , .false. , .false. , .false. , .false.
-   sn_tracer(2)  = 'Alkalini' , 'Total Alkalinity Concentration         ', 'mmoleq/L ',  .true.   , .false. , .false. , .false. , .false.
-   sn_tracer(3)  = 'O2      ' , 'Dissolved Oxygen Concentration         ', 'mmol-O2/L',  .true.   , .false. , .false. , .false. , .false.
-   sn_tracer(4)  = 'NO3     ' , 'Nitrate Concentration                  ', 'mmol-N/L' ,  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(1)  = 'DIC     ' , 'Dissolved inorganic Concentration      ', 'mmol-C/L' ,  .false.  , .false. , .false. , .false. , .false.
+   sn_tracer(2)  = 'Alkalini' , 'Total Alkalinity Concentration         ', 'mmoleq/L ',  .false.  , .false. , .false. , .false. , .false.
+   sn_tracer(3)  = 'O2      ' , 'Dissolved Oxygen Concentration         ', 'mmol-O2/L',  .false.  , .false. , .false. , .false. , .false.
+   sn_tracer(4)  = 'NO3     ' , 'Nitrate Concentration                  ', 'mmol-N/L' ,  .false.  , .false. , .false. , .false. , .false.
    !_____________!___________!_________________________________________!____________!________________!
    !  CanOE-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
@@ -187,6 +187,14 @@
 !----------------------------------------------------------------------
 &namtrc_bc       !   data for boundary conditions
 !-----------------------------------------------------------------------
+! Surface and coastal input data must be specified individually for each tracer.
+! Lateral open boundary inputs are specified for each BDY segment and related inputfiles
+!  must contain data for the variables with active open boundary (set through &namtrc).
+!  By default, variable names of BDY inputfiles are the same as in &namtrc, but using
+!  cn_tronam it is possible to specify alternative variable names to match with inputfiles.
+!               !    file name             ! freq ! variable ! time interp. ! clim   !'yearly' ! weights  ! rotation | land/sea
+   sn_trcobc(1) = 'bdy_dta_trc_north'      ,  -1  , 'dummy'  ,  .true.      , .true. ,'yearly' ,  '',  '',  ''
+   sn_trcobc(2) = 'bdy_dta_trc_south'      ,  -1  , 'dummy'  ,  .true.      , .true. ,'yearly' ,  '',  '',  ''
    cn_dir_sbc    =  './'     !  root directory for the location of SURFACE data files
    cn_dir_cbc    =  './'     !  root directory for the location of COASTAL data files
    cn_dir_obc    =  './'     !  root directory for the location of OPEN data files
