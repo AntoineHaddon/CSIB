@@ -219,12 +219,12 @@
    cn_dir        =  './'     !  root directory for the location of the data files
    !
    nb_src3d      = 6
-   sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src3d(1)   =   1.0e-06   ! model is in mol/L
    rn_src3d(2)   =   1.0e-06   ! model is in mol/L
@@ -241,16 +241,16 @@
    cn_dir        =  './'     !  root directory for the location of the data files
    !
    nb_src2d      = 10
-   sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'CHLA'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'dust'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(3)   = 'par.orca'       ,         24       ,  'fr_par' ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(4)   = 'femask'         ,        -12       ,  'femask' ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'ndep'   ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(6)   = 'river.orca'     ,        -12       ,  'riverdic',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(7)   = 'river.orca'     ,        -12       ,  'riverdoc',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(8)   = 'river.orca'     ,        -12       ,  'riverpoc',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(9)   = 'solubility.orca',        -12       ,'solubility1',  .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(10)  = 'solubility.orca',        -12       ,'solubility2',  .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(3)   = 'par.orca'       ,         24       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(4)   = 'femask'         ,        -12       ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(6)   = 'river.orca'     ,        -12       ,  'zeros'   ,   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(7)   = 'river.orca'     ,        -12       ,  'zeros'   ,   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(8)   = 'river.orca'     ,        -12       ,  'zeros'   ,   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(9)   = 'solubility.orca',        -12       ,'zeros'      ,  .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(10)  = 'solubility.orca',        -12       ,'zeros'      ,  .false.   , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src2d(1)   =   1.        !                   
    rn_src2d(2)   =   1.        !                   
