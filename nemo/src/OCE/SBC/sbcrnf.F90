@@ -150,6 +150,9 @@ CONTAINS
             !CEOD River is fresh water so must at least be 0 unless we consider ice
             rnf_tsc(:,:,jp_tem) = MAX( sst_m(:,:), 0.0_wp ) * rnf(:,:) * r1_rho0
          ENDIF
+         if (lk_cancpl) then ! Remove the heat content of the water fluxes because CanAM does not take it into account
+            rnf_tsc(:,:,jp_tem) = 0.
+         endif
          !                                                           ! use runoffs salinity data
          IF( ln_rnf_sal )   rnf_tsc(:,:,jp_sal) = ( sf_s_rnf(1)%fnow(:,:,1) ) * rnf(:,:) * r1_rho0
          !                                                           ! else use S=0 for runoffs (done one for all in the init)
