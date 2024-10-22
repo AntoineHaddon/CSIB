@@ -218,7 +218,7 @@
 !                !                   !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
    cn_dir        =  './'     !  root directory for the location of the data files
    !
-   nb_src3d      = 0
+   nb_src3d      = 6
    sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
@@ -240,7 +240,7 @@
 !                !                   !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
    cn_dir        =  './'     !  root directory for the location of the data files
    !
-   nb_src2d      = 0
+   nb_src2d      = 10
    sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'CHLA'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'dust'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(3)   = 'par.orca'       ,         24       ,  'fr_par' ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
