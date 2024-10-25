@@ -2062,13 +2062,6 @@ CONTAINS
          zqevap_ice(:,:,jl) = 0._wp ! should be -evap * ( ( Tice - rt0 ) * rcpi ) but atm. does not take it into account
       END DO
 
-      if (lk_cancpl) then ! Remove the heat content of the water fluxes because CanAM does not take it into account
-          zcptn=0.
-          zcptrain=0.
-          zcptsnw=0.
-      endif
-
-
       ! --- heat flux associated with emp (W/m2) --- !
       zqemp_oce(:,:) = -  zevap_oce(:,:)                                      *   zcptn   (:,:)   &        ! evap
          &             + ( ztprecip(:,:) - zsprecip(:,:) )                    *   zcptrain(:,:)   &        ! liquid precip
