@@ -255,8 +255,8 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp EMPave_old.dat            $nemo_empave_old 
   fi
 
-  # CanBGC IC and forcing files additional section defined in canesm.cfg.
-  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]] && [[ $runmode != "CanTODS" ]]; then
+  # CanBGC IC and forcing files additional section defined in canesm.cfg. && [[ $runmode != "CanTODS" ]]
+  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]]; then
 
       is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
       acc_cp presatm.nc           $nemo_presatm
