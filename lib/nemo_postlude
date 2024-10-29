@@ -201,7 +201,7 @@
          fi
     fi
 
-    if [ "$nemo_ln_use_calving" = "on" ]; then
+    if [[ "$nemo_ln_icebergs" == "on" && "$nemo_nn_test_iceberg" -lt 0 ]]; then
           # Look for icb restart files matching the pattern below
           eval pfnpatt=${cn_exp}_${end_step}_${cn_icbrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`

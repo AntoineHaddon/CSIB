@@ -480,8 +480,8 @@ echo "#################### Start NEMO pre-processing #################"
     cn_icerst_out="restart_ice"     # ice output
     cn_trcrst_in="restart_trc_in"   # pisces input
     cn_trcrst_out="restart_trc"     # pisces output
-    cn_icbrst_in="restart_icb_in"   # pisces input
-    cn_icbrst_out="restart_icb"     # pisces output
+    cn_icbrst_in="restart_icb_in"   # icb input
+    cn_icbrst_out="restart_icb"     # icb output
 
     # Ocean restart files
     found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
