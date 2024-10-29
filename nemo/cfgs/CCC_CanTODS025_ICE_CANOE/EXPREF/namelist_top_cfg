@@ -273,9 +273,9 @@ wdust0       =  2.0      ! Dust sinking speed
 !-----------------------------------------------------------------------
 &namtrcsrclog  !   external source switches
 !-----------------------------------------------------------------------
-   ln_dust0    =  .true.   ! dust input from the atmosphere
-   ln_river0   =  .true.   ! river input of nutrients
-   ln_ndepo0   =  .true.   ! atmospheric deposition of N
+   ln_dust0    =  .false.  ! dust input from the atmosphere
+   ln_river0   =  .false.  ! river input of nutrients
+   ln_ndepo0   =  .false.  ! atmospheric deposition of N
 /
 !-----------------------------------------------------------------------
 &namtrc_opt    !   parameters for optics
