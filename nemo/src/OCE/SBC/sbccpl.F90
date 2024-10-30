@@ -2119,6 +2119,13 @@ CONTAINS
       ! outputs
       IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea' , - frcv(jpr_cal)%z3(:,:,1) * rLfus ) ! latent heat from calving
       IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea' , - frcv(jpr_icb)%z3(:,:,1) * rLfus ) ! latent heat from icebergs melting
+
+      IF (        iom_use('hflx_whc_cea') )    &                                                     ! heat flux from the heat content flux from P-E (cell average)
+         &   CALL iom_put('hflx_whc_cea' , ( -  zevap_oce(:,:)               * zcptn   (:,:)   &     ! evap
+                           &             + ( ztprecip(:,:) - zsprecip(:,:) ) * zcptrain(:,:)   &     ! liquid precip
+                           &             +   zsprecip(:,:)                   * zcptsnw (:,:) ) )     ! solid precip 
+      IF (        iom_use('hflx_qla_cea') )    &                                                     ! heat flux from latent heat flux from the snow (cell average)
+         &   CALL iom_put('hflx_qla_cea' , ( - zsprecip(:,:) * rLfus ) )
       IF (        iom_use('hflx_rain_cea') )    &                                                    ! heat flux from rain (cell average)
          &   CALL iom_put('hflx_rain_cea' , ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )
       IF (        iom_use('hflx_evap_cea') )    &                                                    ! heat flux from evap (cell average)

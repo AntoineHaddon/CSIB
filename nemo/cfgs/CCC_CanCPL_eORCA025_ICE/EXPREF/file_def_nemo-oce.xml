@@ -40,8 +40,9 @@
           <field field_ref="O_QsrMix"         name="O_QsrMix"       level="0" /> <!-- only rtd -->
           <!-- IAT/age tracer running in TOP w/o any BGCM       -->
           <field field_ref="Age"              name="Age"            level="0" />
-	  <field field_ref="runoffs"          name="friver"         level="0" />	  
-	  <field field_ref="ahmtc_2d"         name="ahmtc2d"        level="0" operation="once" />
+	      <field field_ref="runoffs"          name="friver"         level="0" />	  
+	      <field field_ref="ahmtc_2d"         name="ahmtc2d"        level="0" operation="once" />
+
         </file>
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
           <field field_ref="uoce"        name="uo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
@@ -198,6 +199,51 @@
             <field field_ref="e3t_0"        name="thkcello"        level="1" /> <!-- (Ofx*) -->
             <field field_ref="masscello"    name="masscello"       level="1" operation="once" /> <!-- (Ofx*) --> 
             <field field_ref="volcello"     name="volcello"        level="1" operation="once" /> <!-- (Ofx*) -->
+        </file>
+        <file id="file62" name_suffix="_heat_budget" description="ocean heat budget variables">
+          <field field_ref="areacello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="volcello"   operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="masscello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="heatc"      operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="icehc"      operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="snwhc"      operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="hfgeou"     operation="once"         level="0" /> <!-- (Omon) -->
+          <field field_ref="O_QnsMix"         name="O_QnsMix"       level="0" /> <!-- only rtd -->
+          <field field_ref="O_QsrMix"         name="O_QsrMix"       level="0" /> <!-- only rtd -->
+          <field field_ref="qsr_oce"                             level="0" /> <!-- (Omon) -->
+          <field field_ref="qns_oce"                             level="0" /> <!-- (Omon) -->
+          <field field_ref="qsr_ice"                             level="0" /> <!-- (Omon) -->
+          <field field_ref="qns_ice"                             level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_atm_oi"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_oce_ai"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_ice"                              level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_ice_oce"                          level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_whc_cea"                        level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_qla_cea"                        level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_rain_cea"                       level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_evap_cea"                       level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_subl_cea"                       level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_snow_cea"                       level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_snow_ao_cea"                    level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_snow_ai_cea"                    level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_rnf_cea"                        level="0" /> <!-- (Omon) -->
+          <field field_ref="qemp_oce"                            level="0" /> <!-- (Omon) -->
+          <field field_ref="qemp_ice"                            level="0" /> <!-- (Omon) -->
+        </file>
+        <file id="file63" name_suffix="_mass_budget" description="ocean heat budget variables">
+          <field field_ref="areacello" operation="instant"     level="0" /> <!-- instant => last occurence -->
+          <field field_ref="volcello"  operation="instant"     level="0" /> <!-- instant => last occurence -->
+          <field field_ref="masscello" operation="instant"     level="0" /> <!-- instant => last occurence -->
+          <field field_ref="icemass"   operation="instant"     level="0" /> <!-- instant => last occurence -->
+          <field field_ref="snwmass"   operation="instant"     level="0" /> <!-- instant => last occurence -->
+          <field field_ref="runoffs"                           level="0" />
+          <field field_ref="precip"                            level="0" />
+          <field field_ref="snowpre"                           level="0" />
+          <field field_ref="rain"                              level="0" />
+          <field field_ref="evap_ao_cea"                       level="0" />
+          <field field_ref="subl_ai_cea"                       level="0" />
+          <field field_ref="snow_ai_cea"                       level="0" />
+          <field field_ref="snow_ao_cea"                       level="0" />
         </file>
       </file_group>
 
