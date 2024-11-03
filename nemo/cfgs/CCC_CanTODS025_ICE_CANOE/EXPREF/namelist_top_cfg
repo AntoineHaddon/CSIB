@@ -241,8 +241,8 @@
    cn_dir        =  './'     !  root directory for the location of the data files
    !
    nb_src2d      = 10
-   sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'CHLA'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'dust'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(1)   = 'chlorophyll'    ,        -12        ,  'CHLA'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(2)   = 'dust.orca'      ,        -12        ,  'dust'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(3)   = 'par.orca'       ,         24       ,  'fr_par' ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(4)   = 'femask'         ,        -12       ,  'femask' ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'ndep'   ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
