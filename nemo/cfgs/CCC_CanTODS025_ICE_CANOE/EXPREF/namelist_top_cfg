@@ -21,7 +21,7 @@
    nn_rsttr      =   0       !  restart control = 0 initial time step is not compared to the restart file value
                              !                  = 1 do not use the value in the restart file
                              !                  = 2 calendar parameters read in the restart file
-   cn_trcrst_in  = "restart_trc_in" !  suffix of pass. sn_tracer restart name (input) 
+   cn_trcrst_in  = "restart_trc"   !  suffix of pass. sn_tracer restart name (input)
    cn_trcrst_indir = "."           !  directory from which to read input passive tracer restarts
    cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
    cn_trcrst_outdir = "."          !  directory to which to write output passive tracer restarts
@@ -48,13 +48,13 @@
    !
    jp_dia3d      = 0 ! 3 ! 5  !7 ! Number of 3D diagnostic variables
    jp_dia2d      = 0 ! 2 ! 10    ! Number of 2D diagnostic variables
-   !_____________!____________!__________________________________________!_______!__changebacktoT_!_________!_________!_________!________!
+   !_____________!____________!__________________________________________!_______!________________!_________!_________!_________!________!
    !             !    name    !           title of the field             ! units ! init from file ! sbc     !  cbc    !  obc    !  ais 
 !  sn_tracer(1)  = 'tracer  ' , 'Tracer  Concentration                 ' ,  ' - '     ,   .false. , .false. , .false. , .false. , .false.
-   sn_tracer(1)  = 'DIC     ' , 'Dissolved inorganic Concentration      ', 'mmol-C/L' ,  .false.  , .false. , .false. , .false. , .false.
-   sn_tracer(2)  = 'Alkalini' , 'Total Alkalinity Concentration         ', 'mmoleq/L ',  .false.  , .false. , .false. , .false. , .false.
-   sn_tracer(3)  = 'O2      ' , 'Dissolved Oxygen Concentration         ', 'mmol-O2/L',  .false.  , .false. , .false. , .false. , .false.
-   sn_tracer(4)  = 'NO3     ' , 'Nitrate Concentration                  ', 'mmol-N/L' ,  .false.  , .false. , .false. , .false. , .false.
+   sn_tracer(1)  = 'DIC     ' , 'Dissolved inorganic Concentration      ', 'mmol-C/L' ,  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(2)  = 'Alkalini' , 'Total Alkalinity Concentration         ', 'mmoleq/L ',  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(3)  = 'O2      ' , 'Dissolved Oxygen Concentration         ', 'mmol-O2/L',  .true.   , .false. , .false. , .false. , .false.
+   sn_tracer(4)  = 'NO3     ' , 'Nitrate Concentration                  ', 'mmol-N/L' ,  .true.   , .false. , .false. , .false. , .false.
    !_____________!___________!_________________________________________!____________!________________!
    !  CanOE-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
@@ -220,11 +220,11 @@
    !
    nb_src3d      = 6
    sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src3d(1)   =   1.0e-06   ! model is in mol/L
    rn_src3d(2)   =   1.0e-06   ! model is in mol/L
@@ -241,16 +241,16 @@
    cn_dir        =  './'     !  root directory for the location of the data files
    !
    nb_src2d      = 10
-   sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(3)   = 'par.orca'       ,         24       ,  'zeros'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(4)   = 'femask'         ,        -12       ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'zeros'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(6)   = 'river.orca'     ,        -12       ,  'zeros'   ,   .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(7)   = 'river.orca'     ,        -12       ,  'zeros'   ,   .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(8)   = 'river.orca'     ,        -12       ,  'zeros'   ,   .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(9)   = 'solubility.orca',        -12       ,'zeros'      ,  .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(10)  = 'solubility.orca',        -12       ,'zeros'      ,  .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'CHLA'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'dust'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(3)   = 'par.orca'       ,         24       ,  'fr_par' ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(4)   = 'femask'         ,        -12       ,  'femask' ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'ndep'   ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(6)   = 'river.orca'     ,        -12       ,  'riverdic',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(7)   = 'river.orca'     ,        -12       ,  'riverdoc',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(8)   = 'river.orca'     ,        -12       ,  'riverpoc',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(9)   = 'solubility.orca',        -12       ,'solubility1',  .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(10)  = 'solubility.orca',        -12       ,'solubility2',  .false.   , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src2d(1)   =   1.        !                   
    rn_src2d(2)   =   1.        !                   
