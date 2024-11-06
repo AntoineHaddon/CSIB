@@ -219,9 +219,9 @@
    cn_dir        =  './'     !  root directory for the location of the data files
    !
    nb_src3d      = 6
-   sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(1)   = 'data_NO3_nomask' ,        -12       ,  'NO3'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(2)   = 'data_Si_nomask'  ,        -12       ,  'Si'     ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(3)   = 'data_PO4_nomask' ,        -12       ,  'PO4'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
