@@ -43,6 +43,7 @@
    ln_c14        =  .false.     !  Run the Radiocarbon passive tracer
    !
    ln_trcdta     =  .true.   !  Initialisation from data input file (T) or not (F)
+   ln_trcbc      =  .true.   !  Surface, Lateral or Open Boundaries conditions
    ln_trcdmp     =  .false.  !  add a damping termn (T) or not (F)
    ln_trcdmp_clo =  .false.  !  damping term (T) or not (F) on closed seas
    !
