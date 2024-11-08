@@ -237,17 +237,23 @@ CONTAINS
          DO jn = 1, ntrc   ! define imap pointer, must be done after the call to fld_fill
             DO ib = 1, nb_bdy
                IF( ln_trc_obc(jn) ) THEN     !* Initialise from external data *!
+                  WRITE(numout,*) "Pointers, jn=", jn, "ib=", ib 
                   jl = n_trc_indobc(jn)
+                  WRITE(numout,*) "jl=", jl
                   sf_trcobc(jl,ib)%imap => idx_bdy(ib)%nbmap(1:idx_bdy(ib)%nblen(igrd),igrd)
+                  WRITE(numout,*) "A"
                   sf_trcobc(jl,ib)%igrd  = igrd
+                  WRITE(numout,*) "B"
                   sf_trcobc(jl,ib)%ibdy  = ib
+                  WRITE(numout,*) "C"
                   sf_trcobc(jl,ib)%lzint = ln_zintobc(ib) ! vertical interpolation
+                  WRITE(numout,*) "D"
                ENDIF
             END DO
          END DO
          !
       ENDIF
-
+      WRITE(numout,*) "After OBC pointers"
       ! SURFACE Boundary conditions
       IF( nb_trcsbc > 0 ) THEN       !  allocate only if the number of tracer to initialise is greater than zero
          ALLOCATE( sf_trcsbc(nb_trcsbc), rf_trsfac(nb_trcsbc), STAT=ierr1 )
