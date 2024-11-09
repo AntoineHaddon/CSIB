@@ -106,17 +106,15 @@
 !-----------------------------------------------------------------------
 !                !  file name        ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
 !                !                   !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_trcdta(1)  = 'data_DIC_nomask'      ,        -12   ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''   , ''
-   sn_trcdta(2)  = 'data_Alkalini_nomask' ,        -12   ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(1)  = 'data_DIC_nomask'      ,        -1    ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(2)  = 'data_Alkalini_nomask' ,        -1    ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''   , ''
    sn_trcdta(3)  = 'data_O2_nomask'       ,        -1    ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''   , ''
    sn_trcdta(4)  = 'data_NO3_nomask'      ,        -1    ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''   , ''
-   sn_trcdta(5)  = 'data_Fer_nomask'      ,        -12   ,  'Fer'     ,    .false.   , .true. , 'yearly'  , ''       , ''   , ''
    cn_dir        =  './'     !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06 ! In this version DIC and TA will remain in mol/L
    rn_trfac(2)   =   1.0e-06 ! while other tracers will be in mmol m^-3 except
-   rn_trfac(3)   =  44.6     ! Fe ones which are in nmol m^-3 (pmol/L)
-   rn_trfac(4)   =   1.      !  -      -      -     -
-   rn_trfac(5)   =   1.0e+12 ! convert dFe from mol/L to pmol/L
+   rn_trfac(3)   =   1.0     ! Fe ones which are in nmol m^-3 (pmol/L) 
+   rn_trfac(4)   =   1.0     !  -      -      -     -
 /
 !-----------------------------------------------------------------------
 &namtrc_adv      !   advection scheme for passive tracer                (default: NO selection)
@@ -196,6 +194,10 @@
 !               !    file name             ! freq ! variable ! time interp. ! clim   !'yearly' ! weights  ! rotation | land/sea
    sn_trcobc(1) = 'bdy_dta_trc_north'      ,  -1  , 'dummy'  ,  .true.      , .true. ,'yearly' ,  '',  '',  ''
    sn_trcobc(2) = 'bdy_dta_trc_south'      ,  -1  , 'dummy'  ,  .true.      , .true. ,'yearly' ,  '',  '',  ''
+   rn_trofac(1)   =   1.0e-06 ! DIC to mol/L 
+   rn_trofac(2)   =   1.0e-06 ! Alkalini to mol/L
+   rn_trofac(3)   =   1.0     ! O2 to mmol/m3
+   rn_trofac(4)   =   1.0     ! NO3 to mmol/m3
    cn_dir_sbc    =  './'     !  root directory for the location of SURFACE data files
    cn_dir_cbc    =  './'     !  root directory for the location of COASTAL data files
    cn_dir_obc    =  './'     !  root directory for the location of OPEN data files
@@ -205,7 +207,7 @@
 &namtrc_bdy      !   Setup of tracer boundary conditions
 !-----------------------------------------------------------------------
    cn_trc_dflt   = 'neumann' !  OBC applied by default to all tracers
-   cn_trc        = 'frs', 'frs'  !  Boundary conditions used for tracers with data files (selected in namtrc)
+   cn_trc        = 'orlanski_npo','orlanski_npo' !  Boundary conditions used for tracers with data files (selected in namtrc)
 
    nn_trcdmp_bdy = 0, 0      !  Use damping timescales defined in nambdy of namelist
                              !  = 0 NO damping of tracers at open boudaries
