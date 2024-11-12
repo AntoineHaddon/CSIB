@@ -67,7 +67,7 @@ nemo_file_freqs_array=()
 for i in $(seq 0 $((n_suffix-1))); do
     fs=${nemo_hist_file_suffix_list_array[$i]}
     IFS='_' read -r freq param <<< $fs
-    if [[ $freq =~ ^[0-9]+[hdmy]$ ]]; then
+    if [[ $freq =~ ^[0-9]+[hdmyt] ]]; then
         nemo_file_suffixes_array+=("$param")
         nemo_file_freqs_array+=("$freq")
     else

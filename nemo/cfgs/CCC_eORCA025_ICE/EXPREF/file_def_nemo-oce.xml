@@ -190,16 +190,22 @@
             <!-- <field field_ref="strd_eiv"      name="osaltpadvect"    level="3" /> <!-- (Oyr) not avaialble in  NEMO4(need to code it?)  -->
             <!-- <field field_ref="ttrd_qsr_li"   name="rsdoabsorb"      level="3" /> <!-- (Oyr*) in field* but not in NEMO4 -->
             <!-- <field field_ref="eketrd_eiv"    name="tnkebto"       level="3" /> <!-- (Oyr*) in field* but not in NEMO4 --> 
-            <field field_ref="areacello"    name="areacello"       level="1" /> <!-- (Ofx*) used for sftof as well --> 
-            <field field_ref="bathy"        name="deptho"          level="1" /> <!-- (Ofx*) --> 
-            <!-- <field field_ref="basins"       name="basin"           level="1" /> <!-- (Ofx*) not avaialble in  NEMO4(need to code it?) --> 
-            <field field_ref="e3t_0"        name="thkcello"        level="1" /> <!-- (Ofx*) -->
-            <field field_ref="masscello"    name="masscello"       level="1" operation="once" /> <!-- (Ofx*) --> 
-            <field field_ref="volcello"     name="volcello"        level="1" operation="once" /> <!-- (Ofx*) -->
         </file>
       </file_group>
 
 
+      <file_group id="Ofx" output_freq="1ts"  enabled=".TRUE." > <!-- fix variables files files -->
+        <file id="file65" name_suffix="_cfg" description="ocean T grid variables">
+            <field field_ref="areacello"    name="areacello"       level="0" operation="once" /> <!-- (Ofx*) --> 
+            <field field_ref="sftof"        name="sftof"           level="0" operation="once" /> <!-- (Ofx*) --> 
+            <field field_ref="bathy"        name="deptho"          level="0" operation="once" /> <!-- (Ofx*) --> 
+            <field field_ref="basins"       name="basins"          level="0" operation="once" /> <!-- (Ofx*)--> 
+            <field field_ref="e3t_0"        name="thkcello"        level="0" operation="once" /> <!-- (Ofx*) -->
+            <field field_ref="masscello"    name="masscello"       level="0" operation="once" /> <!-- (Ofx*) --> 
+            <field field_ref="volcello"     name="volcello"        level="0" operation="once" /> <!-- (Ofx*) -->
+            <field field_ref="hfgeou"       name="hfgeou"          level="0" operation="once" /> <!-- (Ofx*) -->
+        </file>
+      </file_group>
       <file_group id="1ts" output_freq="1ts"  enabled=".TRUE."/> <!-- 1 time step files -->
       <file_group id="2h"  output_freq="2h"   enabled=".TRUE."/> <!-- 2h files -->
       <file_group id="4h"  output_freq="4h"   enabled=".TRUE."/> <!-- 4h files -->
