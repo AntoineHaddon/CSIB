@@ -120,6 +120,10 @@
   </grid>
   <!--  -->
 
+  <grid id="grid_basin" >
+    <domain domain_ref="grid_T" />
+    <axis axis_ref="basin" />
+  </grid>
   <grid id="grid_znl_T_2D">
     <domain domain_ref="gznl" />
     <axis axis_ref="basin" />

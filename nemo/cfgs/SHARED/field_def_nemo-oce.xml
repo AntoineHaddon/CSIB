@@ -924,10 +924,11 @@ that are available in the tidal-forcing implementation (see
   </field_group>
 
   <field_group id="constant_fields"  grid_ref="grid_T_2D"  operation="once" >
+    <field id="sftof"       long_name="Sea Area Percentage"                       standard_name="sea_area_fraction"                         unit="%"/>
     <field id="bathy"       long_name="Sea floor depth below geoid"               standard_name="sea_floor_depth_below_geoid"               unit="m"/>
     <field id="areacello"   long_name="Horizontal area of ocean grid cells"       standard_name="cell_area"                                 unit="m2" />
     <field id="hfgeou"      long_name="Upward geothermal heat flux at sea floor"  standard_name="upward_geothermal_heat_flux_at_sea_floor"  unit="W/m2"/>
-    <field id="basins"      long_name="ocean tracer region masks"                 standard_name="ocean_tracer_region_masks"   unit="none" grid_ref="grid_basin"  />
+    <field id="basins"      long_name="ocean tracer region integer"                 standard_name="ocean_tracer_region_integer"                 unit="none" />
   </field_group>
 
 

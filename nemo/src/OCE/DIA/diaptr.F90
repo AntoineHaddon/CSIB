@@ -460,6 +460,7 @@ CONTAINS
       INTEGER ::  inum, jn           ! local integers
       !!
       REAL(wp), DIMENSION(jpi,jpj) :: zmsk
+      REAL(wp),  DIMENSION(jpi,jpj) :: zbind
       !!----------------------------------------------------------------------
 
       ! l_diaptr is defined with iom_use
@@ -489,6 +490,7 @@ CONTAINS
          IF( lk_mpp )   CALL mpp_ini_znl( numout )     ! Define MPI communicator for zonal sum
 
          btmsk(:,:,1) = tmask_i(:,:)
+         zbind(:,:)   = tmask_i(:,:)
          IF( nbasin == 5 ) THEN   ! nbasin has been initialized in iom_init to define the axis "basin"
             CALL iom_open( 'subbasins', inum )
             CALL iom_get( inum, jpdom_global, 'atlmsk', btmsk(:,:,2) )   ! Atlantic basin
@@ -498,6 +500,7 @@ CONTAINS
             btmsk(:,:,5) = MAX ( btmsk(:,:,3), btmsk(:,:,4) )            ! Indo-Pacific basin
          ENDIF
          DO jn = 2, nbasin
+            IF (jn .ne. 5) zbind(:,:)   = btmsk(:,:,jn) * tmask_i(:,:) * jn    ! nb. of the bassin (1 to 4)
             btmsk(:,:,jn) = btmsk(:,:,jn) * tmask_i(:,:)                 ! interior domain only
          END DO
          ! JD : modification so that overturning streamfunction is available in Atlantic at 34S to compare with observations
@@ -510,6 +513,8 @@ CONTAINS
          DO jn = 2, nbasin
             btmsk34(:,:,jn) = btmsk(:,:,jn) * zmsk(:,:)                  ! interior domain only
          ENDDO
+
+         CALL iom_put('basins',zbind)
 
          ! Initialise arrays to zero because diatpr is called before they are first calculated
          ! Note that this means diagnostics will not be exactly correct when model run is restarted.

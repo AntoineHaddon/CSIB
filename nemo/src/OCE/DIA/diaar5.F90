@@ -95,6 +95,7 @@ CONTAINS
       CALL iom_put( 'e2u'      , e2u  (:,:) )
       CALL iom_put( 'e1v'      , e1v  (:,:) )
       CALL iom_put( 'areacello', e1e2t(:,:) )
+      CALL iom_put( 'sftof'    , tmask(:,:,1)*100. )
       !
       IF( iom_use( 'volcello' ) .OR. iom_use( 'masscello' )  ) THEN
          zrhd(:,:,jpk) = 0._wp        ! ocean volume ; rhd is used as workspace
