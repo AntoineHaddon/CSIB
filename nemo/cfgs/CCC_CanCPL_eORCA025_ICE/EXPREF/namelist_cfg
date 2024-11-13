@@ -169,7 +169,7 @@ sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,       
 sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''
+sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''
 /
 
 !-----------------------------------------------------------------------

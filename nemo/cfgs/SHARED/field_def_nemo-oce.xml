@@ -448,6 +448,7 @@ that are available in the tidal-forcing implementation (see
       <field id="wspd"         long_name="wind speed module"                     standard_name="wind_speed"                                                           unit="m/s"                            />
 
       <!-- * variable relative to atmospheric pressure forcing : available with ln_apr_dyn -->
+      <field id="apr"          long_name="Atmospheric pressure"  standard_name="atmospheric_pressure"   unit="Pa"        />
       <field id="ssh_ib"       long_name="Inverse barometer sea surface height"  standard_name="sea_surface_height_correction_due_to_air_pressure_at_low_frequency"   unit="m"        />
 
       <!-- *_oce variables available with ln_blk_clio or ln_blk_core -->

@@ -607,7 +607,9 @@ CONTAINS
           l_aprcpl           = .TRUE.                      ! -> no need to read mslp in sbcapr or patm in trc_flx
           IF(lwp) WRITE(numout,*)
           IF(lwp) WRITE(numout,*) '   Sea level pressure received from the coupler'
-          IF (.NOT.ln_apr_dyn) allocate( apr (jpi,jpj) )  ! if ln_alr_dyn, apr allocaterd in sbcapr 
+          ALLOCATE( ssh_ib(jpi,jpj) , ssh_ibb(jpi,jpj) )
+          ALLOCATE( apr (jpi,jpj) ) ! ssh_ib, ssh_ibb and apr are allocated in sbcapr if l_aprcpl=.false.
+          ssh_ib=0.; ssh_ibb=0.; apr=0. 
       ELSEIF (ln_apr_dyn) THEN
           CALL ctl_warn( 'sbc_apr: ln_apr_dyn=T but no Sea level pressure received from the coupler,', &
                &         '===> ln_apr_dyn forced to .FALSE.' )
@@ -1378,7 +1380,17 @@ CONTAINS
               ssh_ib(:,:) = - ( frcv(jpr_mslp)%z3(:,:,1) - rpref ) * r1_grau    ! equivalent ssh (inverse barometer)
               IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
               CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
+              IF( kt == nit000 ) THEN                   !   set the forcing field at nit000 - 1    !
+                 IF( ln_rstart .AND. .NOT.l_1st_euler ) THEN
+                    IF(lwp) WRITE(numout,*) 'sbc_apr:   ssh_ibb read in the restart file'
+                    CALL iom_get( numror, jpdom_auto, 'ssh_ibb', ssh_ibb )   ! before inv. barometer ssh
+                 ELSE                                         !* no restart: set from nit000 values
+                    IF(lwp) WRITE(numout,*) 'sbc_apr:   ssh_ibb set to nit000 values'
+                    ssh_ibb(:,:) = ssh_ib(:,:)
+                 ENDIF
+              ENDIF
           ENDIF
+          CALL iom_put( "apr", apr )                   !* output the inverse barometer ssh
 
       END IF
       !
