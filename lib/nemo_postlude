@@ -157,7 +157,8 @@
     end_step=$(get_namelist_var nn_itend namelist_cfg | awk '{printf "%8.8d",$1}')
 
     # Look for ocean restart files matching the pattern below
-    eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+    ofnpatt="${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc ${cn_exp}_${end_step}_${cn_ocerst_out}.nc"
+
     found_rs=$(ls -1 $ofnpatt || : 2>/dev/null)
     if [ -z "$found_rs" ]; then
       # No ocean restart files exist
@@ -283,5 +284,6 @@
 
     # SAVE
     rs_out=${model_rs}tiled_nemors
+    [ $nnode_o -eq 1 ] && rs_out=${model_rs}nemors # rename without the "tiled" if only one proc.
     save NEXT_RESTART_ARC $rs_out
     release NEXT_RESTART_ARC
