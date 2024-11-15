@@ -244,6 +244,8 @@
     	# bio module output namelist
     	cp -f output.namelist.can rs_output.namelist.can  || :
     	[ -s rs_output.namelist.can ] && filelist="$filelist rs_output.namelist.can"
+    	cp -f output.namelist.cmoc rs_output.namelist.cmoc  || :
+    	[ -s rs_output.namelist.cmoc ] && filelist="$filelist rs_output.namelist.cmoc"
 
     fi 
     # current executable
