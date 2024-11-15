@@ -106,7 +106,7 @@ set -e
           # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
           ################################################################
           # make sure inputs exist and run!
-          if [[ -L grid_t && $output_level -eq 1 ]]; then
+          if [[ -L grid_t ]] && ([[ $output_level -eq 1 ]] || [[ $output_level -eq 2 ]]); then
             $diag_exe
           elif [ ! -L grid_t ]; then
             bail "Inputs for $diag_exe (grid_t) don't exist!"
