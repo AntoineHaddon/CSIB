@@ -38,7 +38,7 @@ parser.add_argument('-A','--all',help='Set True (default) to run everything.',de
 parser.add_argument('-o','--outdir',help='Output directory for diagnostic netCDF files. Default is current directory.',default='./')
 parser.add_argument('-R','--redo',help='If True (default is False), deletes original netCDF output files (if present) and creates fresh files. Default is to append.',default=False)
 parser.add_argument('-I','--ice',help='Calculate sea-ice parameters (volume and area). Not used if -A is True. 0: volume and area (default), 1: volume only, 2: area only, other: do not calculate',default=0)
-parser.add_argument('-Y','--phys',help='Calculate mean temperature and salnity (3D and surface). Not used if -A is True. 0: 3D T & S, SST, and SSS (default), 1: T only, 2: S only, other: do not calculate',default=0)
+parser.add_argument('-Y','--phys',help='Calculate mean temperature and salnity (3D and surface) and max MLD. Not used if -A is True. 0: 3D T & S, SST, SSS, and MLD (default), 1: T only, 2: S only, 3: MLD only. Other: do not calculate',default=0)
 parser.add_argument('-z','--depths',help='Depths (in m) for calculating variables (as applicable). Pass as list, e.g., 0,250,1000,all',default='0,250,1000,all')
 parser.add_argument('-x','--xlim',help='Set time limit for calculating diagnostics. All series are forced to 0-time.',default=[-np.inf,np.inf])
 parser.add_argument('-y','--year0',help='Start year for model run(s). Can either pass single value or use multiple times to match number of runids. If not passed, finds earliest date in files and assumes that to be the start.',default=None)
@@ -126,28 +126,36 @@ def cantodsFiles(runid,nemoVar,args):
 
     return flist,args
 
-def time2datetime(times):
-  """
-  Convert times from one format (e.g., np.datetime) to datetime.datetime
-  using pandas
-  """
-  datetime = pd.to_datetime(times).to_pydatetime()
+#TODO: delete if working properly
+# def time2datetime(times):
+#   """
+#   Convert times from one format (e.g., np.datetime) to datetime.datetime
+#   using pandas
+#   """
+#   datetime = pd.to_datetime(times,unit='s').to_pydatetime()
 
-  return datetime
+#   return datetime
 
 def relativeYear(dset,args):
     # convert from date in file to years since start date
     with warnings.catch_warnings():
         warnings.simplefilter("ignore",category=RuntimeWarning)
         try:
-            ftime=np.array(time2datetime(dset.indexes['time_counter'].values))
+            ftime=np.array(dset.indexes['time_counter'].values)
         except:
-            ftime=np.array(time2datetime(dset.indexes['time_counter'].to_datetimeindex().values))
+            ftime=np.array(dset.indexes['time_counter'].to_datetimeindex().values)
+        #TODO: delete if working properly
+        # try:
+        #     ftime=np.array(time2datetime(dset.indexes['time_counter'].values))
+        # except:
+        #     ftime=np.array(time2datetime(dset.indexes['time_counter'].to_datetimeindex().values))
     
     d0=dt.datetime(args.year0,1,1)
 
     #TODO: handle leap years properly?
-    fyears=np.array([((ft-d0).days+(ft-d0).seconds/86400)/365 for ft in ftime])
+    fyears=np.full(len(ftime),np.nan)
+    for iY,fT in enumerate(ftime):
+        fyears[iY]=fT.year-args.year0 + (fT.month-1)/12 + (fT.day-1)/365. + (fT.hour-1)/(24*365.) + (fT.minute-1)/(60*24*365.) + (fT.second-1)/(60*60*24*365.)    # fraction by seconds in that minute
 
     return fyears
 
@@ -275,6 +283,7 @@ def rtdNetCDF(runid,timeseries,var,args):
     ifFile=os.path.isfile(ncFile)
     if len(timeseries['data'])>0:
         ds=xr.Dataset.from_dict({'time':{"dims":('time'),'data':365.*timeseries['years'],"attrs": {"units": f"days since {args.year0}-01-01 00:00:00"}},
+                                'year':{"dims":('time'),'data':timeseries['years'],'attrs':{'units':'simluation duration in years'}},
                                 var:{"dims":('time'),'data':timeseries['data']}})
     if ifFile and not args.redo:
         if len(timeseries['data'])>0:
@@ -460,23 +469,30 @@ def calcIce(args):
 
 def calcPhys(args):
     """
-    Calculate mean temperature or salinity.
+    Calculate temperature, salinity, and/or MLD.
     """
-    print('Calculating temperature and salinity')
+    print('Calculating physical diagnostics.')
 
     # initialize dictionaries
     aVars=[]; series={}
-    for vV in ['T','S']:
-        for iZ,zZ in enumerate(args.depths):
-            if np.isinf(zZ):
-                dpth=f'3D'
-            else:
-                dpth=f'{int(zZ):04}m'
-            aVars.append(f'{vV}_{dpth}')
-            series[f'{vV}_{dpth}']={}
+    for vV in ['T','S','MLD']:
+        if vV in ['MLD']:
+            aVars.append(vV)
+            series[vV]={}
             for reg in args.regions:
-                aVars.append(f'{vV}_{dpth}_{reg}')
-                series[f'{vV}_{dpth}_{reg}']={}
+                aVars.append(f'{vV}_{reg}')
+                series[f'{vV}_{reg}']={}
+        else:
+            for iZ,zZ in enumerate(args.depths):
+                if np.isinf(zZ):
+                    dpth=f'3D'
+                else:
+                    dpth=f'{int(zZ):04}m'
+                aVars.append(f'{vV}_{dpth}')
+                series[f'{vV}_{dpth}']={}
+                for reg in args.regions:
+                    aVars.append(f'{vV}_{dpth}_{reg}')
+                    series[f'{vV}_{dpth}_{reg}']={}
 
     # loop through each run id
     for iR,runid in enumerate(args.runid):
@@ -493,10 +509,13 @@ def calcPhys(args):
             meshSurf=meshGrid(args.meshfile,runid,0,args)
         levZ=[]
         for iZ,var in enumerate(aVars):
-            if '3D' in var:
-                levZ.append(-1)
+            if 'MLD' in var:
+                levZ.append(np.nan)
             else:
-                levZ.append(np.argmin(np.abs(meshAll['depths']-int(var.split('_')[1].split('m')[0]))))
+                if '3D' in var:
+                    levZ.append(-1)
+                else:
+                    levZ.append(np.argmin(np.abs(meshAll['depths']-int(var.split('_')[1].split('m')[0]))))
         print(f"\r  {f'Loaded mesh.':<50}",end='',flush=True)
 
         # get list of files to load using glob
@@ -506,7 +525,7 @@ def calcPhys(args):
         if len(tflist) > 0:
             # create empty arrays to assign values
             for iV,var in enumerate(aVars):
-                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) and (runid not in series[var].keys()):
+                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) and (runid not in series[var].keys()):
                     series[var][runid]={'years':np.array([]),'data':np.array([])}
             
             # regional masks
@@ -544,9 +563,11 @@ def calcPhys(args):
                         try:
                             reg=var.split('_')[2]
                         except:
-                            reg='domain'
+                            reg=var.split('_')[-1]
+                            if ('3D' in reg) or (reg==var) or ('m' in reg):
+                                reg='domain'
                         if rmasks[reg] is not None:
-                            if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2):
+                            if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3):
                                 lvars[var]={'years':years,'data':np.full(len(years),np.nan)}
 
                     # calculate means at each time step
@@ -557,7 +578,9 @@ def calcPhys(args):
                             try:
                                 reg=var.split('_')[2]
                             except:
-                                reg='domain'
+                                reg=var.split('_')[-1]
+                                if ('3D' in reg) or (reg==var) or ('m' in reg):
+                                    reg='domain'
                             if rmasks[reg] is not None:
                                 if 'T' in var and (args.phys in [0,1]):
                                     if '3D' in var:
@@ -569,16 +592,18 @@ def calcPhys(args):
                                         lvars[var]['data'][tcount]=volMean(ds['so'].isel(time_counter=tid).values,-1,meshAll,rmasks[reg])
                                     else:
                                         lvars[var]['data'][tcount]=volMean(ds['so'].isel(time_counter=tid,deptht=levZ[iV]).values,0,meshSurf,rmasks[reg])
+                                elif 'MLD' in var and (args.phys in [0,3]):
+                                    lvars[var]['data'][tcount]=np.nanmax((ds['mlotst'].isel(time_counter=tid).values*rmasks[reg]).ravel())
                         
                 # append to time series
                 for iV,var in enumerate(aVars):
-                    if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2)) and var in lvars.keys():
+                    if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3)) and var in lvars.keys():
                         series[var][runid]['years']=np.append(series[var][runid]['years'],lvars[var]['years'])
                         series[var][runid]['data']=np.append(series[var][runid]['data'],lvars[var]['data'])
 
             # sort in time
             for iV,var in enumerate(aVars):
-                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2):
+                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3):
                     if len(series[var][runid]) > 0:
                         iY=np.argsort(np.array(series[var][runid]['years']))
                         series[var][runid]['years']=np.array(series[var][runid]['years'])[iY]
@@ -609,9 +634,9 @@ def plotTimeseries(ncFile,varName,runid):
     Plot complete time series and link to public_html for viewing
     """
     plt.close('all')
-    with xr.open_dataset(ncFile) as ds:
-        plt.plot(ds['time'],ds[varName],'k.')
-    plt.xlabel('Date')
+    with xr.open_dataset(ncFile,decode_times=False) as ds:
+        plt.plot(ds['year'],ds[varName],'k.')
+    plt.xlabel('Years Since Run Start')
     plt.ylabel(varName)
     plt.grid(visible=True)
     plt.tight_layout()
@@ -675,7 +700,7 @@ if args.ice in [0,1,2]:
     calcIce(args)
 
 # Temperature and Salinity Calculations
-if args.phys in [0,1,2]:
+if args.phys in [0,1,2,3]:
     calcPhys(args)
 
 # link jupyter notebook to public_html if not already
@@ -692,6 +717,8 @@ for iR,runid in enumerate(args.runid):
         # update where to find files
         sedOutDir=args.outdir.replace('/','\/')
         subprocess.run(f'sed -i "s/RTDPATH/{sedOutDir}/g" {os.path.join(args.outdir,jptFile)}',shell=True)
+        # update initial year
+        subprocess.run(f'sed -i "s/YEAR0/{args.year0}/g" {os.path.join(args.outdir,jptFile)}',shell=True)
 
     if not os.path.isfile(f'/home/$(whoami)/public_html/CanTODS_diagnostics/{jptFile}'):
         # link to file
