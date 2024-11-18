@@ -108,7 +108,7 @@ usage() {
 #==============
 # Set defaults
 #==============
-nemo_config=''                                          # The particular configuration of nemo to be setup
+CanNEMO_CONFIG=''                                          # The particular configuration of nemo to be setup
 nemo_version=''                                         # The version of code to extract
 nemo_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git   # The default nemo repo
 maestro_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO_maestro_suite.git # The default maestro repo
@@ -156,7 +156,7 @@ for arg in "$@"; do
                 runid)              nemo_runid="$val" ;;    # The runid for this setup 
                 ver)                nemo_version="$val" ;;  # git version, tag or branch
                 repo)               nemo_repo="$val" ;;     # location of git repository
-                config)             nemo_config="$val" ;;   # name of subdir in which config lives
+                config)             CanNEMO_CONFIG="$val" ;;   # name of subdir in which config lives
                 maestro_repo)       maestro_repo="$val"     # maestro repo (already added to the env in the eval statement)
                                     usr_maestro_repo=1 ;;
                 maestro_version)    maestro_version="$val"  # maestro version / commit 

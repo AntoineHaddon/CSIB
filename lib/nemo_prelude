@@ -32,12 +32,12 @@
       acc_cp $1 $2 nocp=no
     else
       # Otherwise look for a configuration specific file in the NEMO repository
-      # nemo_repo, nemo_ver and nemo_config must be defined in this case
-      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
-        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
+      # nemo_repo, nemo_ver and CanNEMO_CONFIG must be defined in this case
+      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$CanNEMO_CONFIG" ] &&
+        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, CanNEMO_CONFIG are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .
+      cp ${nemo_repo}/nemo/CONFIG/$CanNEMO_CONFIG/EXP00/$1 .
       [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
@@ -58,7 +58,7 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $run_start_month       || bail "nemo_prelude: run_start_month must be defined"
   is_defined $run_stop_year         || bail "nemo_prelude: run_stop_year must be defined"
   is_defined $run_stop_month        || bail "nemo_prelude: run_stop_month must be defined"
-  is_defined $nemo_config           || bail "nemo_prelude: nemo_config must be defined"
+  is_defined $CanNEMO_CONFIG           || bail "nemo_prelude: CanNEMO_CONFIG must be defined"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
@@ -100,7 +100,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_carbon=${nemo_carbon:=0}
 
   # IO specification files
-  #     If not defined a default version will be pulled for the given nemo_config
+  #     If not defined a default version will be pulled for the given CanNEMO_CONFIG
   nemo_iodef=${nemo_iodef:=''}
   nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
 
@@ -162,10 +162,10 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_ver=`(cd $nemo_repo; git rev-parse $nemo_ver)` ||
         bail "Unable to validate runtime nemo_ver"
   fi
-  export nemo_ver nemo_repo nemo_config
+  export nemo_ver nemo_repo CanNEMO_CONFIG
   echo "### NEMO runtime: nemo_repo   = $nemo_repo"
   echo "### NEMO runtime: nemo_ver    = $nemo_ver"
-  echo "### NEMO runtime: nemo_config = $nemo_config"
+  echo "### NEMO runtime: CanNEMO_CONFIG = $CanNEMO_CONFIG"
 
   run_start_day=1
   run_start_date=$( printf "%04d-%02d-%02d" $run_start_year $run_start_month $run_start_day )
@@ -178,7 +178,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   nemo_cmoc=0
   nemo_canoe=0
-  case $nemo_config in
+  case $CanNEMO_CONFIG in
     *_CANOE*) nemo_canoe=1 ;; # use CANOE carbon in NEMO
      *_CMOC*) nemo_cmoc=1  ;; # use CMOC carbon in NEMO
   esac
@@ -448,7 +448,7 @@ echo "#################### Start NEMO pre-processing #################"
       acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
   # Modify all FAFMIP related quantities
-  if [[ $nemo_config == *"_FAFMIP"* ]]; then
+  if [[ $CanNEMO_CONFIG == *"_FAFMIP"* ]]; then
 
     # Set specified or default names for fafmip forcing files
     nemo_fafmip_qtot=${nemo_fafmip_qtot:=cmip6_fafmip_hfds_orca1.nc}

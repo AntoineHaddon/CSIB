@@ -44,7 +44,7 @@ if [[ "$jobtype" == 'rtd' ]] || [[ "$jobtype" == 'dumpdel' ]]; then
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
-    sed -i "s/CONFIG=.*/CONFIG=${nemo_config}/g" experiment.cfg
+    sed -i "s/CONFIG=.*/CONFIG=${CanNEMO_CONFIG}/g" experiment.cfg
     config-maestro
 
     # produce message about experiement.cfg
@@ -66,7 +66,7 @@ if [[ "$jobtype" == 'rtd' ]] || [[ "$jobtype" == 'dumpdel' ]]; then
     echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-${jobtype}.log
 else
     echo "Setting up an ocean only run"
-    [ -z "$nemo_config" ] &&
+    [ -z "$CanNEMO_CONFIG" ] &&
         bail "The name of the configuration is required on the command line ...config=cfgname"
 
     # Try to get user input list for a new config.
@@ -76,7 +76,7 @@ else
     echo " "
     echo "This might be OK if you have just added this CONFIG to your repo, otherwise you are in trouble and should abort.
           We need to figure out which namelists (etc) you want to save from this config. The choices below relate only 
-          to the *names* of files to be used. The files themselves will be extracted from the CONFIG ($nemo_config) that you specified."
+          to the *names* of files to be used. The files themselves will be extracted from the CONFIG ($CanNEMO_CONFIG) that you specified."
     echo " "
     echo "Choose an option and hit enter"
     echo "
@@ -97,7 +97,7 @@ else
     }
 
     # Make sure the config is valid and decide which namelist files we need.
-    case $nemo_config in
+    case $CanNEMO_CONFIG in
         CCC_ORCA025_LIM)      lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
         CCC_ORCA025_LIM_CMOC) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
         CCC_ORCA1_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
@@ -111,7 +111,7 @@ else
                          *) get_list ;;
     esac
 
-    nemo_config_lc=$(echo "$nemo_config" | awk '{print tolower($0)}')
+    CanNEMO_CONFIG_lc=$(echo "$CanNEMO_CONFIG" | awk '{print tolower($0)}')
 
     #========================================================================
     # Make a directory by cloning the maestro repo and do basic maestro setup
@@ -152,12 +152,12 @@ else
     echo "Using nemo sha: $nemo_sha1"
 
     # copy experiment.cfg to maestro directory
-    cp -p -f ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/experiment.cfg ${CWD}/.
+    cp -p -f ${src_dir}/nemo/CONFIG/${CanNEMO_CONFIG}/EXP00/experiment.cfg ${CWD}/.
     
     # set experiment specific values in config and config maestro
     sed -i "s#^storage_dir=.*#storage_dir=${storage_dir}#g" experiment.cfg
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
-    sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
+    sed -i 's/.*config=.*/config='"$CanNEMO_CONFIG/" experiment.cfg
     if [ ${with_nemo_diag} = on ] ; then
        sed -i "s/with_nemo_diag=.*/with_nemo_diag=on/" experiment.cfg
     fi
@@ -165,8 +165,8 @@ else
     config-maestro
 
     # Get the compile script, and reset runid, repo and ver.
-    ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/compile ${CWD}/compile
-    [ -e compile ] || bail "Failed to extract compile script from ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/compile" 
+    ln -s ${src_dir}/nemo/CONFIG/${CanNEMO_CONFIG}/EXP00/compile ${CWD}/compile
+    [ -e compile ] || bail "Failed to extract compile script from ${src_dir}/nemo/CONFIG/${CanNEMO_CONFIG}/EXP00/compile" 
     cat compile | sed "s#build-nemo#./CanNEMO_tmp_src/bin/build-nemo#;s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=${nemo_sha1} srcpath=${src_dir}#" > compile_${nemo_runid}
     if [ ${with_nemo_diag} = off ] ; then
        sed -i '/cfg/s/$/ del_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
@@ -180,8 +180,8 @@ else
     sed -i "1i $insrt_hdr" compile_${nemo_runid}
     echo "EOSSH" >> compile_${nemo_runid}
 
-    nemo_config_lower=$(echo ${nemo_config} | tr '[:upper:]' '[:lower:]')
-    nemo_exe=${nemo_runid}_${nemo_config_lower}_exe
+    CanNEMO_CONFIG_lower=$(echo ${CanNEMO_CONFIG} | tr '[:upper:]' '[:lower:]')
+    nemo_exe=${nemo_runid}_${CanNEMO_CONFIG_lower}_exe
     sed -i "s#nemo_exec=.*#nemo_exec="'${SEQ_EXP_HOME}/'${nemo_exe}"#g" experiment.cfg
 
     # SETUP links to relevant namelists
@@ -197,7 +197,7 @@ else
     for i in $lists
     do
         # Link here from source using relative links
-        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${i} .
+        ln -s ${src_dir}/nemo/CONFIG/${CanNEMO_CONFIG}/EXP00/${i} .
         if [[ $i == *"namelist"* ]]; then
            sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
         fi
@@ -206,12 +206,12 @@ else
     sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
 
     # Setup files and carbon options, depending on the config.
-    if [[ $nemo_config_lower == *"cmoc"* ]] || [[ $nemo_config_lower == *"canoe"* ]]; then
+    if [[ $CanNEMO_CONFIG_lower == *"cmoc"* ]] || [[ $CanNEMO_CONFIG_lower == *"canoe"* ]]; then
         sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
-        if [[ $nemo_config_lower == *"cmoc"* ]]; then
+        if [[ $CanNEMO_CONFIG_lower == *"cmoc"* ]]; then
             sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
         fi
-        if [[ $nemo_config_lower == *"off"* ]]; then
+        if [[ $CanNEMO_CONFIG_lower == *"off"* ]]; then
             sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="ptrc_T diad_T"#' ../experiment.cfg
             sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="1m     1m"#' ../experiment.cfg
             sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="ptrc_T diad_T"#' ../experiment.cfg
@@ -222,23 +222,23 @@ else
     fi
 
     # Set the nemoval resolution, depending on the config (default is 1d in experiment.cfg).
-    if [[ $nemo_config_lower == *"orca025"* ]]; then
+    if [[ $CanNEMO_CONFIG_lower == *"orca025"* ]]; then
         sed -i "s#nemoval_res=.*#nemoval_res=025d#" ../experiment.cfg
     fi
 
     # Set nemo_freq
     echo "Setting nemo_freq, based off given config, to recommended value for 3hr wallclock time"
-    case $nemo_config_lower in 
+    case $CanNEMO_CONFIG_lower in 
         "ccc_orca1_lim")        frq="10y"   ;; 
         "ccc_orca1_lim_cmoc")   frq="5y"    ;;
         "ccc_orca1_lim_canoe")  frq="2y"    ;;
         "ccc_orca025_lim")      frq="4m"    ;;
         *) 
-            echo "There is currently no recommended nemo_freq for config ${nemo_config}"
+            echo "There is currently no recommended nemo_freq for config ${CanNEMO_CONFIG}"
             echo "Value set to 1y. Alter if desired"
             frq="1y" ;;
     esac
-    if [[ ${with_nemo_diag} = on ]] && [[ $nemo_config_lower != *"orca025"* ]]; then frq="1y"; fi
+    if [[ ${with_nemo_diag} = on ]] && [[ $CanNEMO_CONFIG_lower != *"orca025"* ]]; then frq="1y"; fi
     sed -i "s#nemo_freq=.*#nemo_freq=${frq}#" ../experiment.cfg
 
     # print to log
@@ -256,20 +256,20 @@ else
 
     #sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
     #                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
-    #                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
+    #                        values('${nemo_runid}', '${datef}', '${userf}', '${CanNEMO_CONFIG}', 
     #                               '${nemo_version}', '${nemo_repo}', '${sha1}');
 #EOF
 
     # if the -l flag was given, launch simulation according to the desired length
     if (( launch_job == 1 )); then
-        echo "Compiling and launching default $nemo_config simulation from 0001:01 to ${rn_ln_y}:${rn_ln_m}"
+        echo "Compiling and launching default $CanNEMO_CONFIG simulation from 0001:01 to ${rn_ln_y}:${rn_ln_m}"
 
         # compile
         echo "compiling..."
         ./compile_${runid} >> compile.log 2>&1    
 
         # considerations for quarter degree model
-        if [[ $nemo_config_lower == *"orca025"* ]]; then
+        if [[ $CanNEMO_CONFIG_lower == *"orca025"* ]]; then
             sed -i "s#nemo_rtd=.*#nemo_rtd=off#" ./experiment.cfg
 
             # set necessary data files for added resolution
