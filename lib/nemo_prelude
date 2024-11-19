@@ -235,7 +235,7 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
 
-  if [[ $nemo_ln_use_calving == "on" ]]; then
+  if [[ $nemo_ln_use_calving == "on" ]] || [[ nemo_nn_test_icebergs -eq -1 ]]; then
     is_defined $nemo_calving || bail "The variable nemo_calving must be defined in the configuration file."
     acc_cp calving.nc                $nemo_calving 
   fi 
