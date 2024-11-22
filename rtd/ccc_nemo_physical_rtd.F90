@@ -460,7 +460,7 @@ PROGRAM nemo_ocean_diag
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
          ! vertical scale factors - nonlinear free surface case 
-          CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
+          CALL getvara ('thkcello', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
           CALL getvara ('e3u', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
           CALL getvara ('e3v', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
          ! temperature
