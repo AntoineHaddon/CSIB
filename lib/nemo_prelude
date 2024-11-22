@@ -538,7 +538,7 @@ echo "#################### Start NEMO pre-processing #################"
     found_rs=`(ls -1 *_${cn_icbrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icbrst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
-      [ "$nemo_ln_icebergs == "on" && "$nemo_nn_test_icebergs" -lt 0 ] && bail "No icb restart files were found in $nemo_rs"
+      [ "$nemo_ln_icebergs == "on" && $nemo_nn_test_icebergs -lt 0" ] && bail "No icb restart files were found in $nemo_rs"
     else
       for rsfile in $found_rs; do
         [ $rsfile = 'cpl_restart.nc' ] && continue
