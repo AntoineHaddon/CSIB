@@ -198,6 +198,18 @@ ln -sf ../rebuild_nemo.exe .
 nn_itend=$(cat rs_time.step)
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
 
+# The initial ice state files
+pfx=output.init_ice
+# Check if the RS is already rebuilt, in which case do nothing.
+if [ -s "${pfx}_0000.nc" ]; then
+   rebuild_nemo_tiles
+   # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
+   ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
+   ncsave=${runid}_${start_step}_istate_ice.nc
+   mv  $pfx.nc $ncsave
+fi
+
 # The physics rs file
 pfx=${runid}_${end_step}_restart
 
