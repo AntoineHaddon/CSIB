@@ -62,10 +62,21 @@
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
   cn_trcrst_out=${nemo_cn_trcrst_out:="restart_trc"}
 
+  # Part of input icb restart name (default restart_icb_in)
+  # The input icb restart file name will be ${cn_icb_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_icbrst_in=${nemo_cn_icbrst_in:="restart_icb_in"}
+
+  # Part of output icb restart name (default restart_icb)
+  # The output icb restart file name will be ${cn_exp}_NNNNNNNN_${cn_icbrst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_icbrst_out=${nemo_cn_icbrst_out:="restart_icb"}
+
   # After the job has run remove input restart files (if any)
   [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
   [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
   [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
+  [ -s input_icb_restart_file_names ] && cat input_icb_restart_file_names | xargs rm -f
 
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
@@ -190,6 +201,18 @@
          fi
     fi
 
+    if [[ "$nemo_ln_icebergs" == "on" && "$nemo_nn_test_icebergs" -lt 0 ]]; then
+          # Look for icb restart files matching the pattern below
+          eval pfnpatt=${cn_exp}_${end_step}_${cn_icbrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+          if [ -z "$found_rs" ]; then
+            # No icb restart files exist
+            bail "Attempting to save restarts but no icb restart files exist. Looking for $pfnpatt"
+          else
+            mv $found_rs NEXT_RESTART_ARC
+          fi
+    fi
+
     # ADD ADDITIONAL FILES
     filelist=''
 
@@ -210,6 +233,9 @@
            [ -s rs_namelist_ice_cfg ] && filelist="$filelist rs_namelist_ice_cfg"
            cp -f namelist_ice_ref rs_namelist_ice_ref || :
            [ -s rs_namelist_ice_ref ] && filelist="$filelist rs_namelist_ice_ref"
+    	   # ice module output namelist
+    	   cp -f output.namelist.ice rs_output.namelist.ice  || :
+    	   [ -s rs_output.namelist.ice ] && filelist="$filelist rs_output.namelist.ice"
            ;;
         3) # CICE ice-model (_cfg and _ref namelist for CICE ? )
            cp -f ice_in rs_ice_in || :
@@ -223,6 +249,10 @@
         [ -s rs_namelist_top_cfg ]     && filelist="$filelist rs_namelist_top_cfg"
         cp -f namelist_top_ref    rs_namelist_top_ref    || :
         [ -s rs_namelist_top_ref ]     && filelist="$filelist rs_namelist_top_ref"
+    	# tracer module output namelist
+    	cp -f output.namelist.top rs_output.namelist.top  || :
+    	[ -s rs_output.namelist.top ] && filelist="$filelist rs_output.namelist.top"
+
     fi
 
     if [ "$nemo_carbon" = "on" ]; then 
@@ -234,6 +264,12 @@
         [ -s rs_namelist_canoe_cfg ]  && filelist="$filelist rs_namelist_canoe_cfg" 
         cp -f namelist_canoe_ref rs_namelist_canoe_ref || : 
         [ -s rs_namelist_canoe_ref ]  && filelist="$filelist rs_namelist_canoe_ref" 
+    	# bio module output namelist
+    	cp -f output.namelist.can rs_output.namelist.can  || :
+    	[ -s rs_output.namelist.can ] && filelist="$filelist rs_output.namelist.can"
+    	cp -f output.namelist.cmoc rs_output.namelist.cmoc  || :
+    	[ -s rs_output.namelist.cmoc ] && filelist="$filelist rs_output.namelist.cmoc"
+
     fi 
     # current executable
     rm -f rs_${nemo_exec}
@@ -248,6 +284,10 @@
     # ocean output file
     cp -f ocean.output rs_ocean.output || :
     [ -s rs_ocean.output ] && filelist="$filelist rs_ocean.output"
+
+    # physics output namelist
+    cp -f output.namelist.dyn rs_output.namelist.dyn  || :
+    [ -s rs_output.namelist.dyn ] && filelist="$filelist rs_output.namelist.dyn"
 
     # checksum file of ocean prognostic state (for bit identity checks)
     #cp -f final.state rs_final.state || :

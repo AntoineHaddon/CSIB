@@ -130,6 +130,23 @@
           <field field_ref="saltot"           name="soga"        level="1" /> <!-- (Omon*) -->
         </file>
 
+        <file id="file30" name_suffix="_icbvar" description="iceberg variables">
+          <field field_ref="berg_melt"          name="berg_melt"          level="9" /> 
+	  <field field_ref="berg_melt_qlat"     name="berg_melt_qlat"     level="9" />
+	  <field field_ref="berg_buoy_melt"     name="berg_buoy_melt"     level="9" />
+	  <field field_ref="berg_eros_melt"     name="berg_eros_melt"     level="9" />
+	  <field field_ref="berg_conv_melt"     name="berg_conv_melt"     level="9" />
+	  <field field_ref="berg_virtual_area"  name="berg_virtual_area"  level="9" />
+	  <field field_ref="bits_src"           name="bits_src"           level="9" />
+          <field field_ref="bits_melt"          name="bits_meltx"         level="9" />
+          <field field_ref="bits_mass"          name="bits_mass"          level="9" />
+          <field field_ref="berg_mass"          name="berg_mass"          level="9" />
+          <field field_ref="calving"            name="calving"            level="9" />
+          <field field_ref="berg_floating_melt" name="berg_floating_melt" level="9" />
+          <field field_ref="berg_real_calving"  name="berg_real_calving"  level="9" />
+          <field field_ref="berg_stored_ice"    name="berg_stored_ice"    level="9" />	  
+        </file>
+
         <file id="file41" name_suffix="_diaptr" description="zonal mean variables" enabled=".TRUE." >
           <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->

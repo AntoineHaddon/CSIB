@@ -235,7 +235,7 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
 
-  if [[ $nemo_ln_use_calving == "on" ]]; then
+  if [[ $nemo_ln_use_calving == "on" ]] || [[ nemo_nn_test_icebergs -eq -1 ]]; then
     is_defined $nemo_calving || bail "The variable nemo_calving must be defined in the configuration file."
     acc_cp calving.nc                $nemo_calving 
   fi 
@@ -488,6 +488,8 @@ echo "#################### Start NEMO pre-processing #################"
     cn_icerst_out="restart_ice"     # ice output
     cn_trcrst_in="restart_trc_in"   # pisces input
     cn_trcrst_out="restart_trc"     # pisces output
+    cn_icbrst_in="restart_icb_in"   # icb input
+    cn_icbrst_out="restart_icb"     # icb output
 
     # Ocean restart files
     found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -535,6 +537,23 @@ echo "#################### Start NEMO pre-processing #################"
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_trcrst_in}$sfx
         echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
+      done
+    fi
+
+    # icb restart files
+    rm -f input_icb_restart_file_names
+    touch input_icb_restart_file_names
+    found_rs=`(ls -1 *_${cn_icbrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icbrst_out}.nc || : ) 2>/dev/null`
+    if [ -z "$found_rs" ]; then
+      [[ "$nemo_ln_icebergs" == "on" && $nemo_nn_test_icebergs -lt 0 ]] && bail "No icb restart files were found in $nemo_rs"
+    else
+      for rsfile in $found_rs; do
+        [ $rsfile = 'cpl_restart.nc' ] && continue
+        sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
+        mv $rsfile ${cn_icbrst_in}$sfx
+        echo "${cn_icbrst_in}$sfx" >> input_icb_restart_file_names
       done
     fi
   fi
