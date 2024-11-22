@@ -19,11 +19,9 @@ set -e
   nmon=`echo $nemo_rtd_mons | wc -w` # number of chunks in 12-month period
   if [ $fmon -eq 1 ] ; then
     fyear=$year
-    lyear=$year
     lmon=12
   else
     fyear=`echo $year | awk '{printf "%04d", $1 - 1}'`
-    lyear=$year
     lmon=`echo $fmon | awk '{printf "%02d", $1 - 1}'`
   fi
 
@@ -31,7 +29,7 @@ set -e
   if [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
     # use the current year because output.init.nc is used in that case (below)
     yearm1=`echo $year | awk '{printf "%04d", $1}'`
-    file_state="initial"
+    file_state="istate"
     t_state="votemper"
     s_state="vosaline"
   else
@@ -60,47 +58,58 @@ set -e
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
 # Access the history files
-  for sfx in $nemo_diag_file_suffix_list ; do
-    yr=$fyear
-    mp=0
-    for mm in $nemo_rtd_mons ; do
-      if [ $mm -lt $mp ] ; then
-        # increment year by 1 if the current month is smaller than the previous month
-        yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
-      fi
-      diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist na
-      mp=$mm
-    done
-# Merge sub-yearly files
-    if [ $nmon -gt 1 ] ; then
-      cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      rm -f ${sfx}_??
-      mv ${sfx}_m$fmon ${sfx}_$fmon
-    fi
+  for sfx in $nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list; do
+    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+    access ${sfx}_${fmon} $diag_hist na
   done
 
-##########################################################################
-# 1. Access input files/variables                                        #
-# 2. Run the Fortran executable to compute the CMIP6 offline diagnostics #
-# 3. Process *diaptr* files                                              #
-##########################################################################
-#
-# Note that the following two "for and case" structures translates 
-# "output_leve" to "level" that represent the variable priority levels. 
-# For example, output_leve=3 means variable priority levels 1, 2 and 3.
-#
-# Execute the following lines when output_level -ge 1;
-  for level in $(seq 1 $output_level); do	  
-    case $level in
-      # output_level=1 and only if starting from January
-      1)
-        # access input variables for computing vars with priority level 1
-        
-        if [[ $fmon -eq 1 && $nemo_calc_diag == 1 ]] ; then
-          ln -sf 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
-          ln -sf 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
-          ln -sf 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
+# Execute the following lines when output_level -ge 1
+  if [ $output_level -ge 1 ] ; then
+
+      # Run offline computation only if starting from January 
+      if [ $fmon -eq 1 ] ; then 
+# Access the nemo restart files
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
+        diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
+
+        access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
+        access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
+
+# Get tn and sn from the last step of previous year
+        if [ -L rsp ] ; then
+          work_dir=$(pwd)
+          cd rsp
+          cdo select,name=$t_state,timestep=-1 *_$file_state.nc ${work_dir}/tnp.nc
+          cdo select,name=$s_state,timestep=-1 *_$file_state.nc ${work_dir}/snp.nc
+          cd ..
+          release rsp
+          rm -f -r dir_rsp
+        fi
+
+# Get tn and sn from the last step of current year
+        if [ -L rsc ] ; then
+          work_dir=$(pwd)
+          cd rsc
+          cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/tnc.nc
+          cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/snc.nc
+          cd ..
+          release rsc
+          rm -f -r dir_rsc
+        fi
+
+##############################
+# Run CMIP6 nemo diagnostics #
+##############################
+        ln -s 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
+        ln -s 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
+        ln -s 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
+
+        # make sure inputs exist, and run!
+        if [[ -L grid_t ]] && [[ -s tnp.nc ]]; then
+          ./${diag_exe}
+        else
+          bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
+        fi
 
           ################################################################
           # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
@@ -224,7 +233,7 @@ set -e
 # Split historical files to time series and save #
 ##################################################
   # split to time series
-  for sfx in $nemo_diag_file_suffix_list ; do
+  for sfx in $nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list; do
     [ ! -e ${sfx}_${fmon} ] && continue
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
 
@@ -248,11 +257,9 @@ set -e
   tslist=`ls -1 xxx-*`
   for ts in $tslist ; do
     tssfx=`echo $ts |cut -f 2 -d '-' |sed 's/_ar6//'`
-    save $ts sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${tssfx}
+    save $ts sc_${runid}_${fyear}${fmon}_${year}${lmon}_${tssfx}
     release $ts
   done
 
   # Save orca grid mask with consistent name as TS files
-  save orca_mesh_mask sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_mesh_mask.nc
-
-exit 0
+  save orca_mesh_mask sc_${runid}_${fyear}${fmon}_${year}${lmon}_mesh_mask.nc
