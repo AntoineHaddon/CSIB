@@ -38,7 +38,7 @@ parser.add_argument('-A','--all',help='Set True (default) to run everything.',de
 parser.add_argument('-o','--outdir',help='Output directory for diagnostic netCDF files. Default is current directory.',default='./')
 parser.add_argument('-R','--redo',help='If True (default is False), deletes original netCDF output files (if present) and creates fresh files. Default is to append.',default=False)
 parser.add_argument('-I','--ice',help='Calculate sea-ice parameters (volume and area). Not used if -A is True. 0: volume and area (default), 1: volume only, 2: area only, other: do not calculate',default=0)
-parser.add_argument('-Y','--phys',help='Calculate mean temperature and salnity (3D and surface) and max MLD. Not used if -A is True. 0: 3D T & S, SST, SSS, and MLD (default), 1: T only, 2: S only, 3: MLD only. Other: do not calculate',default=0)
+parser.add_argument('-Y','--phys',help='Calculate mean temperature and salnity (3D and surface), max MLD, and mean SSH. Not used if -A is True. 0: calculate all variables (default), 1: T only, 2: S only, 3: MLD only, 4: SSH only. Other: do not calculate',default=0)
 parser.add_argument('-z','--depths',help='Depths (in m) for calculating variables (as applicable). Pass as list, e.g., 0,250,1000,all',default='0,250,1000,all')
 parser.add_argument('-x','--xlim',help='Set time limit for calculating diagnostics. All series are forced to 0-time.',default=[-np.inf,np.inf])
 parser.add_argument('-y','--year0',help='Start year for model run(s). Can either pass single value or use multiple times to match number of runids. If not passed, finds earliest date in files and assumes that to be the start.',default=None)
@@ -469,14 +469,14 @@ def calcIce(args):
 
 def calcPhys(args):
     """
-    Calculate temperature, salinity, and/or MLD.
+    Calculate temperature, salinity, MLD, and/or SSH.
     """
     print('Calculating physical diagnostics.')
 
     # initialize dictionaries
     aVars=[]; series={}
-    for vV in ['T','S','MLD']:
-        if vV in ['MLD']:
+    for vV in ['T','S','MLD','SSH']:
+        if vV in ['MLD','SSH']:
             aVars.append(vV)
             series[vV]={}
             for reg in args.regions:
@@ -509,7 +509,7 @@ def calcPhys(args):
             meshSurf=meshGrid(args.meshfile,runid,0,args)
         levZ=[]
         for iZ,var in enumerate(aVars):
-            if 'MLD' in var:
+            if 'MLD' in var or 'SSH' in var:
                 levZ.append(np.nan)
             else:
                 if '3D' in var:
@@ -525,7 +525,7 @@ def calcPhys(args):
         if len(tflist) > 0:
             # create empty arrays to assign values
             for iV,var in enumerate(aVars):
-                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) and (runid not in series[var].keys()):
+                if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and (runid not in series[var].keys()):
                     series[var][runid]={'years':np.array([]),'data':np.array([])}
             
             # regional masks
@@ -567,7 +567,7 @@ def calcPhys(args):
                             if ('3D' in reg) or (reg==var) or ('m' in reg):
                                 reg='domain'
                         if rmasks[reg] is not None:
-                            if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3):
+                            if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4):
                                 lvars[var]={'years':years,'data':np.full(len(years),np.nan)}
 
                     # calculate means at each time step
@@ -594,16 +594,18 @@ def calcPhys(args):
                                         lvars[var]['data'][tcount]=volMean(ds['so'].isel(time_counter=tid,deptht=levZ[iV]).values,0,meshSurf,rmasks[reg])
                                 elif 'MLD' in var and (args.phys in [0,3]):
                                     lvars[var]['data'][tcount]=np.nanmax((ds['mlotst'].isel(time_counter=tid).values*rmasks[reg]).ravel())
+                                elif 'SSH' in var and (args.phys in [0,4]):
+                                    lvars[var]['data'][tcount]=volMean(ds['zos'].isel(time_counter=tid).values,0,meshSurf,rmasks[reg])
                         
                 # append to time series
                 for iV,var in enumerate(aVars):
-                    if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3)) and var in lvars.keys():
+                    if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and var in lvars.keys():
                         series[var][runid]['years']=np.append(series[var][runid]['years'],lvars[var]['years'])
                         series[var][runid]['data']=np.append(series[var][runid]['data'],lvars[var]['data'])
 
             # sort in time
             for iV,var in enumerate(aVars):
-                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3):
+                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4):
                     if len(series[var][runid]) > 0:
                         iY=np.argsort(np.array(series[var][runid]['years']))
                         series[var][runid]['years']=np.array(series[var][runid]['years'])[iY]
@@ -612,7 +614,7 @@ def calcPhys(args):
             # save timeseries to file
             print(f"\r  {' ':<50}",end='',flush=True) # clear line
             for iV,var in enumerate(aVars):
-                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) and (var in series):
+                if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and (var in series):
                     if len(series[var][runid]['data']) > 0:
                         # only keep unique values
                         series[var][runid]['years'],iU=np.unique(series[var][runid]['years'],return_index=True)
@@ -696,11 +698,11 @@ os.makedirs(args.outdir,exist_ok=True)
 subprocess.run(f'mkdir -p /home/$(whoami)/public_html/CanTODS_diagnostics/',shell=True)
 
 # Sea Ice Calculations
-if args.ice in [0,1,2]:
+if args.ice in range(3):
     calcIce(args)
 
 # Temperature and Salinity Calculations
-if args.phys in [0,1,2,3]:
+if args.phys in range(5):
     calcPhys(args)
 
 # link jupyter notebook to public_html if not already
