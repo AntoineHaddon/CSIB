@@ -1,0 +1,741 @@
+"""
+Functions to remap CMORIZED outputs from CanESM runs onto a different domain
+(including CanTODS)
+
+Written by J. G. Izett (2024)
+"""
+
+#TODO: Add rivers
+#TODO: hot start
+
+import argparse
+import glob
+import math
+import numpy as np
+import os
+import subprocess
+import sys
+import time
+import xarray as xr
+
+# argument parser
+# allows to be calculated at runtime, or a posteriori
+parser=argparse.ArgumentParser(description='Calculate CanTODS diagnostics.')
+
+# add arguments
+parser.add_argument('-y','--years',help='Years to process. It two years passed, processes years in range(year1,year2+1). If not two years, processes as a list.',action='append',required=True,type=int)
+parser.add_argument('-P','--parent_path',help='Full path to files containing model output from parent run, ending before the ensemble identifier.\ne.g., /fs/site5/eccc/crd/ccrn/model_output/CMIP6/final/CMIP6/CMIP/CCCma/CanESM5',required=True)
+parser.add_argument('-p','--parent_name',help='Name of parent run to help identify output files. Required for finding files.\ne.g., CanESM5',required=True)
+parser.add_argument('-e','--parent_ensemble',help='Ensemble identifier for parent run.',required=True)
+parser.add_argument('-x','--parent_experiment',help='Experiment (e.g., piControl) for parent run.',required=True)
+parser.add_argument('-g','--parent_grid',help='Parent meshfile. Only needed if remapping rivers.',default=None)
+parser.add_argument('-o','--outfile',help='Prefix for output file. If None, default name is created based on type of file being produced.',default=None)
+parser.add_argument('-m','--meshfile',help='Meshfile for remapping.',default='CREG_NEMO4_domain_meshfile_forRemapping.nc')
+parser.add_argument('-t','--type',help='Type of files to produce. Either:\n  -1 - nemo configuration info\n  0 - Initial conditions (default)\n  1 - Boundary conditions\n  2 - Atmospheric forcing (does not remap; only gets correct file time)',type=int,default=0)
+parser.add_argument('-X','--Xdeg',help='Slice to contain X degrees either side of the boundary. Should be larger than the parent grid resolution to guarantee border. Default = 1.25.',default=1.25,type=float)
+parser.add_argument('-B','--bdyFile',help='Map to a specific boundary coordinate file (if type=1), e.g., to the Med. Otherwise maps to presumed north/south boudary.',default=None)
+parser.add_argument('-F','--forcing',help='Type of forcing CanESM (default) or OMIP',default='CanESM')
+parser.add_argument('-i','--ic_ind',help='Index in file of desired time for initial condition. Default: 0',default=0)
+parser.add_argument('-R','--run_start_year',help='Run start year if type==-1',default=0)
+parser.add_argument('-r','--run_start_month',help='Run start month if type==-1',default=0)
+parser.add_argument('-l','--loop',help='Sequencer loop if type==-1',default=0)
+parser.add_argument('-f','--nemo_freq_months',help='If type==-1',default=0)
+parser.add_argument('-M','--mor',help='CMOR frequency/directory (e.g., 3hr or Amon) for atmospheric forcing.',default='Amon')
+parser.add_argument('-v','--rvr',help='River file for remapping/scaling of frehswater inputs (if type==3)',default=None)
+parser.add_argument('-A','--iaf_year_offset',help='Year offset if wanting to use cyclical forcing.',default=None)
+parser.add_argument('-a','--iaf_loop_year',help='Reference year for loop if offset for cyclical forcing.',default=None)
+
+#-----------#
+# FUNCTIONS #
+#-----------#
+
+def matchFileYear(year,flist,file0=''):
+    """
+    Match the desired year to the file. Necessary because not all files will have
+    the same year format.
+    """
+    foundFile=False; sameFile=False; file=[]
+    # find file with either this year or a previous year in the name
+    # not the most elegant, but it is pretty quick!
+    # allows multiple years in a single file, potentially speeding up the file
+    # generation for more than one desired year
+    for fle in flist:
+        # look for year in the file name
+        if f'_{year:04}' in fle or f'-{year:04}' in fle:
+            print(year)
+            print(fle)
+            file.append(fle)
+    if len(file) > 0:
+        foundFile=True
+        sameFile=file[0]==file0
+        fdates=file[0].split('_')[-1].split('-')[0]+'-'+file[-1].split('_')[-1].split('-')[1]
+    else:
+        for tryYear in range(year-1,-1,-1):
+            # check for a file that starts before the desired year and ends on or after the desired year
+            for fle in flist:
+                if f'_{tryYear:04}' in fle:
+                    # check that a later year is also in the file name (or year at the end)
+                    for tryYear2 in range(year,year+201):
+                        if f'-{tryYear2:04}' in fle:
+                            file=[fle]
+                            fdates=os.path.basename(fle).split('_')[-1]
+                            foundFile=True
+                            break
+                    if foundFile:
+                        break
+    if foundFile:
+        sameFile=file0==file
+        return file,fdates,sameFile
+    else:
+        return None,None,False
+
+def checkMeshFile(meshfile):
+    # ensure mesh file is in proper format to be able to remap using cdo
+    with xr.open_dataset(meshfile) as ds0:   
+        try:
+            x=len(ds0['x']); y=len(ds0['y'])
+        except:
+            x=np.shape(ds0['nav_lat'].values)[1]; y=len(ds0['nav_lat'])
+        # need some 'data'
+        nav_ones=np.ones((1,y,x))
+        # convert to dataset
+        msh=xr.Dataset.from_dict(
+            {'nav_lon':{'dims':('y','x'),'data':ds0['nav_lon'].values,'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
+            'nav_lat':{'dims':('y','x'),'data':ds0['nav_lat'].values,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}},
+            'nav_ones':{'dims':('time_counter','y','x'),'data':nav_ones,'attrs':{'coordinates':'nav_lat nav_lon'}},
+            'time_counter':{'dims':('time_counter'),'data':[0.]}})
+        # write to temporary netCDF file
+        msh.to_netcdf(f'grd.tmp.nc')
+    return
+
+def getZ(meshFile,outFile):
+    """
+    Get a file with just z coordinates.
+    """
+    if not os.path.isfile(f'{outFile}.onlyz.tmp.nc'):
+        with xr.open_dataset(args.meshfile) as mF:
+            if 'e3t_0' in mF.keys():
+                subprocess.run(f'ncks -h -v e3t_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+            elif 'tmask' in mF.keys():
+                subprocess.run(f'ncks -h -v tmask {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+            elif 'gdept_0' in mF.keys():
+                subprocess.run(f'ncks -h -v gdept_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+            elif 'votemper' in mF.keys():
+                subprocess.run(f'ncks -h -v votemper {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+            # elif 'depth' in mF.keys():
+            #     # depth is not a 3-D variable. Need to tile it and save separately  
+            #     x=len(mF['x'])
+            #     y=len(mF['y'])
+            #     depths=np.transpose(np.tile(mF.depth.values,(1,y,x,1)),(0,3,1,2))
+            #     # convert to dataset
+            #     dpth=xr.Dataset.from_dict(
+            #         {'depth':{'dims':('t','z','y','x'),'data':depths}})
+            #     dpth.to_netcdf(f'{outFile}.onlyz.tmp.nc')
+            else:
+                sys.exit('Error: cannot find depth coordinate.')
+    return
+
+def cellAreas(meshFile):
+    with xr.open_dataset(meshFile) as mF:
+        e1t = mF['e1t'].values.squeeze() # y,x
+        e2t = mF['e2t'].values.squeeze() # y,x
+
+        # calulate grid area
+        gridArea = e1t*e2t
+
+    return gridArea
+
+def ic_remap(args):
+    """
+    Remap initial condition.
+    """
+
+    # get month index as integer
+    args.ic_ind=int(args.ic_ind)
+
+    # loop through each variable
+    print(f'Finding and processing data from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    # get mesh file in correct format and find lat/lon bounds
+    checkMeshFile(args.meshfile)
+    with xr.open_dataset('grd.tmp.nc') as ds0:
+        # latitude range of grid
+        bN=np.nanmax(ds0['nav_lat'])
+        bS=np.nanmin(ds0['nav_lat'])
+
+    if args.outfile is None:
+        outFile='data_1m_VAR_nomask.nc'
+    else:
+        outFile=args.outfile
+    vRep={'thetao':'potential_temperature','so':'salinity'}
+
+    for iV,vV in enumerate(['thetao','so']):
+        varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+        # find all files that match format in Omon
+        flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+
+        # identify file based on desired year
+        print(f'{vV}')
+        startYear=min(args.years)
+        file,fileDates,_=matchFileYear(startYear,flist)
+        if file is None:
+            searchSTR=os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc')
+            print(f"No files found.\n{searchSTR}")
+        else:
+            # extract desired year from file
+            if len(file) > 1:
+                # concatenate multiple files
+                fstr=''
+                for fle in file:
+                    fstr+=f'{fle} '
+                subprocess.run(f'ncrcat -h {fstr} -O {outFile}_y{fdates}_{vV}.nc',shell=True)
+                subprocess.run(f'cdo --no_history selyear,{startYear}/{startYear} {outFile}_y{fdates}_{vV}.nc {outFile}_y{startYear}_{vV}.nc',shell=True)
+                subprocess.run(f'rm -f {outFile}_y{fdates}_{vV}.nc',shell=True)
+            else:
+                subprocess.run(f'cdo --no_history selyear,{startYear}/{startYear} {file[0]} {outFile}_y{startYear}_{vV}.nc',shell=True)
+            # get desired index/month
+            subprocess.run(f'ncks -h -d time,{int(args.ic_ind)},{int(args.ic_ind)} {outFile}_y{startYear}_{vV}.nc -O {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.nc',shell=True)
+
+            # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
+            subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},90 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
+            
+            # fill any gaps in the sliced srcFile (two iterations)
+            subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc',shell=True)
+
+            # remap to child grid
+            subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.remapped.tmp.nc",shell=True)
+
+            # interpolate vertically (if not SSH or sea ice)
+            if vV in ['zos','siconc','sithick']:
+                # interpolate filled src file to boundary points
+                subprocess.run(f"mv {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.remapped.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{startYear}')}.nc",shell=True)
+            else:
+                getZ(args.meshfile,outFile)
+                # if not os.path.isfile(f'{outFile}.onlyz.tmp.nc'):
+                #     with xr.open_dataset(args.meshfile) as mF:
+                #         if 'e3t_0' in mF.keys():
+                #             subprocess.run(f'ncks -h -v e3t_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+                #         elif 'tmask' in mF.keys():
+                #             subprocess.run(f'ncks -h -v tmask {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+                #         else:
+                #             subprocess.run(f'ncks -h -v gdept_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
+                subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.remapped.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{startYear}')}",shell=True)
+
+            # remove intermediate variable files
+            subprocess.run(f"rm -f {outFile.replace('VAR','*')}*.tmp.nc*",shell=True)
+            subprocess.run(f'rm -f {outFile}*{vV}.nc',shell=True)
+    # remove intermediate files
+    subprocess.run(f'rm -f grd.tmp.nc',shell=True)
+
+def bdy_remap(args):
+    """
+    Remap to boundary.
+    """
+    print(f'Finding and processing boundaries from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    if len(args.years) == 2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    else:
+        years=np.array(args.years)
+
+    # get output file name
+    if args.outfile is None:
+        # BDY gets replaced with north/south and YYYY gets replaced with the year
+        outFile='obc_BDY_cantods025_yYYYY.nc'
+    else:
+        outFile=args.outfile
+
+    # get boundaries from meshfile
+    bN=-90.; bS=90.
+    checkMeshFile(args.meshfile)
+    # extract boundaries
+    if args.bdyFile is not None:
+        # boundary from defined file
+        # identify boundary with file name
+        bbase=os.path.basename(args.bdyFile).replace('.nc','')
+        # may not know orientation of boundary from file alone,
+        # so create a file with either orientation unless specified
+        blist=[]
+        # get coordinates, include buffer zone, write to file
+        with xr.open_dataset(args.bdyFile) as bdyFile:
+            # read boundary
+            ii=bdyFile.nbit.squeeze()-1
+            jj=bdyFile.nbjt.squeeze()-1
+
+            # get grid coordinates on either side of the boundary
+            # TODO: check that this works in different configurations, e.g., double plus/double minus
+            iis={'plus':np.full((len(ii),10),0),'minus':np.full((len(ii),10),0)}
+            jjs={'plus':np.full((len(jj),10),0),'minus':np.full((len(jj),10),0)}
+            # if all the same i coordinate, only add in j
+            if len(np.unique(ii))==1:
+                for iB in range(10):
+                    iis['plus'][:,iB]=ii; iis['minus'][:,iB]=ii
+                    jjs['plus'][:,iB]=jj+iB ; jjs['plus'][:,iB]=jj-iB
+            # if all same j coordinate, only add in i
+            elif len(np.unique(jj))==1:
+                for iB in range(10):
+                    iis['plus'][:,iB]=ii+iB; iis['minus'][:,iB]=ii-iB
+                    jjs['plus'][:,iB]=jj; jjs['minus'][:,iB]=jj
+            # if both i and j vary, add in both i and j directions
+            else:# len(np.unique(ii))==len(ii) and len(np.unique(jj))==len(jj):
+                for iB in range(10):
+                    iis['plus'][:,iB]=ii+iB; iis['minus'][:,iB]=ii-iB
+                    jjs['plus'][:,iB]=jj+iB ; jjs['minus'][:,iB]=jj-iB
+            # else:
+            #     sys.exit('Not sure how to deal with this boundary!!')
+            # create output files with lat/lon surrounding the boundary (if possible)
+            with xr.open_dataset('grd.tmp.nc') as grd:
+                # get lon and lat coordinates of boundary + buffer zone
+                lns={}; lts={}
+                goodOrientation={'plus':True,'minus':False}
+                for iPM in ['plus','minus']:
+                    lns[iPM]=np.full(np.shape(iis[iPM]),0.)
+                    lts[iPM]=np.full(np.shape(jjs[iPM]),0.)
+                    for iL in range(len(iis[iPM])):
+                        for iB in range(10):
+                            # try:
+                            lns[iPM][iL,iB]=grd.nav_lon[iis[iPM][iL,iB],jjs[iPM][iL,iB]]
+                            lts[iPM][iL,iB]=grd.nav_lat[iis[iPM][iL,iB],jjs[iPM][iL,iB]]
+                            # except:
+                            #     goodOrientation[iPM]=False
+                            #     break
+                        if not goodOrientation:
+                            break
+                    if goodOrientation[iPM]:
+                        # write to file
+                        msh=xr.Dataset.from_dict(
+                            {'nav_lon':{'dims':('y','x'),'data':lns[iPM],'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
+                            'nav_lat':{'dims':('y','x'),'data':lts[iPM],'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}},
+                            'nav_ones':{'dims':('time_counter','y','x'),'data':np.ones((1,np.shape(lns[iPM])[0],np.shape(lns[iPM])[1])),'attrs':{'coordinates':'nav_lat nav_lon'}},
+                            'time_counter':{'dims':('time_counter'),'data':[0.]}})
+                        # write to temporary netCDF file
+                        msh.to_netcdf(f'bdy.{bbase}_{iPM}.nc')
+                        blist.append(f'{bbase}_{iPM}')
+                        # boundary max/min latitude
+                        bN=np.nanmax([bN,np.nanmax(lts[iPM])])
+                        bS=np.nanmin([bS,np.nanmin(lts[iPM])])
+    else:
+        # assumed boundary from grid
+        blist=['north','south']
+        for bdy in blist:
+            # sub-sample meshfile to only include the boundary and 10 rows around it
+            if bdy=='south':
+                subprocess.run(f'ncks -h -d y,1,10 grd.tmp.nc -O bdy.south.nc',shell=True)
+            elif bdy=='north':
+                subprocess.run(f'ncks -h -d y,-11,-2 grd.tmp.nc -O bdy.north.nc',shell=True)
+
+            # get the maximum latitude extent of the boundary to slice file (quicker processing)
+            with xr.open_dataset(f'bdy.{bdy}.nc') as ds0:
+                # boundary max/min latitude and longitude
+                bN=np.nanmax([bN,np.nanmax(ds0['nav_lat'].values)])
+                bS=np.nanmin([bS,np.nanmin(ds0['nav_lat'].values)])
+        subprocess.run(f'rm -f grd.tmp.nc',shell=True)
+
+    # loop through each variable and interpolate to the regional boundaries
+    vars2interp=['thetao','so','uo','vo','zos']
+    for iV,vV in enumerate(vars2interp):
+        varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+
+        # find all files that match format
+        flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+        
+        # identify and process file based on desired year
+        # slow on first pass, but then much quicker on subsequent years if reading from same file
+        file0=''
+        for year in years:
+            print(f'{vV} - {year}')
+            file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
+
+            if (file is not None) and (not sameFile):
+                file0=file
+                            
+                # subsample srcFile to be within +/- X degrees of the boundary
+                if len(file) > 1:
+                    fstr=''
+                    for fle in file:
+                        fstr+=f'{fle} '
+                    subprocess.run(f'ncrcat -h {fstr} -O {outFile}.{vV}.concat.tmp.nc',shell=True)
+                else:
+                    subprocess.run(f'ln -s {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
+                with xr.open_dataset(file[0]) as src:
+                    # find indices of region north and south of the boundary
+                    ilat=np.where(np.sum(np.logical_and(src['latitude']>=bS-args.Xdeg,src['latitude']<=bN+args.Xdeg),axis=1))[0]
+                    latLen=len(src['latitude'].isel(i=0))
+                # add some extra latitude points if min and max the same, or only one point
+                if (np.nanmax(ilat)-np.nanmin(ilat)) <= 1:
+                    ilat=[np.nanmax([0,np.nanmin(ilat)-1]),np.nanmin([np.nanmax(ilat)+1,latLen])]
+                subprocess.run(f'ncks -h -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc',shell=True)
+
+                # subsample file to only include desired years
+                subprocess.run(f"cdo --no_history selyear,{min(years)}/{max(years)} {outFile}.{vV}.sliced.tmp.nc {outFile}.{vV}.sliced2.tmp.nc",shell=True)
+                
+                # fill any gaps in the sliced srcFile (two iterations)
+                subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}.{vV}.sliced2.tmp.nc {outFile}.{vV}.filled.tmp.nc',shell=True)
+
+                # interpolate vertically (if not SSH)
+                if vV == 'zos':
+                    # interpolate filled src file to boundary points
+                    subprocess.run(f'mv {outFile}.{vV}.filled.tmp.nc {outFile}.{vV}.z.tmp.nc',shell=True)
+                else:
+                    getZ(args.meshfile,outFile)
+                    subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile}.{vV}.filled.tmp.nc {outFile}.{vV}.z.tmp.nc",shell=True)
+
+                # remap to meshfiles to boundaries
+                for bdy in blist:
+                    subprocess.run(f"cdo --no_history remapdis,bdy.{bdy}.nc {outFile}.{vV}.z.tmp.nc {outFile.replace('BDY',bdy)}_y{fdates}.{vV}.tmp.nc",shell=True)
+
+                # remove intermediate variable files
+                subprocess.run(f'rm -f {outFile}.{vV}*.tmp.nc*',shell=True)
+            
+            if file is not None:
+                # slice files to match the desired date range
+                for bdy in blist:
+                    subprocess.run(f"cdo --no_history selyear,{year}/{year} {outFile.replace('BDY',bdy)}_y{fdates}.{vV}.tmp.nc {outFile.replace('BDY',bdy).replace('YYYY',f'{year}')}.{vV}.nc",shell=True)
+            else:
+                print('No files found.')
+        
+        # remove intermediate files
+        subprocess.run(f"rm -f {outFile.replace('BDY','*')}_y*-*.{vV}.tmp.nc*",shell=True)    
+
+    # remove all remaining intermediate files generated above
+    subprocess.run(f"rm -f {outFile.replace('BDY','*')}*.tmp.nc*",shell=True)
+
+    # now concatenate physical variables and rename currents
+    print(f'\rConcatenating files')
+    for bdy in blist:
+        outFileBdy=f"{outFile.replace('BDY',bdy)}"
+        for year in years:
+            flist=''; ccount=0
+            for vV in vars2interp:
+                if os.path.isfile(f"{outFileBdy.replace('YYYY',f'{year}')}.{vV}.nc"):
+                    flist+=f"{outFileBdy.replace('YYYY',f'{year}')}.{vV}.nc "
+                    ccount+=1
+            if ccount > 0:
+                subprocess.run(f"cdo merge {flist} {outFileBdy.replace('YYYY',f'{year}')}",shell=True)
+                # remove individual variable files
+                subprocess.run(f'rm -f {flist}',shell=True)
+            
+        # rename variables, dimensions, etc. for NEMO
+        dimNames={'time':'t','lev':'z','i':'x','j':'y'}
+        varNames={'longitude':'nav_lon','latitude':'nav_lat','i':'x','j':'y','thetao':'votemper',
+                'so':'vosaline','uo':'vozocrtx','vo':'vomecrty','zos':'sossheig'}
+        fcount=0
+        for fF in sorted(glob.glob(f"{outFileBdy.replace('YYYY','*')}")):
+            # rename depth variable (shouldn't matter since all the same depth...)
+            # and add attributes
+            subprocess.run(f'cdo --no_history setattribute,thetao@grid=T,so@grid=T,zos@grid=T,uo@grid=U,vo@grid=V {fF} {fF}2',shell=True)
+            subprocess.run(f'ncrename -h -v .lev,deptht {fF}2 -O {fF}',shell=True)
+            subprocess.run(f'rm -f {fF}2',shell=True)
+
+            # rename other variables and dimensions
+            for iD,dD in enumerate(dimNames.keys()):
+                subprocess.run(f'ncrename -h -d .{dD},{dimNames[dD]} {fF} -O {fF}',shell=True)
+            for iV,vV in enumerate(varNames.keys()):
+                subprocess.run(f'ncrename -h -v .{vV},{varNames[vV]} {fF} -O {fF}',shell=True)
+            
+            # count files
+            fcount+=1
+
+    # remove sliced meshfiles and intermediate files
+    subprocess.run(f"rm -f {outFile.replace('BDY',bdy).replace('YYYY',f'{year}')}.{vV}.nc",shell=True)
+    for bdy in blist:
+        subprocess.run(f'rm -f bdy.{bdy}.nc',shell=True)
+
+    return fcount
+
+def frc_slice(args):
+    """
+    Slice atmospheric forcing into annual files (if not already)
+    """
+    # variables to process
+    if args.forcing == 'OMIP':
+        vars2process=['ncar_precip','ncar_rad','q_10','slp','t_10','u_10','v_10']
+        vRep={'ncar_precip':'prec','ncar_rad':'rad','q_10':'humi','slp':'slp',
+              't_10':'tair','u_10':'u','v_10':'v'}
+    else:
+        vars2process=['tas','uas','vas','huss','rsds','rlds','pr','prsn','psl','ps']
+        vRep={'tas':'tair','uas':'u','vas':'v','huss':'humi','rsds':'qsr',
+            'rlds':'qlw','pr':'prec','prsn':'snow','psl':'slp','ps':'slp'}
+
+    if args.outfile is None:
+        outFile=f'VAR_cantods025_yYYYY'
+    else:
+        outFile=args.outfile
+
+    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    else:
+        years=np.array(args.years)
+
+    if args.forcing=='OMIP':
+        print(f'Finding OMIP forcing.')
+    else:
+        print(f'Finding forcing from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+    fexpect=0; fcount=0
+    for iV,vV in enumerate(vars2process):
+        if args.forcing=='OMIP':
+            varPath='/space/hall6/sitestore/eccc/crd/ccrn/users/rdy001/forcing/corev2-ciaf'
+            # find all files that match format
+            flist=glob.glob(os.path.join(varPath,f'{vV}.1948-2009.23OCT2012.nc'))
+        else:
+            varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'{args.mor}/{vV}/gn/v20190429/')
+            # find all files that match format
+            flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_{args.mor}_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+
+        # identify file based on desired year
+        for year in years:
+            fexpect+=1
+            if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+                fy=year + int(args.iaf_year_offset)
+                yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+                yr=fy-int((year-1)/yd)*yd
+                file=matchFileYear(yr,flist)[0]
+            else:
+                # find matching file
+                file=matchFileYear(year,flist)[0]
+                yr=year
+            print(f'{vV} - {year} ({yr})')
+
+            if file is None:
+                print(f'No {vV} files found for {year} ({yr}).')
+            else:
+                # get desired time from file
+                if len(file) > 1:
+                    fstr=''
+                    for fle in file:
+                        fstr+=f'{fle} '
+                    subprocess.run(f'ncrcat -h {fstr} -O {outFile}.{vV}.concat.tmp.nc',shell=True)
+                else:
+                    subprocess.run(f'ln -s {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
+                subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.{vV}.concat.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                subprocess.run(f"rm -f {outFile}.{vV}.concat.tmp.nc",shell=True)
+                # fill missing points (e.g., in raw OMIP files)
+                if args.forcing=='OMIP':
+                    # need to rename lat/lon
+                    subprocess.run(f"ncrename -h -v LON,nav_lon -v LAT,nav_lat {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                    # subprocess.run(f"ncatted -h -a _CoordinateAxisType,nav_lon,o,c,Lon -a _CoordinateAxisType,nav_lat,o,c,Lat {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                # subprocess.run(f"cdo --no_history fillmiss2 {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                # subprocess.run(f"rm -f {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.tmp*.nc",shell=True)
+                # else:
+                #     # subprocess.run(f"ncatted -a _FillValue,{vV},d,, {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-2.nc",shell=True)
+                #     # subprocess.run(f"ncatted -h -a coordinates,{vV},o,c,'lat lon' {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-2.nc",shell=True)
+                #     subprocess.run(f"cdo --no_history fillmiss2 {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-2.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-3.nc",shell=True)
+                #     subprocess.run(f"\mv {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-3.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                #     subprocess.run(f"ncrename -h -d lon,x -d lat,y -v lon,nav_lon -v lat,nav_lat {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                    # subprocess.run(f"rm -f {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-*.nc",shell=True)
+                # if OMIP precipitation, need to have snow and rain+snow variables
+                    if vV == 'ncar_precip':
+                        subprocess.run(f"ncap2 -O -s 'PRECIP=RAIN+SNOW' {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                fcount+=1
+    return fcount,fexpect
+
+def rvr_remap(args):
+    """
+    (Very) simple river remapping (simply scales one file to match another).
+    """
+    #TODO: perform area-weighted sum of river discharges
+    # calculate total disharge in kg/s
+    # calculate ratio of total discharge
+    # scale ratio of total discharge by ratio of water areas
+    # scale discharge in second file by those values
+
+    if args.outfile is None:
+        outFile=f'rvr_cantods025'
+    else:
+        outFile=args.outfile
+    
+    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    else:
+        years=np.array(args.years)
+
+    print(f'Finding river inputs forcing from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+    # find all files that match format
+    rvrPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/friver/gn/v20190429/')
+    # find all files that match format
+    flist=np.array(sorted(glob.glob(os.path.join(rvrPath,f'friver_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+    if len(flist)==0:
+        print('No river files!')
+    else:
+        for year in years:
+            if args.iaf_year_offset is not None and args.iaf_loop_year is not None:
+                fy=year + int(args.iaf_year_offset)
+                yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+                yr=fy-int((year-1)/yd)*yd
+            else:
+                yr=year
+            file0=matchFileYear(yr,flist)[0]
+            if file0 is None:
+                print(f'No river file found for {year} ({yr}).')
+            else:
+                # concatenate multiple files
+                if len(file0) > 1:
+                    fstr=''
+                    for fle in file0:
+                        fstr+=f'{fle} '
+                    subprocess.run(f'ncrcat -h {fstr} -O {outFile}.concat.tmp.nc',shell=True)
+                else:
+                    subprocess.run(f'ln -s {file0[0]} {outFile}.concat.tmp.nc',shell=True)
+                # if only one file given, simply slice for correct dates
+                if (args.rvr is None):
+                    print(f'Slicing river file - {year} ({yr})')
+                    subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.concat.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                # otherwise, remap
+                else:
+                    print(f'Remapping {file0} - {year} ({yr})') 
+                    # get river scaling and apply to new file
+                    # sum up all values in file 0 and file 1
+                    if 'flist1' not in locals():
+                        flist1=np.array(sorted(glob.glob(args.rvr)))
+                    if len(flist1)==0:
+                        print('No files for remapping rivers!')
+                    else:
+                        file1=matchFileYear(yr,flist1)[0]
+                        if file1 is None:
+                            print('No exact file found for remapping. Instead, taking first file found.')
+                            file1=[flist1[0]]
+                        if len(file1) > 1:
+                            fstr=''
+                            for fle in file1:
+                                fstr+=f'{fle} '
+                            subprocess.run(f'ncrcat -h {fstr} -O {outFile}.concat1.tmp.nc',shell=True)
+                        else:
+                            subprocess.run(f'ln -s {file1[0]} {outFile}.concat1.tmp.nc',shell=True)
+                        # get time-sliced files
+                        subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.concat.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp0.nc",shell=True)
+                        # get single year from target file (may not match yr)
+                        syr=os.path.basename(args.rvr).split('_')[-1].split('-')[0][0:4]
+                        subprocess.run(f"cdo --no_history selyear,{syr}/{syr} {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
+                        area0=cellAreas(args.parent_grid)
+                        area1=cellAreas(args.meshfile)
+                        with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp0.nc") as rvr0:
+                            with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc") as rvr1:
+                                sum0=np.nansum(rvr0.friver*area0)#; ar0=np.nansum(area0[rvr0.friver > 0])
+                                sum1=np.nansum(rvr1.friver*area1)#; ar1=np.nansum(area1[rvr1.friver > 0])
+                                # get ratio
+                                ratio=sum0/sum1#; aratio=ar0/ar1
+                                # check: does sum of rvr1*ratio == sum0??
+                                diffCheck=100*np.abs(np.nansum(ratio*rvr1.friver*area1)-sum0)/sum0
+                                if diffCheck > 0.1:
+                                    sys.exit(f'Total fresh water does not agree!\n{sum0}\n{np.nansum(ratio*rvr1.friver*area1)}\n{diffCheck}%')
+                                else:
+                                    print(f'Total freshwater within 0.1% ({diffCheck}%)')
+                        # apply ratio to files
+                        subprocess.run(f"cdo expr,'friver={ratio}*friver' {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                    subprocess.run(f"rm -f {outFile.replace('yYYYY',f'*')}.tmp*.nc",shell=True)
+                subprocess.run(f'rm -f {outFile}*concat*tmp.nc',shell=True)
+                
+                # add river mask to file
+                with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.nc") as rvr:
+                    rflag=np.squeeze(np.nansum(rvr.friver,axis=0))>0
+                    rmask=np.full(np.shape(rflag),0.0)
+                    rmask[rflag]=0.5
+                rset=xr.Dataset.from_dict({'riv_mask':{'dims':('y','x'),'data':rmask}})
+                
+                # write to temporary netCDF file
+                rset.to_netcdf(f"{outFile.replace('yYYYY',f'y{year:04}')}.rmask.nc")
+                # # scale friver by 0
+                # subprocess.run(f"cdo --no_history expr,\"friver=0.0*friver\" {outFile.replace('yYYYY',f'y{year:04}')}.nc {outFile.replace('yYYYY',f'y{year:04}')}.0scale.nc",shell=True)
+                # add to original file
+                subprocess.run(f"cdo --no_history merge {outFile.replace('yYYYY',f'y{year:04}')}.nc {outFile.replace('yYYYY',f'y{year:04}')}.rmask.nc {outFile.replace('yYYYY',f'y{year:04}')}.masked.nc",shell=True)
+                # delete temporary file
+                subprocess.run(f"rm -f {outFile.replace('yYYYY',f'y{year:04}')}.rmask.nc",shell=True)
+    return
+
+def calc_nemo_chunk_dates(args):
+    """
+    Compute the start and end date of the current chunk
+    Copied and modified from: CanNEMO/lib/maestro/bin/compute_iteration_info.py
+    """
+    nf = int(args.nemo_freq_months)
+
+    if int(args.run_start_month) not in range(1,13):
+        raise ValueError(f'Start month must be 1-12 ({args.run_start_month})')
+ 
+    sm = int(args.run_start_month)
+    sy = int(args.run_start_year)
+    
+    # get loop from directory name
+    if args.loop == 0:
+        ll=int(os.path.split(os.getcwd())[-2].split('+')[-1])-1
+    else:
+        ll = int(args.loop)-1
+
+    cl_start_nmonth = sm + ll*nf
+    cl_end_nmonth = sm + (ll+1)*nf - 1
+
+    # dictionary mapper to get days in month
+    days_in_month = {1 : 31,
+                 2 : 28,
+                 3 : 31,
+                 4 : 30,
+                 5 : 31,
+                 6 : 30,
+                 7 : 31,
+                 8 : 31,
+                 9 : 30,
+                 10 : 31,
+                 11 : 30,
+                 12 : 31
+                 } 
+
+    # Get the calendar start/end month for each loop segment
+    cl_start_cal_month = (cl_start_nmonth)%12 if cl_start_nmonth%12 > 0 else 12
+    cl_end_cal_month =  cl_end_nmonth%12 if cl_end_nmonth%12 > 0 else 12
+    # Get the calendar start/end year for each loop segment
+    cl_start_cal_year = int((sm + ll*nf-1)/12 + sy) 
+    cl_end_cal_year = int(math.ceil((sm + (ll+1)*nf -1)/12.0)) + sy -1
+
+    cl_start_cal_day = 0o1 
+    cl_end_cal_day = days_in_month[cl_end_cal_month]
+    
+    # List of all years in this chunk
+    chunk_years = range(cl_start_cal_year, cl_end_cal_year+1,1)
+    chunk_years_str = " ".join('%04d' % year for year in chunk_years)
+
+    if args.outfile is None:
+        cfgFile='nemo_counter_info.cfg'
+    else:
+        cfgFile=os.path.join(os.path.dirname(os.path.abspath(args.outfile)),'nemo_counter_info.cfg')
+
+    with open(cfgFile, 'w') as ff: 
+        ff.write('NEMO_CHUNK_START_DAY=%s\n' % (cl_start_cal_day))
+        ff.write('NEMO_CHUNK_START_MONTH=%s\n' % (cl_start_cal_month))
+        ff.write('NEMO_CHUNK_START_YEAR=%s\n' % (cl_start_cal_year))
+        ff.write('NEMO_CHUNK_END_DAY=%s\n' % (cl_end_cal_day))
+        ff.write('NEMO_CHUNK_END_MONTH=%s\n' % (cl_end_cal_month))
+        ff.write('NEMO_CHUNK_END_YEAR=%s\n' % (cl_end_cal_year))
+        ff.write(f'NEMO_CHUNK_START_DATE={cl_start_cal_year:04}-{cl_start_cal_month:02}-{cl_start_cal_day:02}\n')
+        ff.write(f'NEMO_CHUNK_END_DATE={cl_end_cal_year:04}-{cl_end_cal_month:02}-{cl_end_cal_day:02}\n')
+        ff.write("NEMO_CHUNK_YEARS='%s'\n" % (chunk_years_str))
+        ff.write("NEMO_MODEL_LOOP='%s'\n" % (ll+1))
+
+    return
+
+#---------------#
+# END FUNCTIONS #
+#---------------#
+
+# parse arguments
+args=parser.parse_args()
+
+start=time.time()
+
+# get necessary info about run
+if args.type==-1:
+    calc_nemo_chunk_dates(args)
+elif args.type==0:
+    ic_remap(args)
+    print(f'Done making IC files!\n{time.time()-start} s elapsed.')
+elif args.type==1:
+    fcount=bdy_remap(args)
+    print(f'Done making the boundary files!\n{fcount} files created.\n{time.time()-start} s elapsed.')
+elif args.type==2:
+    fcount,fexpect=frc_slice(args)
+    print(f'Done finding forcing files!\n({fcount}/{fexpect} found)\n{time.time()-start} s elapsed.')
+elif args.type==3:
+    print('Remapping/scaling rivers.')
+    rvr_remap(args)
+    print(f'Done river rivermapping.')
+else:
+    sys.exit(f'ERROR: type must be -1, 0, 1, or 2, not {args.type}')
