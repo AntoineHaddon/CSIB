@@ -189,6 +189,12 @@ CONTAINS
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
+        DO jj = 1, 10
+          rnegtr2(:,jj,:)=0._wp
+        END DO
+        DO jj = jpj-10, jpj
+          rnegtr2(:,jj,:)=0._wp
+        END DO 
         !
         IF( ln_canoenegtr )  CALL trc_xnegtr( 1, jp_tot, Kbb, Kmm, Krhs, rnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
         DO jn = 1, jp_tot
