@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# get necessary variables
+source ${WRK_DIR}/config/canesm-shell-params.sh
+
 # get copy of the domain.cfg file
 is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
 acc_cp domain_cfg.nc $nemo_coordinates
