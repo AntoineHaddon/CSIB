@@ -20,7 +20,6 @@ python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y $(($NEMO_CHUNK_START_Y
 
 # initial conditions
 if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; then
-  #python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
   python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
   if [ -z "$(ls ./data_1m_*_nomask.nc)" ] ; then
     echo "ERROR: No IC files generated!"
