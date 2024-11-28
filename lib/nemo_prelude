@@ -142,6 +142,10 @@ echo "#################### Start NEMO pre-processing #################"
       prepDir=${wrkDir/model_loop\/model_run/dada_prep_loop\/dada_run_prep}
       prepDir=${prepDir::-5}
       dadaDir=${wrkDir/model_run/dada_run_prep}
+      newDada=${dadaDir::-5}
+      # remove directory if it exists
+      rm -rf $newDada
+      # move directory from dada_prep_loop
       mv ${prepDir} ../../
       for ff in ${dadaDir}/*.nc ; do
           echo $ff
