@@ -2,22 +2,3 @@
 !! CANOE configuration namelist 
 !-----------------------------------------------------------------------
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcansed     !  parameters for external nutrient inputs
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-!              !  file name        ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
-!              !                   !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_dust     = 'dust.orca'       ,     -1            , 'dust'     ,  .true.      , .true. ,   'yearly'  , ''       , ''
-   sn_riverdic = 'river.orca'      ,    -12            , 'riverdic' ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_riverdoc = 'river.orca'      ,    -12            , 'riverdoc' ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_ndepo    = 'ndeposition.orca',    -12            , 'ndep'     ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_ironsed  = 'bathy.orca'      ,    -12            , 'bathy'    ,  .false.     , .true. ,   'yearly'  , ''       , ''
-!
-   cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_dust     =  .true.   ! boolean for dust input from the atmosphere
-   ln_river    =  .false.  ! boolean for river input of nutrients
-   ln_ndepo    =  .false.  ! boolean for atmospheric deposition of N
-   ln_ironsed  =  .false.  ! boolean for Fe input from sediments
-   sedfeinput  =  1000.    ! Coastal release of Iron
-   dustsolub   =  0.01     ! Solubility of the dust
-   wdust       =  2.0      ! Dust sinking speed
-/
