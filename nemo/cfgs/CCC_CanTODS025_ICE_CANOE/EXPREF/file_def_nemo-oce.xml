@@ -27,7 +27,7 @@
           <field field_ref="ssh"              name="zos"            level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="empmr"            name="wfo"            level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
           <field field_ref="mldr10_1"         name="mlotst"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
-          <field field_ref="mldr10_3"         name="mldr10_3"       level="0" /> <!-- (Omon*) with add_cccma_vars=1 -->
+          <!field field_ref="mldr10_3"         name="mldr10_3"       level="0" /> <!-- (Omon*) with add_cccma_vars=1 -->
           <field field_ref="snow_ai_cea"      name="sndmasssnf"     level="0" /> <!-- (SImon*) -->
           <field field_ref="dmsmel"           name="sndmassmelt"    level="0" /> <!-- (SImon*) -->
           <field field_ref="snow_ao_cea"      name="prsn"           level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
