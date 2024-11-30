@@ -189,9 +189,6 @@ CONTAINS
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
-        ! turn off SMS in bdy rim points
-        rnegtr2(:,mj0(1):mj1(10+nn_hls),:)=0._wp
-        rnegtr2(:,mj0(jpjglo-nn_hls-10):mj1(jpjglo),:)=0._wp
         !
         IF( ln_canoenegtr )  CALL trc_xnegtr( 1, jp_tot, Kbb, Kmm, Krhs, rnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
         DO jn = 1, jp_tot
