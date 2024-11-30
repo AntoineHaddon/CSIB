@@ -36,7 +36,7 @@
    ln_cmoc       =  .false.     !  Run CMOC   BGC model 
    ln_pisces     =  .false.     !  Run PISCES BGC model 
    ln_my_trc     =  .false.     !  Run MY_TRC BGC model
-   ln_age        =  .true.      !  Run the sea water age tracer
+   ln_age        =  .false.     !  Run the sea water age tracer
    ln_cfc11      =  .false.     !  Run the CFC11 passive tracer
    ln_cfc12      =  .false.     !  Run the CFC12 passive tracer
    ln_sf6        =  .false.     !  Run the SF6 passive tracer
@@ -277,7 +277,7 @@ wdust0       =  2.0      ! Dust sinking speed
 &namtrcsrclog  !   external source switches
 !-----------------------------------------------------------------------
    ln_dust0    =  .false.  ! dust input from the atmosphere
-   ln_river0   =  .false.  ! river input of nutrients
+   ln_river0   =  .true.   ! river input of nutrients
    ln_ndepo0   =  .false.  ! atmospheric deposition of N
 /
 !-----------------------------------------------------------------------
