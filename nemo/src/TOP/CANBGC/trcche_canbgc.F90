@@ -383,6 +383,7 @@ CONTAINS
       !     -------------------------------------------
       
       hi(:,:,:)=1.e-9
+      qomegac(:,:,:) = 0.e0
       CALL trc_src3d(kt,js3d_si)
       qasi3=src3d_dta(:,:,:,js3d_si)
 
