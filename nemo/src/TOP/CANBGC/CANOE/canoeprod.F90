@@ -199,14 +199,9 @@ CONTAINS
                       Nlim  =  Ni/(kn1+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
 
-                      WRITE(numout,*) "ji,jj,jk,QFemin1:",ji,jj,jk,QFemin1
-                      WRITE(numout,*) "ji,jj,jk,QFemax1:",ji,jj,jk,QFemax1
-                      WRITE(numout,*) "ji,jj,jk,phyfe:",ji,jj,jk,phyfe
-                      WRITE(numout,*) "ji,jj,jk,phyc:",ji,jj,jk,phyc
                       QFe = MIN(QFemax1,phyfe/(phyc+rtrn))
                       QFe = MAX(QFemin1,QFe)
                       qfedep = MAX((QFemax1-QFe)/(QFemax1-QFemin1),0.) 
-                      WRITE(numout,*) "ji,jj,jk,qfedep:",ji,jj,jk,qfedep
                       VCFmax = VCFref*Tf*qfedep**0.05
                       VCF = VCFmax*Fe/(kf1+Fe)
 
@@ -228,7 +223,6 @@ CONTAINS
                       zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)     ! NO3 uptake
                       xlimnn(ji,jj,jk)   = 1.-qndep 
                       xlimnfe0(ji,jj,jk) = 1.-qfedep
-                      WRITE(numout,*) "ji,jj,jk,xlimnfe0:",ji,jj,jk,xlimnfe0(ji,jj,jk) 
 
 ! large phytoplankton
 
