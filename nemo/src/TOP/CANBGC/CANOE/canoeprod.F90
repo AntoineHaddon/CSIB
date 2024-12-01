@@ -329,8 +329,8 @@ CONTAINS
        CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by nanophyto
        CALL iom_put( "LNN"     , xlimnn  (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
        CALL iom_put( "LDN"     , xlimdn  (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
-       CALL iom_put( "LNFe"    , xlimnfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
-       CALL iom_put( "LDFe"    , xlimdfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+       !CALL iom_put( "LNFe"    , xlimnfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+       !CALL iom_put( "LDFe"    , xlimdfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
        CALL iom_put( "PAR"     , par_3bands (:,:,:)        * tmask_bgc_closea(:,:,:) )  ! Irradiance
      ENDIF
      !
