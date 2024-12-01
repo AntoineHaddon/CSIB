@@ -469,7 +469,7 @@ CONTAINS
               zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
               zfactcal=0.
               !WRITE(numout,*) "ji,jj,ikt,qomegac:", ji, jj, ikt, qomegac(ji,jj,ikt)
-              qomegac(ji,jj,ikt) = FLOAT(qomegac(ji,jj,ikt)
+              qomegac(ji,jj,ikt) = FLOAT(qomegac(ji,jj,ikt))
               IF( qomegac(ji,jj,ikt) > 1. )  zfactcal=1.
               !zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
               tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
