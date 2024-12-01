@@ -466,7 +466,7 @@ CONTAINS
             zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
             zfactcal=0.
             !WRITE(numout,*) "ji,jj,ikt,qomegac:", ji, jj, ikt, qomegac(ji,jj,ikt)
-            IF( ikt>0 .AND. qomegac(ji,jj,ikt)>1. ) zfactcal=1.
+            IF( (tmask(ji,jj,ikt) .eq. 1) .AND. (qomegac(ji,jj,ikt)>1. ) )  zfactcal=1.
             !zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
             tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
             ! add DIC/TA to bottom layer if dissolution and to surface layer if burial

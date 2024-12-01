@@ -424,7 +424,7 @@ CONTAINS
                   qco3(ji,jj,jk) = zcalk / ( 2. + zah2 / zak2 )     ! no conversion to mol L^-1 as it is not applied to Ksp
                   zcalcon  = calcium * ( ts(ji,jj,jk,jp_sal,Kmm) / 35._wp )
                   zfact    = rhop(ji,jj,jk) / 1000._wp
-                  qomegac(ji,jj,jk) = ( zcalcon * qco3(ji,jj,jk) * zfact ) / qaksp(ji,jj,jk) * tmask_bgc_closea(ji,jj,jk)
+                  qomegac(ji,jj,jk) = ( zcalcon * qco3(ji,jj,jk) * zfact ) / qaksp(ji,jj,jk)
                   qhi(ji,jj,jk) = hi(ji,jj,jk)     ! OR Jan 19th 2023
 
                END DO
