@@ -426,6 +426,7 @@ CONTAINS
                   zcalcon  = calcium * ( ts(ji,jj,jk,jp_sal,Kmm) / 35._wp )
                   zfact    = rhop(ji,jj,jk) / 1000._wp
                   qomegac(ji,jj,jk) = ( zcalcon * qco3(ji,jj,jk) * zfact ) / qaksp(ji,jj,jk)
+                  WRITE(numout,*) "ji,jj,jk,qomegac(ji,jj,jk):",ji,jj,jk,qomegac(ji,jj,jk)
                   qhi(ji,jj,jk) = hi(ji,jj,jk)     ! OR Jan 19th 2023
 
                END DO
