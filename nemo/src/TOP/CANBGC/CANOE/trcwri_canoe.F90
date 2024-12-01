@@ -50,7 +50,7 @@ CONTAINS
       END DO
       !
       ! Testing trcopt diagnostics
-      CALL iom_put( "surf_chla", src2d_dta(:,:,js2d_chla))
+      !CALL iom_put( "surf_chla", src2d_dta(:,:,js2d_chla))
       !CALL iom_put( "tmask", tmask(:,:,:) )
       CALL iom_put( "closea", tmask_bgc_closea(:,:,:) )
       !
