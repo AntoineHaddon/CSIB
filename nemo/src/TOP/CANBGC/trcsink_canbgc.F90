@@ -460,8 +460,7 @@ CONTAINS
       !
       ! Bottom sedimentation of calcite. Dissolution IFF Omega_C<1
       !
-      qomegac=qomegac*tmask
-      
+      WHERE( tmask .eq. 0 ); qomegac=0._wp; END WHERE
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
