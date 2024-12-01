@@ -460,23 +460,17 @@ CONTAINS
       !
       ! Bottom sedimentation of calcite. Dissolution IFF Omega_C<1
       !
-      WHERE( tmask .eq. 0 ); qomegac=0._wp; END WHERE
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
-            IF( tmask(ji,jj,ikt) .eq. 1) THEN
-              zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
-              zfactcal=0.
-              WRITE(numout,*) "ji,jj,ikt,qomegac:", ji, jj, ikt, qomegac(ji,jj,ikt)
-              IF( qomegac(ji,jj,ikt) > 1. )  zfactcal=1.
-              !zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
-              tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
-              ! add DIC/TA to bottom layer if dissolution and to surface layer if burial
-              tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + zcalbotflx * (1.-zfactcal) * 1.E-6 / e3t(ji,jj,ikt, Kmm)
-              tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zcalbotflx * zfactcal * 1.E-6 / e3t(ji,jj,1, Kmm)
-              tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + zcalbotflx * (1.-zfactcal) * 2.E-6 / e3t(ji,jj,ikt, Kmm)
-              tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
-            ENDIF
+            zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
+            zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
+            tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
+            ! add DIC/TA to bottom layer if dissolution and to surface layer if burial
+            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + zcalbotflx * (1.-zfactcal) * 1.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zcalbotflx * zfactcal * 1.E-6 / e3t(ji,jj,1, Kmm)
+            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + zcalbotflx * (1.-zfactcal) * 2.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
          ENDDO
       ENDDO
       !
