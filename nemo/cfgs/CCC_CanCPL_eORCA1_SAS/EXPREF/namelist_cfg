@@ -183,8 +183,8 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
    sn_tem      = 'sst_data'              ,        -1         , 'sst'     , .true.      , .false. , 'yearly'  ,    ''            ,    ''    ,     ''
    !!
-   !! Following only needed with STATION_ASF compiled with "sea-ice" support: "key_si3" (ice fraction, ice surface temperature and sea-ice albedo:
    sn_ifr      = 'siconc_data'           , -1                , 'siconc'  ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_ims      = 'icemass_data'          , -1.                , 'icemass' ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)

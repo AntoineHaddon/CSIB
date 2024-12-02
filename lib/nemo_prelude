@@ -340,12 +340,16 @@ else
     yearc=`expr ${current_year} - 1 | awk  '{printf "%04d",$1}'`
     acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
     acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
     yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
     acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc
     acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc
     yearc=`expr ${current_year} + 1 | awk  '{printf "%04d",$1}'`
     acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
     acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+
     # If the file for yr-1 or yr+1 does not exist, NEMO will run but will not make time interpolation for 
     # the first part or the last part of the current_year.
         

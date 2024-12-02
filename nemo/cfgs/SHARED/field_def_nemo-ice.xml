@@ -37,8 +37,6 @@
       <field id="sncover"     long_name="Sea-ice cover by snow area fraction"                      standard_name="snow_cover"                                unit=""      />
       <field id="icevolu"      long_name="Sea-ice volume per area"                                 standard_name="sea_ice_thickness"                         unit="m"    />
       <field id="icethic"      long_name="Sea-ice thickness"                                       standard_name="sea_ice_thickness"                         unit="m"    />
-      <field id="icethic_created"   long_name="Sea-ice volume per area created when siconc defined"      standard_name="sea_ice_thickness"                         unit="m"    />
-      <field id="icethic_lost"      long_name="Sea-ice volume per area lost when siconc definded"        standard_name="sea_ice_thickness"                         unit="m"    />
       <field id="snwthic"      long_name="Snow thickness"                                          standard_name="snow_thickness"                            unit="m"    />
       <field id="icebrv"       long_name="brine volume"                                                                                                      unit="%"    />
       <field id="iceage"       long_name="ice age"                                                                                                           unit="days" detect_missing_value="true"/>

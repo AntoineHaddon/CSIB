@@ -13,15 +13,14 @@
    
    <file_group id="1m" output_freq="1mo"  enabled=".TRUE.">  <!-- real monthly files -->   	
      <file id="file43" name_suffix="_sas" description="ice variables" sync_freq="1mo"  >
-          <field field_ref="sst_m"           name='tos'        level="0"  /> 
+          <field field_ref="sst_m"         name='tos'        level="0"  /> 
+          <field field_ref="icemass"       name="icemass"     level="0"  /> 
           <field field_ref="iceconc_pct"   name="siconc"     level="0"  /> 
-          <field field_ref="icethic_created" name="sithick_created" level="4" operation="accumulate" /> 
-          <field field_ref="icethic_lost"    name="sithick_lost"    level="4" operation="accumulate" /> 
-          <field field_ref="vfxice"          name="vfxice"          level="4" operation="accumulate" /> 
      </file>
    </file_group>
 
-   <file_group id="1ts" output_freq="1ts" enabled=".TRUE."/> <!-- 1 time step files -->
+   <file_group id="1ts" output_freq="1ts" enabled=".TRUE." > <!-- 1 time step files -->
+   </file_group>
    <file_group id="1h"  output_freq="1h"  enabled=".TRUE."> <!-- 1h files -->
    </file_group>
    <file_group id="2h"  output_freq="2h"  enabled=".TRUE."/> <!-- 2h files -->
@@ -32,6 +31,7 @@
      <file id="file53" name_suffix="_sas" description="ice variables" sync_freq="1d"  >
           <field field_ref="sst_m"           name='tos'        level="1"  /> 
           <field field_ref="iceconc_pct"   name="siconc"     level="1"  /> 
+          <field field_ref="icemass"       name="icemass"     level="1"  /> 
           <field field_ref="icepres"       name="sitimefrac"  level="1" /> 
           <field field_ref="icethic_cmip"  name="sithick"     level="1" /> 
           <field field_ref="snwthic_cmip"  name="sisnthick"   level="1" /> 
