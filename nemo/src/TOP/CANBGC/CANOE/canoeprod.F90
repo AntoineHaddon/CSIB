@@ -171,7 +171,7 @@ CONTAINS
 ! precalculate some constant terms to minimize divisions
       mwr_n2c = mw_n/mw_c
       imw_n   =   1./mw_n
-
+      WRITE(numout,*) "start loops"
       ! Computation of the various production terms 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -267,7 +267,7 @@ CONTAINS
             END DO
          END DO
       END DO
-
+      WRITE(numout,*) "xlimdfe0:",xlimdfe0
       !   Update the arrays TRA which contain the biological sources and sinks
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -302,7 +302,7 @@ CONTAINS
           END DO
         END DO
      END DO
-
+     WRITE(numout,*) "done loops"
      ! Total primary production per year
      tpp = tpp + glob_sum( 'canoe_prod' , ( zprorca(:,:,:) + zprorcad(:,:,:) ) * cvol(:,:,:) )
 
@@ -311,7 +311,7 @@ CONTAINS
        WRITE(numout,*) '-------------------- : ',tpp * 12. / 1.E12
        WRITE(numout,*) 
      ENDIF
-
+     WRITE(numout,*) "before iom_puts"
       !
      zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
      IF( jnt == qnrdttrc ) THEN
@@ -328,7 +328,7 @@ CONTAINS
        CALL iom_put( "PAR"     , par_3bands (:,:,:)        * tmask_bgc_closea(:,:,:) )  ! Irradiance
      ENDIF
      !
-
+     WRITE(numout,*) "Done iom_puts"
      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
         WRITE(charout, FMT="('prod')")
         CALL prt_ctl_info(charout, cdcomp = 'top')
