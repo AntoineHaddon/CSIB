@@ -8,17 +8,15 @@
 ============================================================================================================
     -->
    
-    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="5d" min_digits="4">
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1d" min_digits="4">
     
-      <file_group id="5d" output_freq="5d" enabled=".TRUE."> <!-- real monthly files -->
+      <file_group id="1d" output_freq="1d" enabled=".TRUE."> 
 
         <file id="file32" name_suffix="_btrc_T" description="CMOC sms variables + TOP tracers" >
-          <!-- BGCM standard : variables available with TOP activated alone  -->
           <field field_ref="DIC"      level="0" />
           <field field_ref="Alkalini" level="0" />
           <field field_ref="O2"       level="0" />
           <field field_ref="NO3"      level="0" /> 
-          <!-- CanOE specific -->
           <field field_ref="POC"      level="0" />
           <field field_ref="ZOO"      level="0" />
           <field field_ref="NCHL"     level="0" />
@@ -37,61 +35,32 @@
         </file>                       
 
         <file id="file33" name_suffix="_diad_T" description="additional CanOE diagnostics" >
-
           <!-- 3D fields here -->
           <field field_ref="pH"         level="0" />
-          <!-- <field field_ref="CO3"         /> -->
-          <!-- <field field_ref="CO3sat"      /> -->
-          <!-- <field field_ref="HCO3"        /> -->
-
           <field field_ref="PAR"         level="0" />
-
           <field field_ref="tmask"      level="0" />
           <field field_ref="closea"     level="0" />
-
-          <field field_ref="Irondep"     level="0" />   
-          <field field_ref="Ironsed"     level="0" />   
-
          <!-- 2D fields here -->
           <field field_ref="Cflx"        level="0" />
           <field field_ref="Oflx"        level="0" />
-          
           <field field_ref="KgCO2"       level="0" />
           <field field_ref="KgO2"        level="0" />
-          
           <field field_ref="DpCO2"       level="0" />
           <field field_ref="DpO2"        level="0" />
-          
           <field field_ref="pCO2"        level="0" />
           <field field_ref="pO2"         level="0" />
-
-          <field field_ref="surf_chla"   level="0" />
-
           <!-- CanOE diagnostics -->
-                 
           <!-- Primary Production -->       
           <field field_ref="PPPHY"       level="0" />
           <field field_ref="PPPHY2"      level="0" />
           <field field_ref="PPNEWN"      level="0" />
           <field field_ref="PPNEWD"      level="0" />
-          <field field_ref="PFeN"        level="0" />
-          <field field_ref="PFeD"        level="0" />
-          <field field_ref="LNN"         level="0" />
-          <field field_ref="LDN"         level="0" />
-          <field field_ref="LNFe"        level="0" />
-          <field field_ref="LDFe"        level="0" />
           <field field_ref="Nfix"        level="0" />
           <field field_ref="Denitr"      level="0" />
           <field field_ref="Nitrif"      level="0" />
           <field field_ref="EPC100"      level="0" />
           <field field_ref="EPCALC100"   level="0" />
           <field field_ref="PCAL"        level="0" />
-          
-          <!-- Temporary addition -->
-          <!-- Ideal Age Tracer (IAT) from TOP -->
-          <!-- <field field_ref="Age"     /> -->
-
-      
         </file>
 
       </file_group>
