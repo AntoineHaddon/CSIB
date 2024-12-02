@@ -525,7 +525,7 @@ def calcPhys(args):
         if len(tflist) > 0:
             # create empty arrays to assign values
             for iV,var in enumerate(aVars):
-                if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and (runid not in series[var].keys()):
+                if (args.phys==0 or ('T' in var and args.phys==1) or ('S_' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and (runid not in series[var].keys()):
                     series[var][runid]={'years':np.array([]),'data':np.array([])}
             
             # regional masks
@@ -567,7 +567,7 @@ def calcPhys(args):
                             if ('3D' in reg) or (reg==var) or ('m' in reg):
                                 reg='domain'
                         if rmasks[reg] is not None:
-                            if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4):
+                            if args.phys==0 or ('T' in var and args.phys==1) or ('S_' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4):
                                 lvars[var]={'years':years,'data':np.full(len(years),np.nan)}
 
                     # calculate means at each time step
@@ -587,7 +587,7 @@ def calcPhys(args):
                                         lvars[var]['data'][tcount]=volMean(ds['thetao'].isel(time_counter=tid).values,-1,meshAll,rmasks[reg])
                                     else:
                                         lvars[var]['data'][tcount]=volMean(ds['thetao'].isel(time_counter=tid,deptht=levZ[iV]).values,0,meshSurf,rmasks[reg])
-                                elif 'S' in var and (args.phys in [0,2]):
+                                elif 'S_' in var and (args.phys in [0,2]):
                                     if '3D' in var:
                                         lvars[var]['data'][tcount]=volMean(ds['so'].isel(time_counter=tid).values,-1,meshAll,rmasks[reg])
                                     else:
@@ -599,13 +599,13 @@ def calcPhys(args):
                         
                 # append to time series
                 for iV,var in enumerate(aVars):
-                    if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and var in lvars.keys():
+                    if (args.phys==0 or ('T' in var and args.phys==1) or ('S_' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and var in lvars.keys():
                         series[var][runid]['years']=np.append(series[var][runid]['years'],lvars[var]['years'])
                         series[var][runid]['data']=np.append(series[var][runid]['data'],lvars[var]['data'])
 
             # sort in time
             for iV,var in enumerate(aVars):
-                if args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4):
+                if args.phys==0 or ('T' in var and args.phys==1) or ('S_' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4):
                     if len(series[var][runid]) > 0:
                         iY=np.argsort(np.array(series[var][runid]['years']))
                         series[var][runid]['years']=np.array(series[var][runid]['years'])[iY]
@@ -614,7 +614,7 @@ def calcPhys(args):
             # save timeseries to file
             print(f"\r  {' ':<50}",end='',flush=True) # clear line
             for iV,var in enumerate(aVars):
-                if (args.phys==0 or ('T' in var and args.phys==1) or ('S' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and (var in series):
+                if (args.phys==0 or ('T' in var and args.phys==1) or ('S_' in var and args.phys==2) or ('MLD' in var and args.phys==3) or ('SSH' in var and args.phys==4)) and (var in series):
                     if len(series[var][runid]['data']) > 0:
                         # only keep unique values
                         series[var][runid]['years'],iU=np.unique(series[var][runid]['years'],return_index=True)
@@ -717,7 +717,7 @@ for iR,runid in enumerate(args.runid):
         # update run name
         subprocess.run(f'sed -i "s/RUNID/{runid}/g" {os.path.join(args.outdir,jptFile)}',shell=True)
         # update where to find files
-        sedOutDir=args.outdir.replace('/','\/')
+        sedOutDir=args.outdir.replace('/','\\/')
         subprocess.run(f'sed -i "s/RTDPATH/{sedOutDir}/g" {os.path.join(args.outdir,jptFile)}',shell=True)
         # update initial year
         subprocess.run(f'sed -i "s/YEAR0/{args.year0}/g" {os.path.join(args.outdir,jptFile)}',shell=True)

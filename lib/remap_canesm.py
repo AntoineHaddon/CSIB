@@ -655,10 +655,15 @@ def calc_nemo_chunk_dates(args):
     sm = int(args.run_start_month)
     sy = int(args.run_start_year)
     
-    # get loop from directory name
+    # get loop
     if args.loop == 0:
+        # from directory name
         ll=int(os.path.split(os.getcwd())[-2].split('+')[-1])-1
+        # add one back if dada_run_prep or dada_run_zero (offsets loop number)
+        if 'dada' in os.path.split(os.getcwd())[-2]:
+            ll+=1
     else:
+        # passed as argument
         ll = int(args.loop)-1
 
     cl_start_nmonth = sm + ll*nf
