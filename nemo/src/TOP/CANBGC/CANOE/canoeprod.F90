@@ -267,7 +267,6 @@ CONTAINS
             END DO
          END DO
       END DO
-      WRITE(numout,*) "xlimdfe0:",xlimdfe0
       !   Update the arrays TRA which contain the biological sources and sinks
       DO jk = 1, jpkm1
          DO jj = 1, jpj
