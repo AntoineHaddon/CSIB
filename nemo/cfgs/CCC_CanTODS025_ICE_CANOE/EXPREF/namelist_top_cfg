@@ -64,21 +64,21 @@
 ! values are huge too: -1.27425e+33 ! This translates to -5.00453e+33 in the regridded /vert. interpolated file used here.
    jp_canoe = 15   
    !             !    name   !           title of the field               ! units ! init from file ! sbc     !  cbc    !  obc    !  ais
-   canoe_tracer(1)   = 'Fer   ' , 'Dissolved Iron Concentration          ',  'nmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(2)   = 'POC   ' , 'Small Particulate Organic Carbon      ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(3)   = 'ZOO   ' , 'Zooplankton Concentration             ',  'mmolC/m3' ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(4)   = 'NCHL  ' , 'Nanophy Chlorophyll Concentration     ',  'mg/m3'    ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(5)   = 'CaCO3 ' , 'Calcite Concentration                 ',  'mmolC/m3' ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(6)   = 'PHYC  ' , 'Nanophytoplankton C Concentration     ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(7)   = 'PHYN  ' , 'Nanophytoplankton N Concentration     ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(8)   = 'PHYFe ' , 'Nanophytoplankton Fe Concentration    ',  'nmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(9)   = 'PHY2C ' , 'Diatoms C Concentration               ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(10)  = 'PHY2N ' , 'Diatoms N Concentration               ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(11)  = 'PHY2Fe' , 'Diatoms Fe Concentration              ',  'nmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(12)  = 'DCHL  ' , 'Diatoms chlorophyll Concentration     ',  'mg/m3'    ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(13)  = 'ZOO2  ' , 'Mesozooplankton Concentration         ',  'mmolC/m3' ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(14)  = 'GOC   ' , 'Large particulate organic carbon      ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
-   canoe_tracer(15)  = 'NH4   ' , 'Ammonium Concentration                ',  'mmol/m3'  ,  .false. , .false. , .false. , .false. , .false.
+   canoe_tracer(1)   = 'Fer   ' , 'Dissolved Iron Concentration          ',  'nmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(2)   = 'POC   ' , 'Small Particulate Organic Carbon      ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(3)   = 'ZOO   ' , 'Zooplankton Concentration             ',  'mmolC/m3' ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(4)   = 'NCHL  ' , 'Nanophy Chlorophyll Concentration     ',  'mg/m3'    ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(5)   = 'CaCO3 ' , 'Calcite Concentration                 ',  'mmolC/m3' ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(6)   = 'PHYC  ' , 'Nanophytoplankton C Concentration     ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(7)   = 'PHYN  ' , 'Nanophytoplankton N Concentration     ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(8)   = 'PHYFe ' , 'Nanophytoplankton Fe Concentration    ',  'nmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(9)   = 'PHY2C ' , 'Diatoms C Concentration               ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(10)  = 'PHY2N ' , 'Diatoms N Concentration               ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(11)  = 'PHY2Fe' , 'Diatoms Fe Concentration              ',  'nmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(12)  = 'DCHL  ' , 'Diatoms chlorophyll Concentration     ',  'mg/m3'    ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(13)  = 'ZOO2  ' , 'Mesozooplankton Concentration         ',  'mmolC/m3' ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(14)  = 'GOC   ' , 'Large particulate organic carbon      ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
+   canoe_tracer(15)  = 'NH4   ' , 'Ammonium Concentration                ',  'mmol/m3'  ,  .false. , .false. , .false. , .true.  , .false.
    
    !_____________!___________!_________________________________________!____________!________________!
    !  CMOC-specific tracers   
