@@ -181,10 +181,10 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_tem      = 'sst_data'              ,        -1         , 'sst'     , .true.      , .false. , 'yearly'  ,    ''            ,    ''    ,     ''
+   sn_tem      = 'sst_data'              ,        -1         , 'SST'     , .true.      , .false. , 'yearly'  ,    ''            ,    ''    ,     ''
    !!
-   sn_ifr      = 'siconc_data'           , -1                , 'siconc'  ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_ims      = 'icemass_data'          , -1.                , 'icemass' ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_ifr      = 'siconc_data'           , -1                , 'SICONC'  ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_ims      = 'icemass_data'          , -1.               , 'ICEMASS' ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)
