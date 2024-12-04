@@ -269,7 +269,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namlbc        !   lateral momentum boundary condition                  (default: NO selection)
 !-----------------------------------------------------------------------
-   rn_shlat    =    2.     !  no slip
+   rn_shlat    =    0.     !  free slip
 /
 !!======================================================================
 !!                ***  Top/Bottom boundary condition  ***             !!
@@ -284,7 +284,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namdrg        !   top/bottom drag coefficient                          (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_lin = .true.         !     linear  drag: Cd = Cd0 Uc0
+   ln_non_lin  = .true.   !  non-linear  drag: Cd = Cd0 |U|
 /
 !-----------------------------------------------------------------------
 &nambbc        !   bottom temperature boundary condition                (default: OFF)
@@ -350,23 +350,24 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
 !-----------------------------------------------------------------------
-   ln_ldfeiv   = .true.    ! use eddy induced velocity parameterization
-   ln_syg2018  = .true.        ! compute mesoscale eddy transfer coefficien following Saenko, Yang & Gregory, J.Clim., 2018                                    ln_thl1997  = .false.       ! compute mesoscale eddy transfer coefficien following Tréguier et al. (1997);
+   ln_ldfeiv   = .true.        ! use eddy induced velocity parameterization
+   ln_syg2018  = .true.        ! compute mesoscale eddy transfer coefficien following Saenko, Yang & Gregory, J.Clim., 2018
+   ln_thl1997  = .false.       ! compute mesoscale eddy transfer coefficien following Tréguier et al. (1997);
                                ! this is the original code containing errors, being kept for traceability.
-      !                        !  Coefficients:
-      nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
+      !                            !  Coefficients:
+      nn_aei_ijk_t  = 21           ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
                                        !   revised following Saenko, Yang & Gregory, J.Clim., 2018
-      !                           !  time invariant coefficients:  aei0 = 1/2  Ue*Le
-      rn_Ue        = 0.03              !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
-      rn_Le        = 200.e+3           !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      !                             !  time invariant coefficients:  aei0 = 1/2  Ue*Le
+      rn_Ue        = 0.03           !  lateral diffusive velocity [m/s] (nn_aei_ijk_t= 0, 10, 20, 30)
+      rn_Le        = 200.e+3        !  lateral diffusive length   [m]   (nn_aei_ijk_t= 0, 10)
       rn_zRomax    = 200.e+3        !  Rossby radius in the tropical regions: 200 km
       rn_zRocoef   = 25.e+3         !  a prescribed "typical" eddy scale: 25 or 50 km
       rn_eiwmin    = 100.           !  lower limit of eddy induced velocity (m2/s)
       rn_eiwmax    = 2000.          !  upper limit of eddy induced velocity (m2/s)
       rn_gm        = 0.25           !  scaling of eddy induced velocity
       !
-      ln_ldfeiv_dia =.true.   ! diagnose eiv stream function and velocities
+      ln_ldfeiv_dia =.true.         ! diagnose eiv stream function and velocities
 /
 !-----------------------------------------------------------------------
 &namtra_dmp    !   tracer: T & S newtonian damping                      (default: OFF)
@@ -390,7 +391,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namdyn_adv    !   formulation of the momentum advection                (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynadv_vec = .true.  !  vector form - 2nd centered scheme
-     nn_dynkeg     = 0        ! grad(KE) scheme: =0   C2  ;  =1   Hollingsworth correction
+     nn_dynkeg     = 1        ! grad(KE) scheme: =0   C2  ;  =1   Hollingsworth correction
 /
 !-----------------------------------------------------------------------
 &namdyn_vor    !   Vorticity / Coriolis scheme                          (default: NO selection)
@@ -412,9 +413,10 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynldf_lap =  .true.     !    laplacian operator
-   ln_dynldf_lev =  .true.     !  iso-level
+   ln_dynldf_hor = .true.      !  horizontal  (geopotential)
    nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
                                !  = 20  F(i,j)=F(grid spacing)=c2d
+      rn_Uv      = 0.2              !  lateral viscous velocity [m/s] (nn_ahm_ijk_t= 0, 10, 20, 30)
 /
 !!======================================================================
 !!                     vertical physics namelists                     !!
@@ -430,6 +432,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namzdf        !   vertical physics manager                             (default: NO selection)
 !-----------------------------------------------------------------------
+   !                       ! adaptive-implicit vertical advection
+   ln_zad_Aimp = .true.      !  Courant number dependent scheme (Shchepetkin 2015)
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
       nn_evdm  =    1            !  evd apply on tracer (=0) or on tracer and momentum (=1)
@@ -437,8 +441,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
-   ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
-   ln_zdftmx   = .true.       !  tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
+   ln_zdfiwm   = .true.       ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
+   ln_zdftmx   = .false.      !  tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
    !                       !  Coefficients
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
