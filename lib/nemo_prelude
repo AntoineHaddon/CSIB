@@ -154,10 +154,14 @@ echo "#################### Start NEMO pre-processing #################"
       prepDir=${prepDir/+${modLoop}/+${mLessOne}}
       dadaDir=${wrkDir/model_run/dada_run_prep}
       newDada=${dadaDir::-5}
-      # remove directory if it exists
-      rm -rf $newDada
-      # move directory from dada_prep_loop
-      mv ${prepDir} ${newDada}
+      # check if directrory available to move, otherwise retain
+      if [[ -d ${prepDir} ]] ; then
+        # remove existing directory if it exists
+        rm -rf $newDada
+        # move directory from dada_prep_loop
+        mv ${prepDir} ${newDada}
+      fi
+      # link files
       for ff in ${dadaDir}/*.nc ; do
           ln -sf $ff
       done

@@ -62,8 +62,6 @@ def matchFileYear(year,flist,file0=''):
     for fle in flist:
         # look for year in the file name
         if f'_{year:04}' in fle or f'-{year:04}' in fle:
-            print(year)
-            print(fle)
             file.append(fle)
     if len(file) > 0:
         foundFile=True
@@ -227,6 +225,107 @@ def ic_remap(args):
     # remove intermediate files
     subprocess.run(f'rm -f grd.tmp.nc',shell=True)
 
+def bdy_slc(args):
+    """
+    Take global field and simply use a weight file. Only extract desired time and interpolate vertically.
+    """
+    print(f'Finding and processing boundaries from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    if len(args.years) == 2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    else:
+        years=np.array(args.years)
+
+    # get output file name
+    if args.outfile is None:
+        # BDY gets replaced with north/south and YYYY gets replaced with the year
+        outFile='obc_cantods025_yYYYY.nc'
+    else:
+        outFile=args.outfile
+
+    # loop through each variable and interpolate to the regional boundaries
+    vars2interp=['thetao','so','uo','vo','zos']
+    for iV,vV in enumerate(vars2interp):
+        varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+
+        # find all files that match format
+        flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+        
+        # identify and process file based on desired year
+        # slow on first pass, but then much quicker on subsequent years if reading from same file
+        file0=''
+        for year in years:
+            print(f'{vV} - {year}')
+            file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
+            if (file is not None):
+                # concatenate files if necessary
+                if len(file) > 1:
+                    fstr=''
+                    for fle in file:
+                        fstr+=f'{fle} '
+                    subprocess.run(f'ncrcat -h {fstr} -O {outFile}.{vV}.concat.tmp.nc',shell=True)
+                else:
+                    subprocess.run(f'ln -s {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
+                
+                # subsample file to only include desired years
+                subprocess.run(f"cdo --no_history selyear,{min(years)}/{max(years)} {outFile}.{vV}.concat.tmp.nc {outFile}.{vV}.sliced2.tmp.nc",shell=True)
+                
+                # fill any gaps in the sliced srcFile (two iterations)
+                subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}.{vV}.sliced2.tmp.nc {outFile}.{vV}.filled.tmp.nc',shell=True)
+
+                # interpolate vertically (if not SSH)
+                if vV == 'zos':
+                    # interpolate filled src file to boundary points
+                    subprocess.run(f"mv {outFile}.{vV}.filled.tmp.nc {outFile.replace('YYYY',f'{year}')}.{vV}.nc",shell=True)
+                else:
+                    getZ(args.meshfile,outFile)
+                    subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile}.{vV}.filled.tmp.nc {outFile.replace('YYYY',f'{year}')}.{vV}.nc",shell=True)
+
+                # remove intermediate files
+                subprocess.run(f"rm -f {outFile}.*.tmp.nc*",shell=True)    
+
+    # remove all remaining intermediate files generated above
+    subprocess.run(f"rm -f {outFile}*.tmp.nc*",shell=True)
+
+    # now concatenate physical variables and rename currents
+    print(f'\rConcatenating files')
+    for year in years:
+        flist=''; ccount=0
+        for vV in vars2interp:
+            if os.path.isfile(f"{outFile.replace('YYYY',f'{year}')}.{vV}.nc"):
+                flist+=f"{outFile.replace('YYYY',f'{year}')}.{vV}.nc "
+                ccount+=1
+        if ccount > 0:
+            subprocess.run(f"cdo merge {flist} {outFile.replace('YYYY',f'{year}')}",shell=True)
+            # remove individual variable files
+            subprocess.run(f'rm -f {flist}',shell=True)
+        
+    # rename variables, dimensions, etc. for NEMO
+    dimNames={'time':'t','lev':'z','i':'x','j':'y'}
+    varNames={'longitude':'nav_lon','latitude':'nav_lat','i':'x','j':'y','thetao':'votemper',
+            'so':'vosaline','uo':'vozocrtx','vo':'vomecrty','zos':'sossheig'}
+    fcount=0
+    for fF in sorted(glob.glob(f"{outFile.replace('YYYY','*')}")):
+        # rename depth variable (shouldn't matter since all the same depth...)
+        # and add attributes
+        subprocess.run(f'cdo --no_history setattribute,thetao@grid=T,so@grid=T,zos@grid=T,uo@grid=U,vo@grid=V {fF} {fF}2',shell=True)
+        subprocess.run(f'ncrename -h -v .lev,deptht {fF}2 -O {fF}',shell=True)
+        subprocess.run(f'rm -f {fF}2',shell=True)
+
+        # rename other variables and dimensions
+        for iD,dD in enumerate(dimNames.keys()):
+            subprocess.run(f'ncrename -h -d .{dD},{dimNames[dD]} {fF} -O {fF}',shell=True)
+        for iV,vV in enumerate(varNames.keys()):
+            subprocess.run(f'ncrename -h -v .{vV},{varNames[vV]} {fF} -O {fF}',shell=True)
+        
+        # count files
+        fcount+=1
+
+    # remove sliced meshfiles and intermediate files
+    subprocess.run(f"rm -f {outFile.replace('YYYY','*')}.*.nc",shell=True)
+
+    return fcount
+
 def bdy_remap(args):
     """
     Remap to boundary.
@@ -253,67 +352,20 @@ def bdy_remap(args):
         # boundary from defined file
         # identify boundary with file name
         bbase=os.path.basename(args.bdyFile).replace('.nc','')
-        # may not know orientation of boundary from file alone,
-        # so create a file with either orientation unless specified
-        blist=[]
         # get coordinates, include buffer zone, write to file
         with xr.open_dataset(args.bdyFile) as bdyFile:
-            # read boundary
-            ii=bdyFile.nbit.squeeze()-1
-            jj=bdyFile.nbjt.squeeze()-1
-
-            # get grid coordinates on either side of the boundary
-            # TODO: check that this works in different configurations, e.g., double plus/double minus
-            iis={'plus':np.full((len(ii),10),0),'minus':np.full((len(ii),10),0)}
-            jjs={'plus':np.full((len(jj),10),0),'minus':np.full((len(jj),10),0)}
-            # if all the same i coordinate, only add in j
-            if len(np.unique(ii))==1:
-                for iB in range(10):
-                    iis['plus'][:,iB]=ii; iis['minus'][:,iB]=ii
-                    jjs['plus'][:,iB]=jj+iB ; jjs['plus'][:,iB]=jj-iB
-            # if all same j coordinate, only add in i
-            elif len(np.unique(jj))==1:
-                for iB in range(10):
-                    iis['plus'][:,iB]=ii+iB; iis['minus'][:,iB]=ii-iB
-                    jjs['plus'][:,iB]=jj; jjs['minus'][:,iB]=jj
-            # if both i and j vary, add in both i and j directions
-            else:# len(np.unique(ii))==len(ii) and len(np.unique(jj))==len(jj):
-                for iB in range(10):
-                    iis['plus'][:,iB]=ii+iB; iis['minus'][:,iB]=ii-iB
-                    jjs['plus'][:,iB]=jj+iB ; jjs['minus'][:,iB]=jj-iB
-            # else:
-            #     sys.exit('Not sure how to deal with this boundary!!')
-            # create output files with lat/lon surrounding the boundary (if possible)
-            with xr.open_dataset('grd.tmp.nc') as grd:
-                # get lon and lat coordinates of boundary + buffer zone
-                lns={}; lts={}
-                goodOrientation={'plus':True,'minus':False}
-                for iPM in ['plus','minus']:
-                    lns[iPM]=np.full(np.shape(iis[iPM]),0.)
-                    lts[iPM]=np.full(np.shape(jjs[iPM]),0.)
-                    for iL in range(len(iis[iPM])):
-                        for iB in range(10):
-                            # try:
-                            lns[iPM][iL,iB]=grd.nav_lon[iis[iPM][iL,iB],jjs[iPM][iL,iB]]
-                            lts[iPM][iL,iB]=grd.nav_lat[iis[iPM][iL,iB],jjs[iPM][iL,iB]]
-                            # except:
-                            #     goodOrientation[iPM]=False
-                            #     break
-                        if not goodOrientation:
-                            break
-                    if goodOrientation[iPM]:
-                        # write to file
-                        msh=xr.Dataset.from_dict(
-                            {'nav_lon':{'dims':('y','x'),'data':lns[iPM],'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
-                            'nav_lat':{'dims':('y','x'),'data':lts[iPM],'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}},
-                            'nav_ones':{'dims':('time_counter','y','x'),'data':np.ones((1,np.shape(lns[iPM])[0],np.shape(lns[iPM])[1])),'attrs':{'coordinates':'nav_lat nav_lon'}},
-                            'time_counter':{'dims':('time_counter'),'data':[0.]}})
-                        # write to temporary netCDF file
-                        msh.to_netcdf(f'bdy.{bbase}_{iPM}.nc')
-                        blist.append(f'{bbase}_{iPM}')
-                        # boundary max/min latitude
-                        bN=np.nanmax([bN,np.nanmax(lts[iPM])])
-                        bS=np.nanmin([bS,np.nanmin(lts[iPM])])
+            # write to temporary file
+            msh=xr.Dataset.from_dict(
+                {'nav_lon':{'dims':('y','x'),'data':bdyFile.nav_lon.values,'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
+                'nav_lat':{'dims':('y','x'),'data':bdyFile.nav_lat.values,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}},
+                'nav_ones':{'dims':('time_counter','y','x'),'data':np.ones((1,np.shape(bdyFile.nav_lat.values)[0],np.shape(bdyFile.nav_lat.values)[1])),'attrs':{'coordinates':'nav_lat nav_lon'}},
+                'time_counter':{'dims':('time_counter'),'data':[0.]}})
+            # write to temporary netCDF file
+            msh.to_netcdf(f'bdy.{bbase}.nc')
+            blist=[bbase]
+            # boundary max/min latitude
+            bN=np.nanmax([bN,np.nanmax(bdyFile.nav_lat)])
+            bS=np.nanmin([bS,np.nanmin(bdyFile.nav_lat)])
     else:
         # assumed boundary from grid
         blist=['north','south']
@@ -742,5 +794,8 @@ elif args.type==3:
     print('Remapping/scaling rivers.')
     rvr_remap(args)
     print(f'Done river rivermapping.')
+elif args.type==10:
+    bdy_slc(args)
+    print(f'Done extracting file as boundary input!')
 else:
     sys.exit(f'ERROR: type must be -1, 0, 1, or 2, not {args.type}')
