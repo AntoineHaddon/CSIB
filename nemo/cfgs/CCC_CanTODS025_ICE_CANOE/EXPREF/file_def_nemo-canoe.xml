@@ -64,7 +64,7 @@
         </file>
 
       </file_group>
-      <file_group id="1m" output_freq="1m" enabled=".TRUE."> 
+      <file_group id="1m" output_freq="1mo" enabled=".TRUE."> 
 
         <file id="file32" name_suffix="_btrc_T" description="CMOC sms variables + TOP tracers" >
           <field field_ref="DIC"      level="0" />
