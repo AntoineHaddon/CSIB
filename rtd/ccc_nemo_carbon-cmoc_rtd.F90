@@ -230,7 +230,7 @@ PROGRAM nemo_ocean_diag
       CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)   
       CALL closefile (iou5)
       CALL openfile(fname08,iou7) 
-      CALL getvara ('e3t', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+      CALL getvara ('thkcello', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
       CALL closefile(iou7)  
 
 !---------------------------------------------------

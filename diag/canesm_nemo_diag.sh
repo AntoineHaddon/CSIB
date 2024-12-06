@@ -60,7 +60,7 @@ set -e
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
 # Access the history files
-  for sfx in $nemo_diag_file_suffix_list ; do
+  for sfx in $nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list ; do
     yr=$fyear
     mp=0
     for mm in $nemo_rtd_mons ; do
@@ -122,13 +122,6 @@ set -e
       # output_level=3 and only if starting from January
       3)
         if [ $nemo_calc_diag -eq 1 ] ; then
-          # access input variables for computing tstend (yearly) with priority level 3
-          if [[ $nmon -eq 1 && $fmon -eq 1 ]] ; then
-            for sfx in $nemo_diag_file_1y_suffix_list ; do
-              diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-              access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
-            done
-          fi
           if [ $fmon -eq 1 ] ; then
             # Run offline computation of tendency terms only if starting from January and yearly chunk
             # Access the nemo restart files
@@ -210,7 +203,6 @@ set -e
               # Append yearly diagnostics suffix list
               chmod u+w 1y_grid_t_ar6_${fmon}
               ncks -A tstend.nc 1y_grid_t_ar6_${fmon}
-              nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
             else
               bail "tstend.nc does not exist"
             fi
@@ -224,7 +216,7 @@ set -e
 # Split historical files to time series and save #
 ##################################################
   # split to time series
-  for sfx in $nemo_diag_file_suffix_list ; do
+  for sfx in $nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list ; do
     [ ! -e ${sfx}_${fmon} ] && continue
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
 
