@@ -473,6 +473,25 @@ CONTAINS
             tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
          ENDDO
       ENDDO
+
+      ! Bottom remineralization of GOC/POC
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ikt  = mbkt(ji,jj)
+            zwsbio4 = wsbio4(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
+            zwsbio3 = wsbio3(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
+! all deposition of POC is returned to bottom layer as inorganic nutrients
+            tr(ji,jj,ikt,jqdic,Kbb) = tr(ji,jj,ikt,jqdic,Kbb) + (tr(ji,jj,ikt,jqgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jqpoc,Kbb) * zwsbio3) * 1.E-6
+            tr(ji,jj,ikt,jqoxy,Kbb) = tr(ji,jj,ikt,jqoxy,Kbb) - (tr(ji,jj,ikt,jqgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jqpoc,Kbb) * zwsbio3)
+            tr(ji,jj,ikt,jqnh4,Kbb) = tr(ji,jj,ikt,jqnh4,Kbb) + (tr(ji,jj,ikt,jqgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jqpoc,Kbb) * zwsbio3) * rr_n2c
+            tr(ji,jj,ikt,jqfer,Kbb) = tr(ji,jj,ikt,jqfer,Kbb) + (tr(ji,jj,ikt,jqgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jqpoc,Kbb) * zwsbio3) * rr_fe2c
+            tr(ji,jj,ikt,jqtal,Kbb) = tr(ji,jj,ikt,jqtal,Kbb) + (tr(ji,jj,ikt,jqgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jqpoc,Kbb) * zwsbio3) * rr_n2c * 1.E-6
+! operations on POC and GOC arrays MUST come after all other lines where these arrays appear on RHS
+            tr(ji,jj,ikt,jqgoc,Kbb) = tr(ji,jj,ikt,jqgoc,Kbb) - tr(ji,jj,ikt,jqgoc,Kbb) * zwsbio4
+            tr(ji,jj,ikt,jqpoc,Kbb) = tr(ji,jj,ikt,jqpoc,Kbb) - tr(ji,jj,ikt,jqpoc,Kbb) * zwsbio3
+            !zocdep(ji,jj) = trn(ji,jj,ikt,jqpoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jqgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
+         END DO
+      END DO
       !
       zrfact2 = 1.e-3 * qfact2r
       ik1  = iksed + 1
