@@ -433,7 +433,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namzdf        !   vertical physics manager                             (default: NO selection)
 !-----------------------------------------------------------------------
    !                       ! adaptive-implicit vertical advection
-   ln_zad_Aimp = .true.      !  Courant number dependent scheme (Shchepetkin 2015)
+   ln_zad_Aimp = .false.      !  Courant number dependent scheme (Shchepetkin 2015)
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
       nn_evdm  =    1            !  evd apply on tracer (=0) or on tracer and momentum (=1)
