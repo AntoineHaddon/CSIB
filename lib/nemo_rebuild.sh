@@ -198,7 +198,6 @@ ln -sf ../rebuild_nemo.exe .
 nn_itend=$(cat rs_time.step)
 start_step=$(grep -m 1 -w nn_it000 rs_namelist_cfg | awk '{printf "%8.8d",$3 - 1}')
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
-bail 'to test'
 
 # The initial ice state files
 pfx=output.init_ice
