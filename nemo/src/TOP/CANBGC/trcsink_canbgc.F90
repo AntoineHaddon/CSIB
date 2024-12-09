@@ -465,12 +465,12 @@ CONTAINS
             ikt = mbkt(ji,jj)
             zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
             zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
-            tr(ji,jj,ikt,jrcal, Kbb) = tr(ji,jj,ikt,jrcal, Kbb) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
             ! add DIC/TA to bottom layer if dissolution and to surface layer if burial
-            tr(ji,jj,ikt,jqdic, Kbb) = tr(ji,jj,ikt,jqdic, Kbb) + zcalbotflx * (1.-zfactcal) * 1.E-6 / e3t(ji,jj,ikt, Kmm)
-            tr(ji,jj,1,jqdic, Kbb) = tr(ji,jj,1,jqdic, Kbb) + zcalbotflx * zfactcal * 1.E-6 / e3t(ji,jj,1, Kmm)
-            tr(ji,jj,ikt,jqtal, Kbb) = tr(ji,jj,ikt,jqtal, Kbb) + zcalbotflx * (1.-zfactcal) * 2.E-6 / e3t(ji,jj,ikt, Kmm)
-            tr(ji,jj,1,jqtal, Kbb) = tr(ji,jj,1,jqtal, Kbb) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
+            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + zcalbotflx * (1.-zfactcal) * 1.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zcalbotflx * zfactcal * 1.E-6 / e3t(ji,jj,1, Kmm)
+            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + zcalbotflx * (1.-zfactcal) * 2.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
          ENDDO
       ENDDO
 
@@ -481,14 +481,14 @@ CONTAINS
             zwsbio4 = wsbio4(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
             zwsbio3 = wsbio3(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
 ! all deposition of POC is returned to bottom layer as inorganic nutrients
-            tr(ji,jj,ikt,jqdic,Kbb) = tr(ji,jj,ikt,jqdic,Kbb) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * 1.E-6
-            tr(ji,jj,ikt,jqoxy,Kbb) = tr(ji,jj,ikt,jqoxy,Kbb) - (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3)
-            tr(ji,jj,ikt,jrnh4,Kbb) = tr(ji,jj,ikt,jrnh4,Kbb) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_n2c
-            tr(ji,jj,ikt,jrfer,Kbb) = tr(ji,jj,ikt,jrfer,Kbb) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_fe2c
-            tr(ji,jj,ikt,jqtal,Kbb) = tr(ji,jj,ikt,jqtal,Kbb) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_n2c * 1.E-6
+            tr(ji,jj,ikt,jqdic,Krhs) = tr(ji,jj,ikt,jqdic,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * 1.E-6
+            tr(ji,jj,ikt,jqoxy,Krhs) = tr(ji,jj,ikt,jqoxy,Krhs) - (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3)
+            tr(ji,jj,ikt,jrnh4,Krhs) = tr(ji,jj,ikt,jrnh4,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_n2c
+            tr(ji,jj,ikt,jrfer,Krhs) = tr(ji,jj,ikt,jrfer,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_fe2c
+            tr(ji,jj,ikt,jqtal,Krhs) = tr(ji,jj,ikt,jqtal,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_n2c * 1.E-6
 ! operations on POC and GOC arrays MUST come after all other lines where these arrays appear on RHS
-            tr(ji,jj,ikt,jrgoc,Kbb) = tr(ji,jj,ikt,jrgoc,Kbb) - tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4
-            tr(ji,jj,ikt,jrpoc,Kbb) = tr(ji,jj,ikt,jrpoc,Kbb) - tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3
+            tr(ji,jj,ikt,jrgoc,Krhs) = tr(ji,jj,ikt,jrgoc,Krhs) - tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4
+            tr(ji,jj,ikt,jrpoc,Krhs) = tr(ji,jj,ikt,jrpoc,Krhs) - tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3
             !zocdep(ji,jj) = trn(ji,jj,ikt,jqpoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jqgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
          END DO
       END DO
