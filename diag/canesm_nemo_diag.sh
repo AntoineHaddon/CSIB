@@ -98,19 +98,19 @@ set -e
         # access input variables for computing vars with priority level 1
         
         if [[ $fmon -eq 1 && $nemo_calc_diag == 1 ]] ; then
-          if [[ -L 1m_grid_t_${fmon} ]]; then
+          if is_file_or_valid_link "1m_grid_t_${fmon}"; then
             ln -sf 1m_grid_t_${fmon} grid_t  
           else
             bail "Link to grid_t failed"
           fi
 
-          if [[ -L 1m_grid_u_${fmon} ]]; then
+          if is_file_or_valid_link "1m_grid_u_${fmon}"; then
             ln -sf 1m_grid_u_${fmon} grid_u  
           else
             bail "Link to grid_u failed"
           fi
 
-          if [[ -L 1m_grid_v_${fmon} ]]; then
+          if is_file_or_valid_link "1m_grid_v_${fmon}"; then
             ln -sf 1m_grid_v_${fmon} grid_v  
           else  
             bail "Link to grid_v failed"
