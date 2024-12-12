@@ -120,15 +120,6 @@ def getZ(meshFile,outFile):
                 subprocess.run(f'ncks -h -v gdept_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
             elif 'votemper' in mF.keys():
                 subprocess.run(f'ncks -h -v votemper {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
-            # elif 'depth' in mF.keys():
-            #     # depth is not a 3-D variable. Need to tile it and save separately  
-            #     x=len(mF['x'])
-            #     y=len(mF['y'])
-            #     depths=np.transpose(np.tile(mF.depth.values,(1,y,x,1)),(0,3,1,2))
-            #     # convert to dataset
-            #     dpth=xr.Dataset.from_dict(
-            #         {'depth':{'dims':('t','z','y','x'),'data':depths}})
-            #     dpth.to_netcdf(f'{outFile}.onlyz.tmp.nc')
             else:
                 sys.exit('Error: cannot find depth coordinate.')
     return
@@ -712,7 +703,7 @@ def calc_nemo_chunk_dates(args):
         # from directory name
         ll=int(os.path.split(os.getcwd())[-2].split('+')[-1])-1
         # add one back if dada_run_prep or dada_run_zero (offsets loop number)
-        if 'dada' in os.path.split(os.getcwd())[-2]:
+        if 'dada_run' in os.path.split(os.getcwd())[-2]:
             ll+=1
     else:
         # passed as argument

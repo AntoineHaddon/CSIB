@@ -17,8 +17,13 @@ python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y $(($NEMO_CHUNK_START_Y
 
 # initial conditions
 if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; then
-  acc_cp tmp_ic.nc $nemo_data_1m_temperature_rest
-  python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
+  if [[ $runmode == *"CanTODS"* ]]; then
+    python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
+  else
+    # eORCA grids slightly different, so interpolate to an existing IC file
+    acc_cp tmp_ic.nc $nemo_data_1m_temperature_rest
+    python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
+  fi
   if [ -z "$(ls ./data_1m_*_nomask.nc)" ] ; then
     echo "ERROR: No IC files generated!"
     exit 29
@@ -26,8 +31,8 @@ if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; t
 fi
 
 # boundary conditions
-if [[ $ctds_dnscl != 0 ]] && [[ $runmode == *"dada"* ]] ; then
-  python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 > bc_status
+if [[ $ctds_dnscl != 0 ]] && [[ $runmode == *"CanTODS"* ]] ; then
+  python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 > bc_status
   if [ -z "$(ls ./obc_*_${dada_outfield}_y*.nc)" ] ; then
     echo "ERROR: No OBC files generated!"
     exit 10

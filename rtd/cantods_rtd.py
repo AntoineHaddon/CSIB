@@ -155,7 +155,18 @@ def relativeYear(dset,args):
     #TODO: handle leap years properly?
     fyears=np.full(len(ftime),np.nan)
     for iY,fT in enumerate(ftime):
-        fyears[iY]=fT.year-args.year0 + (fT.month-1)/12 + (fT.day-1)/365. + (fT.hour-1)/(24*365.) + (fT.minute-1)/(60*24*365.) + (fT.second-1)/(60*60*24*365.)    # fraction by seconds in that minute
+        try:
+          fyears[iY]=fT.year-args.year0 + (fT.month-1)/12 + (fT.day-1)/365. + (fT.hour-1)/(24*365.) + (fT.minute-1)/(60*24*365.) + (fT.second-1)/(60*60*24*365.)    # fraction by seconds in that minute
+        except:
+          # depending on the python version, numpy date object may not have access to year, etc. Instead, need to convert to string and parse that
+          fS=str(fT)
+          fY=int(fS.split('-')[0])
+          fM=int(fS.split('-')[1])
+          fD=int(fS.split('-')[2].split('T')[0])
+          fH=int(fS.split('T')[1].split(':')[0])
+          fm=int(fS.split(':')[1])
+          fs=float(fS.split(':')[2])
+          fyears[iY]=fY-args.year0 + (fM-1.0)/12.0 + (fD-1.0)/365. + (fH-1.0)/(24*365.) + (fm-1.0)/(60*24*365.) + (fs-1.0)/(60*60*24*365.)    # fraction by seconds in that minute
 
     return fyears
 
