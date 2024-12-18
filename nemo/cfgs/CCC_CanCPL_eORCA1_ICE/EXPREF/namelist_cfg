@@ -209,16 +209,17 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
       rn_hrnf     =  15.e0    !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
       rn_avt_rnf  =   1.e-3   !  value of the additional vertical mixing coef. [m2/s] (ln_rnf_mouth=T)
    rn_rfact    =   1.e0    !  multiplicative factor for runoff
+   ln_rnf_depth = .false.   !  read in depth information for runoff
 
    cn_dir = './'  !  root directory for the location of the runoff files
    !___________!_____________!___________________!___________!_____________!_________!___________!__________!__________!_______________!
    !           !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
    !           !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_rnf      = 'runoff_core_monthly',    -1.   , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
-   sn_cnf      = 'runoff_core_monthly',     0.   , 'socoefr0',   .false.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_s_rnf    = 'runoffs'            ,    24.   , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
-   sn_t_rnf    = 'runoffs'            ,    24.   , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
-   sn_dep_rnf  = 'runoffs'            ,     0.   , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_rnf      = 'runoff'    ,    -1.            , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
+   sn_cnf      = 'runoff'    ,     0.            , 'socoefr0',   .false.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_s_rnf    = 'runoff'    ,    24.            , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
+   sn_t_rnf    = 'runoff'    ,    24.            , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
+   sn_dep_rnf  = 'runoff'    ,     0.            , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_apr    !   Atmospheric pressure used as ocean forcing           (ln_apr_dyn =T)
