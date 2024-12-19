@@ -631,6 +631,7 @@ def rvr_remap(args):
                     if 'flist1' not in locals():
                         flist1=np.array(sorted(glob.glob(args.rvr)))
                     if len(flist1)==0:
+                        print(args.rvr)
                         print('No files for remapping rivers!')
                     else:
                         file1=matchFileYear(yr,flist1)[0]

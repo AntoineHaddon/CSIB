@@ -92,7 +92,8 @@ def cantodsFiles(runid,nemoVar,args):
         globdir=os.path.join(args.runpath[0],runid,'data')
     else:
         globdir=os.path.join(np.array(args.runpath)[np.array(args.runid)==runid][0],runid,'data')
-    flist=glob.glob(f'{globdir}/mc_{runid}_*_m01_5d_{ftype.lower()}.nc.*')
+    # flist=glob.glob(f'{globdir}/mc_{runid}_*_m01_5d_{ftype.lower()}.nc.*')
+    flist=glob.glob(f'{globdir}/mc_{runid}_*_m01_1m_{ftype.lower()}.nc.*')
 
     # identify the year in each file name
     fyear=[int(os.path.basename(fle).split(f'{runid}_')[1].split('_m')[0]) for fle in flist]
