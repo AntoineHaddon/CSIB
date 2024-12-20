@@ -50,7 +50,7 @@ MODULE ldfdyn
    REAL(wp), PUBLIC ::   rn_maxfac             !: Multiplicative factor of theorectical maximum Smagorinsky viscosity
    !                                        ! iso-neutral laplacian (ln_dynldf_lap=ln_dynldf_iso=T)
    REAL(wp), PUBLIC ::   rn_ahm_b              !: lateral laplacian background eddy viscosity  [m2/s]
-   REAL(wp), PUBLIC ::   rn_ahm_ratio    !: ratio of viscosity in surface to bottom ocean (nn_ahm_ijk_t = 10 or 30)
+   REAL(wp), PUBLIC ::   rn_ahm_ratio          !: surface to bottom ratio of lateral viscosity (nn_ahm_ijk_t = 10 or 30)
 
    !                                    !!* Parameter to control the type of lateral viscous operator
    INTEGER, PARAMETER, PUBLIC ::   np_ERROR   =-10                      !: error in setting the operator
@@ -149,10 +149,10 @@ CONTAINS
          WRITE(numout,*) '         type of time-space variation         nn_ahm_ijk_t  = ', nn_ahm_ijk_t
          WRITE(numout,*) '         lateral viscous velocity  (if cst)      rn_Uv      = ', rn_Uv, ' m/s'
          WRITE(numout,*) '         lateral viscous length    (if cst)      rn_Lv      = ', rn_Lv, ' m'
-         WRITE(numout,*) '         background viscosity (iso-lap case)     rn_ahm_b   = ', rn_ahm_b, ' m2/s'
          IF ( nn_ahm_ijk_t == 10 .or. nn_ahm_ijk_t == 30 ) THEN
-            WRITE(numout,*) '      viscosity ratio surface to bottom      rn_ahm_ratio = ', rn_ahm_ratio
+            WRITE(numout,*) '         viscosity ratio surface to bottom     rn_ahm_ratio = ', rn_ahm_ratio
          ENDIF
+         WRITE(numout,*) '         background viscosity (iso-lap case)     rn_ahm_b   = ', rn_ahm_b, ' m2/s'
          !
          WRITE(numout,*) '      Smagorinsky settings (nn_ahm_ijk_t  = 32) :'
          WRITE(numout,*) '         Smagorinsky coefficient              rn_csmc       = ', rn_csmc

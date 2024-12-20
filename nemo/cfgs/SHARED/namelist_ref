@@ -950,6 +950,7 @@
       !                             !                           or   = 1/12 Ud*Ld^3 (blp case)
       rn_Ud        = 0.01           !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
       rn_Ld        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      rn_aht_ratio = 0.25           !  surface to bottom ratio of lateral eddy coefficient (nn_aht_ijk_t = 10, 30)
 /
 !-----------------------------------------------------------------------
 &namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)       (default: OFF)
@@ -983,6 +984,7 @@
       !                        !  time invariant coefficients:  aei0 = 1/2  Ue*Le
       rn_Ue        = 0.02           !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
       rn_Le        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      rn_aei_ratio = 0.25           !  surface to bottom ratio of eddy induced velocity coefficient (nn_aei_ijk_t = 10, 30)
       rn_zRomax    = 200.e+3        !  Rossby radius in the tropical regions: 200 km
       rn_zRocoef   = 25.e+3         !  a prescribed "typical" eddy scale: 25 or 50 km
       rn_eiwmin    = 100.           !  lower limit of eddy induced velocity (m2/s)
