@@ -268,7 +268,7 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namlbc        !   lateral momentum boundary condition                  (default: NO selection)
 !-----------------------------------------------------------------------
-   rn_shlat    =    0.     !  free slip
+   rn_shlat    =    2.     !  no slip
 /
 !!======================================================================
 !!                ***  Top/Bottom boundary condition  ***             !!
@@ -390,7 +390,7 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
 &namdyn_adv    !   formulation of the momentum advection                (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynadv_vec = .true.  !  vector form - 2nd centered scheme
-     nn_dynkeg     = 1        ! grad(KE) scheme: =0   C2  ;  =1   Hollingsworth correction
+     nn_dynkeg     = 0        ! grad(KE) scheme: =0   C2  ;  =1   Hollingsworth correction
 /
 !-----------------------------------------------------------------------
 &namdyn_vor    !   Vorticity / Coriolis scheme                          (default: NO selection)
@@ -412,10 +412,11 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynldf_lap =  .true.     !    laplacian operator
-   ln_dynldf_hor = .true.      !  horizontal  (geopotential)
-   nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
-                               !  = 20  F(i,j)=F(grid spacing)=c2d
+   ln_dynldf_lev = .true.      !  iso-level
+   nn_ahm_ijk_t  =  30         !  space/time variation of eddy coefficient :
+                               !  = 30  F(i,j,k)=c2d*c1d
       rn_Uv      = 0.2              !  lateral viscous velocity [m/s] (nn_ahm_ijk_t= 0, 10, 20, 30)
+      rn_ahm_ratio  = 0.5         ! surface to bottom ratio of lateral eddy coefficient (nn_ahm_ijk_t = 10, 30)
 /
 !!======================================================================
 !!                     vertical physics namelists                     !!

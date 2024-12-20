@@ -268,7 +268,7 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namlbc        !   lateral momentum boundary condition                  (default: NO selection)
 !-----------------------------------------------------------------------
-   rn_shlat    =    0.     !  free slip
+   rn_shlat    =    2.     !  no slip
 /
 !!======================================================================
 !!                ***  Top/Bottom boundary condition  ***             !!
@@ -389,7 +389,7 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
 &namdyn_adv    !   formulation of the momentum advection                (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynadv_vec = .true.  !  vector form - 2nd centered scheme
-     nn_dynkeg     = 1        ! grad(KE) scheme: =0   C2  ;  =1   Hollingsworth correction
+     nn_dynkeg     = 0        ! grad(KE) scheme: =0   C2  ;  =1   Hollingsworth correction
 /
 !-----------------------------------------------------------------------
 &namdyn_vor    !   Vorticity / Coriolis scheme                          (default: NO selection)
@@ -412,7 +412,7 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_dynldf_lap =  .false.    !  laplacian operator
    ln_dynldf_blp =  .true.     !  bilaplacian operator
-   ln_dynldf_hor = .true.      !  horizontal  (geopotential)
+   ln_dynldf_lev = .true.      !  iso-level
    nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
                                !  = 20  F(i,j)=F(grid spacing)=c2d
    rn_Uv = 0.0838
