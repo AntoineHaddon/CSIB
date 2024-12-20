@@ -1110,6 +1110,7 @@
       !                             !                            or  = 1/12 Uv*Lv^3 (blp case)
       rn_Uv      = 0.1              !  lateral viscous velocity [m/s] (nn_ahm_ijk_t= 0, 10, 20, 30)
       rn_Lv      = 10.e+3           !  lateral viscous length   [m]   (nn_ahm_ijk_t= 0, 10)
+      rn_ahm_ratio  = 0.25        ! surface to bottom ratio of lateral eddy coefficient (nn_ahm_ijk_t = 10, 30)
       !                       !  Smagorinsky settings  (nn_ahm_ijk_t= 32) :
       rn_csmc       = 3.5         !  Smagorinsky constant of proportionality
       rn_minfac     = 1.0         !  multiplier of theorectical lower limit
