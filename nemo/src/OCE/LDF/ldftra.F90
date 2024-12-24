@@ -14,6 +14,7 @@ MODULE ldftra
    !!                                        coefficien following Saenko, Yang & Gregory (2018) and Tréguier et al. (1997)
    !!                                        respectively. Note that the latter is the original code containing errors that is 
    !!                                        now recovered for traceability. 
+   !!                 ! 2024-12  (G. Stanley) make the surface to bottom diffusivity ratio a parameter, not hardcoded
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------

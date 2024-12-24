@@ -5,6 +5,7 @@ MODULE ldfc1d_c2d
    !!=====================================================================
    !! History :  3.7  ! 2013-12  (G. Madec)  restructuration/simplification of aht/aeiv specification,
    !!                 !                      add velocity dependent coefficient and optional read in file
+   !!                 ! 2024-12  (G. Stanley) make the surface to bottom ratio a parameter, not hardcoded
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------

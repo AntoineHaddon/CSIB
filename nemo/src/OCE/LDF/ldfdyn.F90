@@ -7,6 +7,7 @@ MODULE ldfdyn
    !!   NEMO     1.0  ! 2002-09  (G. Madec)  F90: Free form and module
    !!            3.7  ! 2014-01  (F. Lemarie, G. Madec)  restructuration/simplification of ahm specification,
    !!                 !                                  add velocity dependent coefficient and optional read in file
+   !!                 ! 2024-12  (G. Stanley) make the surface to bottom viscosity ratio a parameter, not hardcoded
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
