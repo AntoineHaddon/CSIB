@@ -261,7 +261,7 @@ CONTAINS
       nday_qsr = -1   ! allow initialization at the 1st call !LB: now warm-layer of COARE* calls "sbc_dcy_param" of sbcdcy.F90!
       IF( ln_dm2dc ) THEN           !* daily mean to diurnal cycle
          !LB:nday_qsr = -1   ! allow initialization at the 1st call
-         IF( .NOT.( ln_flx .OR. ln_blk .OR. ln_abl ) .AND. nn_components /= jp_iam_oce )   &
+         IF( .NOT.( ln_flx .OR. ln_blk .OR. ln_abl .OR. ln_cpl ) .AND. nn_components /= jp_iam_oce )   &
             &   CALL ctl_stop( 'qsr diurnal cycle from daily values requires flux, bulk or abl formulation' )
       ENDIF
       !                             !* Choice of the Surface Boudary Condition
@@ -360,6 +360,7 @@ CONTAINS
 
       ELSEIF( nn_ice == 2 ) THEN
                           CALL ice_init( Kbb, Kmm, Kaa )         ! ICE initialization
+                          CALL sbc_ssm_ice_init ( Kbb, Kmm ) ! Sea-surface mean ice fields initialization
       ENDIF
 #endif
       IF( nn_ice == 3 )   CALL cice_sbc_init( nsbc, Kbb, Kmm )   ! CICE initialization
@@ -446,6 +447,9 @@ CONTAINS
       ENDIF
       !
       IF( .NOT.ll_sas )   CALL sbc_ssm ( kt, Kbb, Kmm )  ! mean ocean sea surface variables (sst_m, sss_m, ssu_m, ssv_m)
+#if defined key_si3
+      IF( .NOT.ll_sas )   CALL sbc_ssm_ice ( kt, Kbb, Kmm )  ! mean sea-ice surface variables (a_i, t_su)
+#endif
       !
       !                                            !==  sbc formulation  ==!
       !

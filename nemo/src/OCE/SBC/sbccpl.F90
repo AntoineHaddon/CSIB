@@ -1213,7 +1213,7 @@ CONTAINS
       !
       IF( kt == nit000 ) THEN
       !   cannot be done in the init phase when we use agrif as cpl_freq requires that oasis_enddef is done
-         ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) + cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
+         ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) !+ cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
          IF( ln_dm2dc .AND. ncpl_qsr_freq /= 86400 )   &
             &   CALL ctl_stop( 'sbc_cpl_rcv: diurnal cycle reconstruction (ln_dm2dc) needs daily couping for solar radiation' )
 
@@ -2119,6 +2119,34 @@ CONTAINS
       ! outputs
       IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea' , - frcv(jpr_cal)%z3(:,:,1) * rLfus ) ! latent heat from calving
       IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea' , - frcv(jpr_icb)%z3(:,:,1) * rLfus ) ! latent heat from icebergs melting
+      IF (        iom_use('hflx_whc_rain_oce')   )    &
+         &   CALL iom_put('hflx_whc_rain_oce' ,  (1-picefr) * ( ztprecip - zsprecip ) *   zcptrain    )
+      IF (        iom_use('hflx_whc_snow_oce') )    &
+         &   CALL iom_put('hflx_whc_snow_oce' , (1-picefr) * zsprecip * zcptsnw   )
+      IF (        iom_use('hflx_whc_evp_oce') )    &
+         &   CALL iom_put('hflx_whc_evp_oce' ,  - zevap_oce * zcptn )
+
+      IF (        iom_use('hflx_whc_rain_ice')   )    &
+         &   CALL iom_put('hflx_whc_rain_ice' , picefr * ( ztprecip - zsprecip ) * zcptrain  )
+      IF (        iom_use('hflx_whc_snow_ice') )    &
+         &   CALL iom_put('hflx_whc_snow_ice' , picefr * zsprecip * zcptsnw  )
+      IF (        iom_use('hflx_whc_evp_ice') )    &
+         &   CALL iom_put('hflx_whc_evp_ice' ,  - zevap_ice_total * picefr * zcptsnw )
+
+      IF (        iom_use('zcptrain')   )    &
+         &   CALL iom_put('zcptrain' , zcptrain  )
+      IF (        iom_use('zcptsnw') )    &
+         &   CALL iom_put('zcptsnw' , zcptsnw  )
+      IF (        iom_use('zcptn') )    &
+         &   CALL iom_put('zcptn' ,  zcptn )
+
+      IF (        iom_use('hflx_whc_rnf') )    &
+         &   CALL iom_put('hflx_whc_rnf' ,  MAX( sst_m(:,:), 0.0_wp ) * rnf(:,:) * rcp )
+
+      IF (        iom_use('hflx_whc_cea') )    &
+         &   CALL iom_put('hflx_whc_cea' , (  zqemp_ice(:,:) + zqemp_oce(:,:) + zsprecip(:,:) * rLfus + MAX( sst_m(:,:), 0.0_wp ) * rnf(:,:) * rcp )  )
+      IF (        iom_use('hflx_qla_cea') )    &                                                    ! heat flux from latent heat flux from the sbow (cell average)
+         &   CALL iom_put('hflx_qla_cea' , ( - zsprecip(:,:) * rLfus ) )
       IF (        iom_use('hflx_rain_cea') )    &                                                    ! heat flux from rain (cell average)
          &   CALL iom_put('hflx_rain_cea' , ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )
       IF (        iom_use('hflx_evap_cea') )    &                                                    ! heat flux from evap (cell average)

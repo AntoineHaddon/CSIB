@@ -195,6 +195,97 @@
             <!-- <field field_ref="ttrd_qsr_li"   name="rsdoabsorb"      level="3" /> <!-- (Oyr*) in field* but not in NEMO4 -->
             <!-- <field field_ref="eketrd_eiv"    name="tnkebto"       level="3" /> <!-- (Oyr*) in field* but not in NEMO4 --> 
         </file>
+        <file id="file32" name_suffix="_heat_budget" description="ocean heat budget variables">
+          <field field_ref="areacello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="volcello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="masscello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="heatc"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="icehc"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="snwhc"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="hfgeou" operation="once"          level="0" /> <!-- (Omon) -->
+          <field field_ref="qsr_oce"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qns_oce"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qsr_ice"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qns_ice"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_atm_oi"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_oce_ai"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qt_ice"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_whc_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_qla_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_rain_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_evap_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_subl_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_snow_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_snow_ao_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_snow_ai_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hflx_rnf_cea"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="O_QsrMix"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="O_QnsMix"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="O_QsrIce"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="O_QnsIce"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qemp_oce"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="qemp_ice"                           level="0" /> <!-- (Omon) -->
+          <field field_ref="hfxbog"                              level="0" />
+          <field field_ref="hfxbom"                              level="0" />
+          <field field_ref="hfxsum"                              level="0" />
+          <field field_ref="hfxopw"                              level="0" />
+          <field field_ref="hfxdif"                              level="0" />
+          <field field_ref="hfxsnw"                              level="0" />
+          <field field_ref="hfxerr"                              level="0" />
+          <field field_ref="hfxthd"                              level="0" />
+          <field field_ref="hfxdyn"                              level="0" />
+          <field field_ref="hfxres"                              level="0" />
+          <field field_ref="hfxsub"                              level="0" />
+          <field field_ref="hfxspr"                              level="0" />
+          <field field_ref="hfxevp"                              level="0" />
+          <field field_ref="hflx_whc_rain_oce"                   level="0" />
+          <field field_ref="hflx_whc_snow_oce"                   level="0" />
+          <field field_ref="hflx_whc_evp_oce"                   level="0" />
+          <field field_ref="hflx_whc_rain_ice"                   level="0" />
+          <field field_ref="hflx_whc_snow_ice"                   level="0" />
+          <field field_ref="hflx_whc_evp_ice"                   level="0" />
+          <field field_ref="hflx_whc_rnf"                   level="0" />
+          <field field_ref="zcptrain"                   level="0" />
+          <field field_ref="zcptsnw"                   level="0" />
+          <field field_ref="zcptn"                   level="0" />
+        </file>
+        <file id="file33" name_suffix="_mass_budget" description="ocean heat budget variables">
+          <field field_ref="areacello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="volcello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="masscello"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="icemass"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="snwmass"  operation="instant"      level="0" /> <!-- instant => last occurence -->
+          <field field_ref="empmr"                             level="0" />
+          <field field_ref="runoffs"                           level="0" />
+          <field field_ref="emp_ice"                           level="0" />
+          <field field_ref="emp_oce"                           level="0" />
+          <field field_ref="precip"                            level="0" />
+          <field field_ref="snowpre"                           level="0" />
+          <field field_ref="rain"                              level="0" />
+          <field field_ref="evap_ao_cea"                       level="0" />
+          <field field_ref="subl_ai_cea"                       level="0" />
+          <field field_ref="snow_ai_cea"                       level="0" />
+          <field field_ref="snow_ao_cea"                       level="0" />
+          <field field_ref="vfxice"                            level="0" />
+          <field field_ref="vfxbog"                            level="0" />
+          <field field_ref="vfxbom"                            level="0" />
+          <field field_ref="vfxsum"                            level="0" />
+          <field field_ref="vfxlam"                            level="0" />
+          <field field_ref="vfxsni"                            level="0" />
+          <field field_ref="vfxopw"                            level="0" />
+          <field field_ref="vfxdyn"                            level="0" />
+          <field field_ref="vfxres"                            level="0" />
+          <field field_ref="vfxpnd"                            level="0" />
+          <field field_ref="vfxsub"                            level="0" />
+          <field field_ref="vfxsub_err"                        level="0" />
+          <field field_ref="vfxthin"                           level="0" />
+          <field field_ref="vfxsnw"                            level="0" />
+          <field field_ref="vfxsnw_sum"                        level="0" />
+          <field field_ref="vfxsnw_sni"                        level="0" />
+          <field field_ref="vfxsnw_dyn"                        level="0" />
+          <field field_ref="vfxsnw_sub"                        level="0" />
+          <field field_ref="vfxsnw_pre"                        level="0" />
+        </file>
       </file_group>
 
 

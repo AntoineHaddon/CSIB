@@ -57,7 +57,6 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
-  is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
   is_defined $input_rs_date_string  || bail "nemo_prelude: input_rs_date_string must be defined"
 
@@ -132,7 +131,7 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp tide_${tidebound}_cantods025_grid_V.nc ${nemo_tide_vvel}.nc
       done
 
-  else # all the OMIP runmode (e.g. omip1 ) 
+  elif [[ $config == "OMIP" ]]; then  # all the other OMIP runmode (e.g. omip1 ) 
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
       for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
@@ -156,6 +155,8 @@ echo "#################### Start NEMO pre-processing #################"
       done
   fi
 
+if [[ $config != "AMIP" ]]; then 
+  # in AMIP configuration, nemo is in SAS mode, no need for ocean input files
   if [[ $nemo_ln_weight == "on" ]];then
     is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
         bail "The variables nemo_weights_bicubic2 and nemo_weights_bilinear2 must be defined in the configuration file"
@@ -313,7 +314,6 @@ echo "#################### Start NEMO pre-processing #################"
       acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
   fi
 
-
   # Access files required to run NEMO
   xios_files=( axis_def_nemo.xml \
                context_nemo.xml \
@@ -332,6 +332,39 @@ echo "#################### Start NEMO pre-processing #################"
   elif [[ $nemo_config == *"PISCES" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
   fi
+
+else
+    echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
+    # GT and SICN specified in SAS
+    # get the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+    yearc=`expr ${current_year} - 1 | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+    yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc
+    yearc=`expr ${current_year} + 1 | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+
+    # If the file for yr-1 or yr+1 does not exist, NEMO will run but will not make time interpolation for 
+    # the first part or the last part of the current_year.
+        
+  # Access files required to run NEMO
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               file_def_nemo-sas.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+
+fi  # config != AMIP
+
 
   for file in "${xios_files[@]}"; do
     echo $file
@@ -423,9 +456,11 @@ echo "#################### Start NEMO pre-processing #################"
     [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
 
     # access the istate files
-    is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
-    acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
-    acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
+    if [[ $config != "AMIP" ]]; then # AMIP use the SAS modele how done not need intial state files
+      is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
+      acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
+      acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
+    fi
 
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -555,6 +590,7 @@ echo "#################### Start NEMO pre-processing #################"
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
   # xios executable
   if [[ $nemo_use_xios_server -eq 1 ]]; then  
+    is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
     ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
   fi                                 
 

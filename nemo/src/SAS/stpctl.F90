@@ -20,7 +20,7 @@ MODULE stpctl
    USE dom_oce         ! ocean space and time domain variables 
    USE ice      , ONLY : vt_i, u_ice, tm_i
    USE phycst   , ONLY : rt0
-   USE sbc_oce  , ONLY : lk_oasis
+   USE sbc_oce  , ONLY : ln_cpl
    !
    USE diawri          ! Standard run outputs       (dia_wri_state routine)
    USE in_out_manager  ! I/O manager
@@ -88,13 +88,13 @@ CONTAINS
             WRITE(numout,*) '~~~~~~~'
          ENDIF
          !                                ! open time.step    ascii file, done only by 1st subdomain
-         IF( lk_oasis ) THEN   ;   clname = 'time_sas.step'
+         IF( ln_cpl ) THEN   ;   clname = 'time_sas.step'
          ELSE                  ;   clname = 'time.step'
          ENDIF
          IF( lwm )   CALL ctl_opn( numstp, clname, 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, narea )
          !
          IF( ll_wrtruns ) THEN
-            IF( lk_oasis ) THEN   ;   clname = 'run_sas.stat'
+            IF( ln_cpl ) THEN   ;   clname = 'run_sas.stat'
             ELSE                  ;   clname = 'run.stat'
             ENDIF
             !                             ! open run.stat     ascii file, done only by 1st subdomain

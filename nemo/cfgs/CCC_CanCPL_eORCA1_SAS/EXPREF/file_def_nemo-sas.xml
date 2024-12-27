@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+    <!-- $id$ -->
+    
+ <!--
+============================================================================================================
+=                                           output files definition                                        =
+=                                      Define your own files for sea ice                                   =
+=                                         put the variables you want...                                    =
+============================================================================================================
+ -->
+    
+ <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
+   
+   <file_group id="1m" output_freq="1mo"  enabled=".TRUE.">  <!-- real monthly files -->   	
+     <file id="file43" name_suffix="_sas" description="ice variables" sync_freq="1mo"  >
+          <field field_ref="sst_m"         name='tos'        level="0"  /> 
+          <field field_ref="icemass"       name="icemass"     level="0"  /> 
+          <field field_ref="iceconc_pct"   name="siconc"     level="0"  /> 
+     </file>
+   </file_group>
+
+   <file_group id="1ts" output_freq="1ts" enabled=".TRUE." > <!-- 1 time step files -->
+   </file_group>
+   <file_group id="1h"  output_freq="1h"  enabled=".TRUE."> <!-- 1h files -->
+   </file_group>
+   <file_group id="2h"  output_freq="2h"  enabled=".TRUE."/> <!-- 2h files -->
+   <file_group id="3h"  output_freq="3h"  enabled=".TRUE."/> <!-- 3h files -->     
+   <file_group id="4h"  output_freq="4h"  enabled=".TRUE."/> <!-- 4h files -->
+   <file_group id="6h"  output_freq="6h"  enabled=".TRUE."/> <!-- 6h files -->        
+   <file_group id="1d"  output_freq="1d"  enabled=".TRUE."> <!-- 1d files -->        
+     <file id="file53" name_suffix="_sas" description="ice variables" sync_freq="1d"  >
+          <field field_ref="sst_m"           name='tos'        level="1"  /> 
+          <field field_ref="iceconc_pct"   name="siconc"     level="1"  /> 
+          <field field_ref="icemass"       name="icemass"     level="1"  /> 
+          <field field_ref="icepres"       name="sitimefrac"  level="1" /> 
+          <field field_ref="icethic_cmip"  name="sithick"     level="1" /> 
+          <field field_ref="snwthic_cmip"  name="sisnthick"   level="1" /> 
+          <field field_ref="icettop_cmip"  name="sitemptop"   level="1" /> 
+          <field field_ref="icetemp"       name="sitemp"      level="1" />
+          <field field_ref="snwtemp"       name="sntemp"      level="1" />
+          <field field_ref="icesalt"       name="sisali"      level="1" />
+          <field field_ref="icehc"         name="icehc"       level="1" />
+          <field field_ref="snwhc"         name="snwhc"       level="1" />
+          <field field_ref="icemask_cat"   name="sitimefrac_cat" level="3" /> 
+          <field field_ref="iceconc_cat"   name="siconc_cat"     level="3" /> 
+          <field field_ref="icethic_cat"   name="sithick_cat"    level="3" />
+          <field field_ref="snwthic_cat"   name="sisnthick_cat"  level="3" />
+          <field field_ref="icettop_cat"   name="sitemptop_cat"  level="3" />
+          <field field_ref="icetemp_cat"   name="sitem_cat"      level="3" />
+          <field field_ref="snwtemp_cat"   name="sntem_cat"      level="3" />
+          <field field_ref="icesalt_cat"   name="sisali_cat"     level="3" />
+          <field field_ref="icehc_cat"     name="icehc_cat"      level="3" />
+          <field field_ref="snwhc_cat"     name="snwhc_cat"      level="3" />
+     </file>
+   </file_group>
+
+   <file_group id="2m"  output_freq="2mo" enabled=".TRUE."/> <!-- real 2m files -->
+   <file_group id="3m"  output_freq="3mo" enabled=".TRUE."/> <!-- real 3m files -->
+   <file_group id="4m"  output_freq="4mo" enabled=".TRUE."/> <!-- real 4m files -->
+   <file_group id="6m"  output_freq="6mo" enabled=".TRUE."/> <!-- real 6m files -->
+   <file_group id="1y"  output_freq="1y"  enabled=".TRUE."/> <!-- real yearly files -->
+   <file_group id="2y"  output_freq="2y"  enabled=".TRUE."/> <!-- real 2y files -->
+   <file_group id="5y"  output_freq="5y"  enabled=".TRUE."/> <!-- real 5y files -->
+   <file_group id="10y" output_freq="10y" enabled=".TRUE."/> <!-- real 10y files -->
+   
+ </file_definition>
+ 
