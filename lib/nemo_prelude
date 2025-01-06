@@ -231,10 +231,13 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ $nemo_ln_weight == "on" ]];then
     is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
         bail "The variables nemo_weights_bicubic2 and nemo_weights_bilinear2 must be defined in the configuration file"
-    #acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
-    #acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
-    ln -s $nemo_weights_bicubic2 weights_bic2.nc
-    ln -s $nemo_weights_bilinear2 weights_bil2.nc
+    if [[ $ctds_dnscl == 2 ]]; then
+      ln -s $nemo_weights_bicubic2 weights_bic2.nc
+      ln -s $nemo_weights_bilinear2 weights_bil2.nc
+    else
+      acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
+      acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
+    fi
   fi
   if [[ $nemo_ln_rnf == "on" ]] ; then
     if [[ ${dada_run} != 1 ]] || [[ ${runmode} == "CanTODS" ]]; then

@@ -385,10 +385,31 @@ def bdy_remap(args):
         # identify and process file based on desired year
         # slow on first pass, but then much quicker on subsequent years if reading from same file
         file0=''
+        if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+            # get max and min years in forcing range
+            mnY=np.inf; mxY=-np.inf
+            for year in years:
+                fy=year + int(args.iaf_year_offset)
+                yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+                yr=fy-int((year-1)/yd)*yd
+                mnY=np.nanmin([mnY,yr])
+                mxY=np.nanmax([mxY,yr])
+        else:
+            mnY=min(years); mxY=max(years)
+        mnY=int(mnY)
+        mxY=int(mxY)
         for year in years:
             print(f'{vV} - {year}')
-            file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
-
+            if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+                fy=year + int(args.iaf_year_offset)
+                yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+                yr=fy-int((year-1)/yd)*yd
+                file,fdates,sameFile=matchFileYear(yr,flist,file0=file0)
+            else:
+                # find matching file
+                file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
+                yr=int(year)
+            
             if (file is not None) and (not sameFile):
                 file0=file
                             
@@ -410,7 +431,7 @@ def bdy_remap(args):
                 subprocess.run(f'ncks -h -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc',shell=True)
 
                 # subsample file to only include desired years
-                subprocess.run(f"cdo --no_history selyear,{min(years)}/{max(years)} {outFile}.{vV}.sliced.tmp.nc {outFile}.{vV}.sliced2.tmp.nc",shell=True)
+                subprocess.run(f"cdo --no_history selyear,{mnY}/{mxY} {outFile}.{vV}.sliced.tmp.nc {outFile}.{vV}.sliced2.tmp.nc",shell=True)
                 
                 # fill any gaps in the sliced srcFile (two iterations)
                 subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}.{vV}.sliced2.tmp.nc {outFile}.{vV}.filled.tmp.nc',shell=True)
@@ -433,13 +454,13 @@ def bdy_remap(args):
             if file is not None:
                 # slice files to match the desired date range
                 for bdy in blist:
-                    subprocess.run(f"cdo --no_history selyear,{year}/{year} {outFile.replace('BDY',bdy)}_y{fdates}.{vV}.tmp.nc {outFile.replace('BDY',bdy).replace('YYYY',f'{year}')}.{vV}.nc",shell=True)
+                    subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile.replace('BDY',bdy)}_y{fdates}.{vV}.tmp.nc {outFile.replace('BDY',bdy).replace('YYYY',f'{year}')}.{vV}.nc",shell=True)                    
             else:
                 print('No files found.')
         
         # remove intermediate files
         subprocess.run(f"rm -f {outFile.replace('BDY','*')}_y*-*.{vV}.tmp.nc*",shell=True)    
-
+    
     # remove all remaining intermediate files generated above
     subprocess.run(f"rm -f {outFile.replace('BDY','*')}*.tmp.nc*",shell=True)
 

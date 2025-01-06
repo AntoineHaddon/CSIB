@@ -32,7 +32,13 @@ fi
 
 # boundary conditions
 if [[ $ctds_dnscl != 0 ]] && [[ $runmode == *"CanTODS"* ]] ; then
-  python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 > bc_status
+  if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
+      # use current year for forcing
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 > bc_status
+  else
+      # use cyclical forcing
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 -A ${iaf_year_offset} -a ${iaf_loop_year} > bc_status
+  fi
   if [ -z "$(ls ./obc_*_${dada_outfield}_y*.nc)" ] ; then
     echo "ERROR: No OBC files generated!"
     exit 10
