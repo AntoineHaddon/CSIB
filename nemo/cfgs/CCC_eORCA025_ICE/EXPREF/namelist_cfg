@@ -1,7 +1,7 @@
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! NEMO/OCE  Configuration namelist : overwrite default values defined in SHARED/namelist_ref
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!!             ORCA2 - ICE - PISCES configuration                     !!
+!!             eORCA025 - ICE configuration                           !!
 !!======================================================================
 !!              ***  Domain & Run management namelists  ***           !!
 !!                                                                    !!
@@ -20,7 +20,7 @@
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
    nn_no       =       0   !  Assimilation cycle index
-   cn_exp      =  "ORCA1"  !  experience name
+   cn_exp      = "eORCA025" !  experience name
    nn_it000    =       1   !  first time step
    nn_itend    =    5840   !  last  time step (std 5475)
    nn_istate   =       0   !  output the initial state (1) or not (0)
@@ -39,7 +39,7 @@
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_Dt      =   900.   !  time step for the dynamics and tracer
+   rn_Dt       = 900.     !  time step for the dynamics and tracer
    ln_meshmask = .true.   !  =T create a mesh file
 /
 !-----------------------------------------------------------------------
@@ -247,7 +247,7 @@
 !-----------------------------------------------------------------------
 &namdrg        !   top/bottom drag coefficient                          (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_lin = .true.         !     linear  drag: Cd = Cd0 Uc0
+   ln_non_lin  = .true.   !  non-linear  drag: Cd = Cd0 |U|
 /
 !-----------------------------------------------------------------------
 &nambbc        !   bottom temperature boundary condition                (default: OFF)
@@ -321,8 +321,8 @@
       nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
       !                           !  time invariant coefficients:  aei0 = 1/2  Ue*Le 
-      rn_Ue        = 0.03              !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
-      rn_Le        = 200.e+3           !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      rn_Ue        = 0.03              !  lateral diffusive velocity [m/s] (nn_aei_ijk_t= 0, 10, 20, 30)
+      rn_Le        = 200.e+3           !  lateral diffusive length   [m]   (nn_aei_ijk_t= 0, 10)
       rn_zRomax    = 200.e+3        !  Rossby radius in the tropical regions: 200 km
       rn_zRocoef   = 25.e+3         !  a prescribed "typical" eddy scale: 25 or 50 km
       rn_eiwmin    = 100.           !  lower limit of eddy induced velocity (m2/s)
@@ -376,7 +376,7 @@
 !-----------------------------------------------------------------------
    ln_dynldf_lap =  .false.    !  laplacian operator
    ln_dynldf_blp =  .true.     !  bilaplacian operator
-   ln_dynldf_lev =  .true.     !  iso-level
+   ln_dynldf_lev = .true.      !  iso-level
    nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
                                !  = 20  F(i,j)=F(grid spacing)=c2d
    rn_Uv = 0.0838
@@ -396,6 +396,8 @@
 !-----------------------------------------------------------------------
 &namzdf        !   vertical physics manager                             (default: NO selection)
 !-----------------------------------------------------------------------
+   !                       ! adaptive-implicit vertical advection
+   ln_zad_Aimp = .false.      !  Courant number dependent scheme (Shchepetkin 2015)
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
       nn_evdm  =    1            !  evd apply on tracer (=0) or on tracer and momentum (=1)
@@ -403,8 +405,8 @@
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
-   ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
-   ln_zdftmx   = .true.       !  tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
+   ln_zdfiwm   = .true.       ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
+   ln_zdftmx   = .false.      !  tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
    !                       !  Coefficients
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
