@@ -45,7 +45,13 @@ set -x
  # Merge sub-yearly files and save it (delete the sub-year files)
      if [ $nmon -gt 1 -a -e "${sfx}_$fmon" ] ; then
        diag_hist="mc_${runid}_${yr}_m${fmon}_${sfx}.nc"
-       cdo mergetime  ${sfx}_?? ${sfx}_merged 
+       if (( with_delhist==0 )) ; then
+         # if keeping history files, compress and merge
+         cdo -f nc4c -z zip_2 mergetime  ${sfx}_?? ${sfx}_merged 
+       else
+         # if keeping not keeping history files, simply merge
+         cdo mergetime  ${sfx}_?? ${sfx}_merged 
+       fi
        for dfile in $(ls  ${sfx}_??)
        do
           delete ${dfile}
