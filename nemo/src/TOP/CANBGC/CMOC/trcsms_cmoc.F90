@@ -211,7 +211,7 @@ CONTAINS
         ! n2 fixation/denitrification
         !! OR Jan19 23 ! CALL cmoc_rem_denit
         CALL cmoc_rem_denit( Kmm )
-        CALL trc_n2fx_denit_cmoc( par_1band, kt, jnt, Kmm, Krhs )
+        CALL trc_n2fx_denit_cmoc( par_1band, kt, jnt, Kbb, Kmm, Krhs )
         !
         ! Move here to be consistent with NEMO4 and sidestepping from CanESM5 CMOC NEMO
         CALL trc_flx(kt, Kbb, Kmm, Krhs)               ! compute air-sea gas exchange

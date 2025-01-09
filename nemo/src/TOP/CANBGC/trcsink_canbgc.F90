@@ -290,12 +290,12 @@ CONTAINS
                                                      ! boundary of the mixed layer.                           
                zideup = 1.0_wp / zdeup    
                !
-               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) -                                   &
+               tr(ji,jj,jk,jqdic, Kbb) = tr(ji,jj,jk,jqdic, Kbb) -                                   &
                &                              zfpon(ji,jj) * zideup 
                ! tr(ji,jj,jk,jqdnt, Krhs) = tr(ji,jj,jk,jqdnt, Krhs) -                                   &
                ! &                              zfpon(ji,jj) * zideup 
                !
-               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) -                                   &
+               tr(ji,jj,jk,jqtal, Kbb) = tr(ji,jj,jk,jqtal, Kbb) -                                   &
                &                      2.0_wp * zfpon(ji,jj) * zideup 
                !
             ENDDO
@@ -310,9 +310,9 @@ CONTAINS
             DO ji = 1,jpi
                zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm) * tmask_bgc_closea(ji,jj,jk)
                !
-               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) +          zcaldiv 
+               tr(ji,jj,jk,jqdic, Kbb) = tr(ji,jj,jk,jqdic, Kbb) +          zcaldiv 
                ! tr(ji,jj,jk,jqdnt) = tr(ji,jj,jk,jqdnt, Krhs) +          zcaldiv 
-               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 2.0_wp * zcaldiv                      
+               tr(ji,jj,jk,jqtal, Kbb) = tr(ji,jj,jk,jqtal, Kbb) + 2.0_wp * zcaldiv                      
                !
             ENDDO
          ENDDO
@@ -324,12 +324,12 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
-            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
-            tr(ji,jj,1,jqdic, Krhs)   = tr(ji,jj,1,jqdic, Krhs)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
+            tr(ji,jj,ikt,jqdic, Kbb) = tr(ji,jj,ikt,jqdic, Kbb) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
+            tr(ji,jj,1,jqdic, Kbb)   = tr(ji,jj,1,jqdic, Kbb)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
             ! tr(ji,jj,ikt,jqdnt, Krhs) = tr(ji,jj,ikt,jqdnt, Krhs) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
             ! tr(ji,jj,1,jqdnt, Krhs)   = tr(ji,jj,1,jqdnt, Krhs)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
-            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) - 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj,ikt,Kmm)
-            tr(ji,jj,1,jqtal, Krhs)   = tr(ji,jj,1,jqtal, Krhs)   + 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj, 1,Kmm) 
+            tr(ji,jj,ikt,jqtal, Kbb) = tr(ji,jj,ikt,jqtal, Kbb) - 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj,ikt,Kmm)
+            tr(ji,jj,1,jqtal, Kbb)   = tr(ji,jj,1,jqtal, Kbb)   + 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj, 1,Kmm) 
          ENDDO
       ENDDO
       !

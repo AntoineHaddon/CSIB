@@ -168,7 +168,7 @@ echo "#################### Start NEMO pre-processing #################"
     if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
       acc_cp runoff_1m_nomask.nc    $nemo_runoff_core_monthly na
     else
-      acc_cp runoff.nc    $nemo_runoff_core_monthly na
+      acc_cp runoffs.nc    $nemo_runoff_core_monthly na
     fi
     if [[ -n "$nemo_runoff" ]]; then # empty nemo_runoff means yearly files are not used. 
       for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
@@ -180,7 +180,7 @@ echo "#################### Start NEMO pre-processing #################"
         yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
         fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
         forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
-        acc_cp runoff_y${yearc}.nc          ${nemo_runoff}_y${forcing_year}.nc
+        acc_cp runoffs_y${yearc}.nc          ${nemo_runoff}_y${forcing_year}.nc
       done
     fi
   fi

@@ -5,6 +5,7 @@ MODULE ldfc1d_c2d
    !!=====================================================================
    !! History :  3.7  ! 2013-12  (G. Madec)  restructuration/simplification of aht/aeiv specification,
    !!                 !                      add velocity dependent coefficient and optional read in file
+   !!                 ! 2024-12  (G. Stanley) make the surface to bottom ratio a parameter, not hardcoded
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -38,7 +39,7 @@ MODULE ldfc1d_c2d
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ldf_c1d( cd_type, pahs1, pahs2, pah1, pah2 )
+   SUBROUTINE ldf_c1d( cd_type, pahs1, pahs2, pah1, pah2, pratio )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ldf_c1d  ***
       !!
@@ -55,6 +56,7 @@ CONTAINS
       CHARACTER(len=3)                , INTENT(in   ) ::   cd_type        ! DYNamique or TRAcers
       REAL(wp), DIMENSION(jpi,jpj)    , INTENT(in   ) ::   pahs1, pahs2   ! surface value of eddy coefficient   [m2/s]
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pah1 , pah2    ! eddy coefficient                    [m2/s]
+      REAL(wp),                         INTENT(in   ) ::   pratio         ! surface to bottom ratio of eddy coefficient [1]
       !
       INTEGER  ::   ji, jj, jk      ! dummy loop indices
       REAL(wp) ::   zh, zc, zdep1   ! local scalars
@@ -66,7 +68,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '   ldf_c1d : set a given profile to eddy mixing coefficients'
       !
       ! initialization of the profile
-      zratio = 0.25_wp           ! surface/bottom ratio
+      zratio = pratio            ! surface/bottom ratio
       zh =  500._wp              ! depth    of the inflection point [m]
       zw =  1._wp / 200._wp      ! width^-1     -        -      -   [1/m]
       !                          ! associated coefficient           [-]
