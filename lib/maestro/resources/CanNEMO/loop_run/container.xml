@@ -1,4 +1,0 @@
-<NODE_RESOURCES>
-    <LOOP start="${NEMO_LOOP_START}" set="1" end="${NEMO_LOOP_END}" step="${NEMO_LOOP_STEP}"/>
-</NODE_RESOURCES>
-

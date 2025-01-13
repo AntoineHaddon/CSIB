@@ -1,5 +1,0 @@
-<NODE_RESOURCES>
-    <LOOP start="${NEMO_LOOP_START}" set="1" end="${NEMO_LOOP_END}" step="${NEMO_LOOP_STEP}"/>
-        <DEPENDS_ON local_index="loop_postproc=$((NEMO_LOOP))" index="run_loop=$((NEMO_LOOP))" dep_name="/CanNEMO/loop_run/nemo_run" status="end" type="node" />
-</NODE_RESOURCES>
-
