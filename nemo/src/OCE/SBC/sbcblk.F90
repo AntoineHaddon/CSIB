@@ -1284,6 +1284,13 @@ CONTAINS
          CALL iom_put( 'evap_ao_cea'  , zevap(:,:) * ( 1._wp - at_i_b(:,:) ) * tmask(:,:,1)              )   ! ice-free oce evap (cell average)
          CALL iom_put( 'hflx_evap_cea', zevap(:,:) * ( 1._wp - at_i_b(:,:) ) * tmask(:,:,1) * zcptn(:,:) )   ! heat flux from evap (cell average)
       ENDIF
+      IF (  iom_use('hflx_qla_cea') .OR.  iom_use('hflx_whc_cea') )   THEN  
+         CALL iom_put('hflx_whc_cea' ,                                                  &             ! heat flux from the heat content flux from P-E (cell average)
+                      &             -   zevap(:,:)                    * zcptn   (:,:)   &             ! evap
+                      &             + ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:)   &             ! liquid precip
+                      &             +   sprecip(:,:)                  * zcptsnw (:,:) )               ! solid precip 
+         CALL iom_put('hflx_qla_cea' ,  - sprecip(:,:) * rLfus )                                      ! heat flux from latent heat flux from the snow (cell average)
+      ENDIF
       IF( iom_use('rain') .OR. iom_use('rain_ao_cea') .OR. iom_use('hflx_rain_cea') ) THEN
          CALL iom_put( 'rain'         ,   tprecip(:,:) - sprecip(:,:)                             )          ! liquid precipitation 
          CALL iom_put( 'rain_ao_cea'  , ( tprecip(:,:) - sprecip(:,:) ) * ( 1._wp - at_i_b(:,:) ) )          ! liquid precipitation over ocean (cell average)

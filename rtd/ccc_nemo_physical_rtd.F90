@@ -460,7 +460,7 @@ PROGRAM nemo_ocean_diag
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
          ! vertical scale factors - nonlinear free surface case 
-          CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
+          CALL getvara ('thkcello', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
           CALL getvara ('e3u', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
           CALL getvara ('e3v', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
          ! temperature
@@ -515,7 +515,6 @@ PROGRAM nemo_ocean_diag
           status = nf_inq_varid(iou1, "O_QnsMix", varid)
           IF (status.eq.nf90_noerr) THEN 
               CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-              hflx_qns_tot=hflx_qns_tot - hflx_evap_cea + hflx_rain_cea
           ELSE; print*,'WARNING: Coupler fluxes not found (normal if forcing from blk)'
           ENDIF
           status = nf_inq_varid(iou1, "O_QsrMix", varid)
@@ -851,6 +850,13 @@ PROGRAM nemo_ocean_diag
           call area_ave_flx(e1t, e2t, g_mask, hflx_qns_ice(:, :), imt      &
             &                  , jmt, hflx_qns_ice_ave(l), dum)
 
+    !---------------------------------------------------
+    ! (10) definition in server.R
+    !---------------------------------------------------
+    
+          ! hglo is treated in server.R as if it does not include melt(PCPN) but include hrunoff. 
+          ! So melt(PCPN) is removed and hflx_rnf is added 
+          hglo(l)=hglo(l)-hflx_snow(i)-hflx_snow(l)+hflx_rnf(l)
 !---------------------------------------------------
 !   Main outputs 
 !--------------------------------------------------

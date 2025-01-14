@@ -256,7 +256,7 @@ CONTAINS
       INTEGER           ::   ierror, inum  ! temporary integer
       INTEGER           ::   ios           ! Local integer output status for namelist read
       INTEGER           ::   nbrec         ! temporary integer
-      REAL(wp)          ::   zacoef
+      REAL(wp), DIMENSION(jpi,jpj)   :: zacoef
       REAL(wp), DIMENSION(jpi,jpj,2) :: zrnfcl
       !!
       NAMELIST/namsbc_rnf/ cn_dir            , ln_rnf_depth, ln_rnf_tem, ln_rnf_sal, ln_rnf_icb,   &
@@ -377,9 +377,10 @@ CONTAINS
                END DO
                nk_rnf(ji,jj) = jk
             ELSEIF( h_rnf(ji,jj) == -1._wp   ) THEN   ;  nk_rnf(ji,jj) = 1
+            ELSEIF( h_rnf(ji,jj) == 0._wp   ) THEN   ;  nk_rnf(ji,jj) = 1
             ELSEIF( h_rnf(ji,jj) == -999._wp ) THEN   ;  nk_rnf(ji,jj) = mbkt(ji,jj)
             ELSE
-               CALL ctl_stop( 'sbc_rnf_init: runoff depth not positive, and not -999 or -1, rnf value in file fort.999'  )
+               CALL ctl_stop( 'sbc_rnf_init: runoff depth not positive, and not -999,0. or -1., rnf value in file fort.999'  )
                WRITE(999,*) 'ji, jj, h_rnf(ji,jj) :', ji, jj, h_rnf(ji,jj)
             ENDIF
          END_2D
@@ -407,9 +408,13 @@ CONTAINS
          END DO
          CALL iom_close( inum )
          !
-         h_rnf(:,:) = 1.
+         h_rnf (:,:) = e3t(:,:,1,Kmm)
          !
-         zacoef = rn_dep_max / rn_rnf_max            ! coef of linear relation between runoff and its depth (150m for max of runoff)
+         if (rn_rnf_max.ne.0) then 
+             zacoef = rn_dep_max / rn_rnf_max            ! coef of linear relation between runoff and its depth (150m for max of runoff)
+         else
+             zacoef = rn_dep_max / zrnfcl(:,:,1) 
+         endif
          !
          WHERE( zrnfcl(:,:,1) > 0._wp )  h_rnf(:,:) = zacoef * zrnfcl(:,:,1)   ! compute depth for all runoffs
          !
@@ -438,9 +443,11 @@ CONTAINS
                h_rnf(ji,jj) = h_rnf(ji,jj) + e3t(ji,jj,jk,Kmm)
             END DO
          END_2D
+         h_rnf=h_rnf*tmask(:,:,1)
          !
          IF( nn_rnf_depth_file == 1 ) THEN      !  save  output nb levels for runoff
             IF(lwp) WRITE(numout,*) '   ==>>>   create runoff depht file'
+            IF(lwp) WRITE(numout,*) '           Max(zrnfcl)=',maxval(zrnfcl)
             CALL iom_open  ( TRIM( sn_dep_rnf%clname ), inum, ldwrt = .TRUE. )
             CALL iom_rstput( 0, 0, inum, 'rodepth', h_rnf )
             CALL iom_close ( inum )

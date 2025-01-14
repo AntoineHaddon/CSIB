@@ -67,7 +67,7 @@ nemo_file_freqs_array=()
 for i in $(seq 0 $((n_suffix-1))); do
     fs=${nemo_hist_file_suffix_list_array[$i]}
     IFS='_' read -r freq param <<< $fs
-    if [[ $freq =~ ^[0-9]+[hdmy]$ ]]; then
+    if [[ $freq =~ ^[0-9]+[hdmyt] ]]; then
         nemo_file_suffixes_array+=("$param")
         nemo_file_freqs_array+=("$freq")
     else
@@ -196,7 +196,20 @@ cd in_${inrs}
 ln -sf ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
 nn_itend=$(cat rs_time.step)
+start_step=$(grep -m 1 -w nn_it000 rs_namelist_cfg | awk '{printf "%8.8d",$3 - 1}')
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
+
+# The initial ice state files
+pfx=output.init_ice
+# Check if the RS is already rebuilt, in which case do nothing.
+if [ -s "${pfx}_0000.nc" ]; then
+   rebuild_nemo_tiles
+   # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
+   ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
+   ncsave=${runid}_${start_step}_initial_ice.nc
+   mv  $pfx.nc $ncsave
+fi
 
 # The physics rs file
 pfx=${runid}_${end_step}_restart
@@ -269,7 +282,7 @@ pfx=output.init
 fnpatt=${pfx}_0000.nc
 if [ -s "$fnpatt" ]; then
    rebuild_nemo_tiles
-   mv $pfx.nc ${runid}_initial.nc
+   mv $pfx.nc ${runid}_${start_step}_initial.nc
 fi
 
 # The trc init file
@@ -278,7 +291,7 @@ pfx=output_trc.init
 fnpatt=${pfx}_0000.nc
 if [ -s "$fnpatt" ]; then
    rebuild_nemo_tiles
-   mv $pfx.nc ${runid}_initial_trc.nc
+   mv $pfx.nc ${runid}_${start_step}_initial_trc.nc
 fi
 
 release rebuild_nemo.exe $rbnl_file

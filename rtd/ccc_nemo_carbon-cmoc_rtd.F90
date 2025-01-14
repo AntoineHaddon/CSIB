@@ -4,6 +4,7 @@ PROGRAM nemo_ocean_diag
 !  Obsolete purpose: Run-time diagnostics for NEMO (ORCA2) 
 !
 ! HISTORY:
+! E. Olson    Dec    2024   PHY, ZOO, POC are in units of C not N: switch conversions
 ! -------
 ! N. Lambert  July   2023   Include the time variation of e3t
 !
@@ -230,7 +231,7 @@ PROGRAM nemo_ocean_diag
       CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)   
       CALL closefile (iou5)
       CALL openfile(fname08,iou7) 
-      CALL getvara ('e3t', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+      CALL getvara ('thkcello', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
       CALL closefile(iou7)  
 
 !---------------------------------------------------
@@ -383,11 +384,11 @@ PROGRAM nemo_ocean_diag
           enddo  ! depth, k        
 
     !     compute toc and ton
-          toc(l) = dicvol(l)  + 106./16. * ( pocvol(l) + phyvol(l) + zoovol(l) )                                         
+          toc(l) = dicvol(l)  +  pocvol(l) + phyvol(l) + zoovol(l)                                         
     !     convert from mmol C to Pg C      
           toc(l) = toc(l) * 12.0e-18
           print*,'toc', toc(l)
-          ton(l) = no3vol(l) + phyvol(l) + zoovol(l)  + pocvol(l)                                             
+          ton(l) = no3vol(l) + 16./106. * ( phyvol(l) + zoovol(l)  + pocvol(l) )                                            
     !     convert to Pg      
           ton(l) = ton(l) * 14.007e-18
 
