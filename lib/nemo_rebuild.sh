@@ -110,8 +110,14 @@ if (( with_rbld_nemo == 1 )) ; then
          pfx=${runid}_${freq}_${start_date}_${stop_date}_$sfx
          ln -s ../rebuild_nemo.exe .
          rebuild_nemo_tiles
+         # compress files before saving if desired and not subsequently merging into yearly files
          ncsave=${model1}_${freq}_${sfx}.nc
-         save ${pfx}.nc $ncsave
+         if (( with_delhist==0 )) && (( with_merge_1y_nemo==0 )) && (( with_nemo_compress==1 )); then
+           cdo -f nc4c -z zip_2 ${pfx}.nc $ncsave.zip2
+           save ${ncsave}.zip2 $ncsave
+         else
+           save ${pfx}.nc $ncsave
+         fi
 
          # Move back up and cleanup
          cd $wrkdir
@@ -119,7 +125,7 @@ if (( with_rbld_nemo == 1 )) ; then
       fi
                # Replace the lat/lon to remove the hold made by the land processors elimination
       ncsave=${freq}_${lsfx}
-      access  $ncsave.nc $indir.nc na 
+      access  $ncsave.nc $indir.nc na
       if [ -e "$ncsave.nc" ] ; then
         chmod u+w $(readlink -f "$ncsave.nc")
         # detect the grid (U/V/F/T) with the suffix
