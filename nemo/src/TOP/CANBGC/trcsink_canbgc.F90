@@ -436,7 +436,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       INTEGER  ::   ji, jj, jk
       REAL(wp) ::   zfact, zwsmax, zmax, zstep, zcalbotflx, zfactcal
-      REAL(wp) ::   zrfact2
+      REAL(wp) ::   zrfact2, zwsbio3, zwsbio4
       INTEGER  ::   ik1, ikt
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
@@ -473,6 +473,25 @@ CONTAINS
             tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
          ENDDO
       ENDDO
+
+      ! Bottom remineralization of GOC/POC
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ikt  = mbkt(ji,jj)
+            zwsbio4 = wsbio4(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
+            zwsbio3 = wsbio3(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
+! all deposition of POC is returned to bottom layer as inorganic nutrients
+            tr(ji,jj,ikt,jqdic,Krhs) = tr(ji,jj,ikt,jqdic,Krhs) + (tr(ji,jj,ikt,jrgoc,Kmm) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kmm) * zwsbio3) * 1.E-6
+            tr(ji,jj,ikt,jqoxy,Krhs) = tr(ji,jj,ikt,jqoxy,Krhs) - (tr(ji,jj,ikt,jrgoc,Kmm) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kmm) * zwsbio3)
+            tr(ji,jj,ikt,jrnh4,Krhs) = tr(ji,jj,ikt,jrnh4,Krhs) + (tr(ji,jj,ikt,jrgoc,Kmm) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kmm) * zwsbio3) * rr_n2c
+            tr(ji,jj,ikt,jrfer,Krhs) = tr(ji,jj,ikt,jrfer,Krhs) + (tr(ji,jj,ikt,jrgoc,Kmm) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kmm) * zwsbio3) * rr_fe2c
+            tr(ji,jj,ikt,jqtal,Krhs) = tr(ji,jj,ikt,jqtal,Krhs) + (tr(ji,jj,ikt,jrgoc,Kmm) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kmm) * zwsbio3) * rr_n2c * 1.E-6
+! operations on POC and GOC arrays MUST come after all other lines where these arrays appear on RHS
+            tr(ji,jj,ikt,jrgoc,Krhs) = tr(ji,jj,ikt,jrgoc,Krhs) - tr(ji,jj,ikt,jrgoc,Kmm) * zwsbio4
+            tr(ji,jj,ikt,jrpoc,Krhs) = tr(ji,jj,ikt,jrpoc,Krhs) - tr(ji,jj,ikt,jrpoc,Kmm) * zwsbio3
+            !zocdep(ji,jj) = trn(ji,jj,ikt,jqpoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jqgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
+         END DO
+      END DO
       !
       zrfact2 = 1.e-3 * qfact2r
       ik1  = iksed + 1
