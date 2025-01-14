@@ -52,7 +52,7 @@
    kf2        = 200.      ! Large P half-saturation for Fe uptake
    thetamax   = 0.18      ! Maximum chlorophyll/nitrogen ratio
    eta        = 2.        ! Metabolic cost of biosynthesis
-   kexh       = 1.7       ! Exudation rate of excess intracellular C
+   kexh       = 0.        ! Exudation rate of excess intracellular C
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanmort     !   parameters for phytoplankton sinks
@@ -61,8 +61,8 @@
    mprat2     =  0.1      ! Large zooplankton mortality rate
    mpratm     =  0.1      ! Diatoms mortality rate
    mpqua      =  6.E-2    ! quadratic mortality of phytoplankton
-   mpquad     =  6.E-2    ! maximum quadratic mortality of diatoms
-   chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
+   mpquad     =  6.E-2    ! maximum quadratic mortality of mesozooplankton
+   chldegr    =  0.       ! Chlorophyll photooxidation rate
    picfrx     =  0.05     ! CaCO3 production rate (as fraction of POC)
    xminp      =  0.01     ! minimum phytoplankton concentration for linear mortality
 /
@@ -101,7 +101,7 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanoenfx     !   parameters for N2 fixation
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-   nitrfix     =  2.25E-2  ! Nitrogen fixation rate
+   nitrfix     =  0.       ! Nitrogen fixation rate
    diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
    concfediaz  =  100.     ! Diazotrophs half-saturation constant for iron
    kni         =  0.1      ! Diazotrophs half-saturation constant for N-inhibition
