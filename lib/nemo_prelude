@@ -231,7 +231,7 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ $nemo_ln_weight == "on" ]];then
     is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
         bail "The variables nemo_weights_bicubic2 and nemo_weights_bilinear2 must be defined in the configuration file"
-    if [[ $ctds_dnscl == 2 ]]; then
+    if [[ $ctds_dnscl != 0 ]]; then
       ln -s $nemo_weights_bicubic2 weights_bic2.nc
       ln -s $nemo_weights_bilinear2 weights_bil2.nc
     else

@@ -46,10 +46,7 @@ if [[ $ctds_dnscl != 0 ]] && [[ $runmode == *"CanTODS"* ]] ; then
 fi
 
 # atmospheric forcing
-if [[ $ctds_dnscl == 1 ]] && [[ $runmode == *"CanTODS"* ]] ; then
-  # OMIP atmospheric forcing
-  python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o VAR_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 2 -f OMIP -A ${iaf_year_offset} -a ${iaf_loop_year} > frc_status
-elif [[ $ctds_dnscl != 0 ]] ; then
+if [[ $ctds_dnscl != 0 ]] ; then
   # CanESM atmospheric forcing
   if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
