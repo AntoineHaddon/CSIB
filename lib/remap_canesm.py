@@ -724,9 +724,6 @@ def calc_nemo_chunk_dates(args):
     if args.loop == 0:
         # from directory name
         ll=int(os.path.split(os.getcwd())[-2].split('+')[-1])-1
-        # add one back if dada_run_prep or dada_run_zero (offsets loop number)
-        if 'dada_run' in os.path.split(os.getcwd())[-2]:
-            ll+=1
     else:
         # passed as argument
         ll = int(args.loop)-1
