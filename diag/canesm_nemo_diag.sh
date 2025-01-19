@@ -60,7 +60,7 @@ set -e
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
 # Access the history files
-  for sfx in $nemo_diag_file_suffix_list ; do
+  for sfx in $nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list ; do
     yr=$fyear
     mp=0
     for mm in $nemo_rtd_mons ; do
@@ -69,7 +69,7 @@ set -e
         yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
       fi
       diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist na
+      access ${sfx}_${mm} $diag_hist 
       mp=$mm
     done
 # Merge sub-yearly files
@@ -118,15 +118,6 @@ set -e
         [[ -L 1d_diaptr_${fmon} || -s 1d_diaptr_${fmon} ]] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
         # Replace 1d_diaptr with 1m_diaptr after doing time mean
         nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
-        # access input yearly variables with priority level 1 (Ofx) and 3 (tstend)
-        if [[ ${nmon} -eq 1 && $fmon -eq 1 ]] ; then
-            for sfx in $nemo_diag_file_1y_suffix_list ; do
-              diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-              access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
-            done
-           # Append yearly diagnostics suffix list
-           nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-        fi
         ;;
       # output_level=3 and only if starting from January
       3)
@@ -212,7 +203,6 @@ set -e
               # Append yearly diagnostics suffix list
               chmod u+w 1y_grid_t_ar6_${fmon}
               ncks -A tstend.nc 1y_grid_t_ar6_${fmon}
-              nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
             else
               bail "tstend.nc does not exist"
             fi
@@ -226,32 +216,18 @@ set -e
 # Split historical files to time series and save #
 ##################################################
   # split to time series
-  for sfx in $nemo_diag_file_suffix_list ; do
+  for sfx in $nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list ; do
     [ ! -e ${sfx}_${fmon} ] && continue
-    cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
-
-    # UGLY PATCH: cdo split name of 1m_diad_t failed because of the pH (I don't knoe why). Try again here by removing the pH. 
-    if [ "${sfx}" == "1m_diad_t" ]; then
-      ncks -O -v pH  ${sfx}_${fmon} xxx-${sfx}_pH.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_pH.nc xxx-${sfx}_pH.nc
-      ncks -O -x -v pH ${sfx}_${fmon} ${sfx}_${fmon}
-      cdo splitname ${sfx}_${fmon} xxx-${sfx}_ 
-    fi
-    # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
-    if [ "${sfx}" == "1m_diaptr" ]; then
-      ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc
-      ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc
-      ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc
-      ncks -v msftyz  ${sfx}_${fmon} xxx-${sfx}_msftyz.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_msftyz.nc xxx-${sfx}_msftyz.nc
-    fi
+    # Get the list of variable (use "coordinates" as the key word because it won't apply to the coordinates variables, e.g. nav_lat)
+    vars_list=$( ncdump -h ${sfx}_${fmon} | grep coordinates | awk -F: '{print $1}' )
+    for var in $vars_list; do
+        # produce one file per variables
+        ncks -v $var ${sfx}_${fmon} xxx-${sfx}_${var}.nc || ncks -v $var ${sfx}_${fmon} xxx-${sfx}_${var}.nc
+        # Save time series
+        save xxx-${sfx}_${var}.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${sfx/_ar6/}_${var}.nc
+        release xxx-${sfx}_${var}.nc
+    done
     rm  ${sfx}_${fmon}
-  done
-
-# Save time series
-  tslist=`ls -1 xxx-*`
-  for ts in $tslist ; do
-    tssfx=`echo $ts |cut -f 2 -d '-' |sed 's/_ar6//'`
-    save $ts sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${tssfx}
-    release $ts
   done
 
   # Save orca grid mask with consistent name as TS files

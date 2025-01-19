@@ -607,7 +607,9 @@ CONTAINS
           l_aprcpl           = .TRUE.                      ! -> no need to read mslp in sbcapr or patm in trc_flx
           IF(lwp) WRITE(numout,*)
           IF(lwp) WRITE(numout,*) '   Sea level pressure received from the coupler'
-          IF (.NOT.ln_apr_dyn) allocate( apr (jpi,jpj) )  ! if ln_alr_dyn, apr allocaterd in sbcapr 
+          ALLOCATE( ssh_ib(jpi,jpj) , ssh_ibb(jpi,jpj) )
+          ALLOCATE( apr (jpi,jpj) ) ! ssh_ib, ssh_ibb and apr are allocated in sbcapr if l_aprcpl=.false.
+          ssh_ib=0.; ssh_ibb=0.; apr=0. 
       ELSEIF (ln_apr_dyn) THEN
           CALL ctl_warn( 'sbc_apr: ln_apr_dyn=T but no Sea level pressure received from the coupler,', &
                &         '===> ln_apr_dyn forced to .FALSE.' )
@@ -1378,7 +1380,17 @@ CONTAINS
               ssh_ib(:,:) = - ( frcv(jpr_mslp)%z3(:,:,1) - rpref ) * r1_grau    ! equivalent ssh (inverse barometer)
               IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
               CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
+              IF( kt == nit000 ) THEN                   !   set the forcing field at nit000 - 1    !
+                 IF( ln_rstart .AND. .NOT.l_1st_euler ) THEN
+                    IF(lwp) WRITE(numout,*) 'sbc_apr:   ssh_ibb read in the restart file'
+                    CALL iom_get( numror, jpdom_auto, 'ssh_ibb', ssh_ibb )   ! before inv. barometer ssh
+                 ELSE                                         !* no restart: set from nit000 values
+                    IF(lwp) WRITE(numout,*) 'sbc_apr:   ssh_ibb set to nit000 values'
+                    ssh_ibb(:,:) = ssh_ib(:,:)
+                 ENDIF
+              ENDIF
           ENDIF
+          CALL iom_put( "apr", apr )                   !* output the inverse barometer ssh
 
       END IF
       !
@@ -2119,33 +2131,11 @@ CONTAINS
       ! outputs
       IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea' , - frcv(jpr_cal)%z3(:,:,1) * rLfus ) ! latent heat from calving
       IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea' , - frcv(jpr_icb)%z3(:,:,1) * rLfus ) ! latent heat from icebergs melting
-      IF (        iom_use('hflx_whc_rain_oce')   )    &
-         &   CALL iom_put('hflx_whc_rain_oce' ,  (1-picefr) * ( ztprecip - zsprecip ) *   zcptrain    )
-      IF (        iom_use('hflx_whc_snow_oce') )    &
-         &   CALL iom_put('hflx_whc_snow_oce' , (1-picefr) * zsprecip * zcptsnw   )
-      IF (        iom_use('hflx_whc_evp_oce') )    &
-         &   CALL iom_put('hflx_whc_evp_oce' ,  - zevap_oce * zcptn )
-
-      IF (        iom_use('hflx_whc_rain_ice')   )    &
-         &   CALL iom_put('hflx_whc_rain_ice' , picefr * ( ztprecip - zsprecip ) * zcptrain  )
-      IF (        iom_use('hflx_whc_snow_ice') )    &
-         &   CALL iom_put('hflx_whc_snow_ice' , picefr * zsprecip * zcptsnw  )
-      IF (        iom_use('hflx_whc_evp_ice') )    &
-         &   CALL iom_put('hflx_whc_evp_ice' ,  - zevap_ice_total * picefr * zcptsnw )
-
-      IF (        iom_use('zcptrain')   )    &
-         &   CALL iom_put('zcptrain' , zcptrain  )
-      IF (        iom_use('zcptsnw') )    &
-         &   CALL iom_put('zcptsnw' , zcptsnw  )
-      IF (        iom_use('zcptn') )    &
-         &   CALL iom_put('zcptn' ,  zcptn )
-
-      IF (        iom_use('hflx_whc_rnf') )    &
-         &   CALL iom_put('hflx_whc_rnf' ,  MAX( sst_m(:,:), 0.0_wp ) * rnf(:,:) * rcp )
-
-      IF (        iom_use('hflx_whc_cea') )    &
-         &   CALL iom_put('hflx_whc_cea' , (  zqemp_ice(:,:) + zqemp_oce(:,:) + zsprecip(:,:) * rLfus + MAX( sst_m(:,:), 0.0_wp ) * rnf(:,:) * rcp )  )
-      IF (        iom_use('hflx_qla_cea') )    &                                                    ! heat flux from latent heat flux from the sbow (cell average)
+      IF (        iom_use('hflx_whc_cea') )    &                                                     ! heat flux from the heat content flux from P-E (cell average)
+         &   CALL iom_put('hflx_whc_cea' , ( -  zevap_oce(:,:)               * zcptn   (:,:)   &     ! evap
+                           &             + ( ztprecip(:,:) - zsprecip(:,:) ) * zcptrain(:,:)   &     ! liquid precip
+                           &             +   zsprecip(:,:)                   * zcptsnw (:,:) ) )     ! solid precip 
+      IF (        iom_use('hflx_qla_cea') )    &                                                     ! heat flux from latent heat flux from the snow (cell average)
          &   CALL iom_put('hflx_qla_cea' , ( - zsprecip(:,:) * rLfus ) )
       IF (        iom_use('hflx_rain_cea') )    &                                                    ! heat flux from rain (cell average)
          &   CALL iom_put('hflx_rain_cea' , ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )

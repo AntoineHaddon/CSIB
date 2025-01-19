@@ -377,9 +377,10 @@ CONTAINS
                END DO
                nk_rnf(ji,jj) = jk
             ELSEIF( h_rnf(ji,jj) == -1._wp   ) THEN   ;  nk_rnf(ji,jj) = 1
+            ELSEIF( h_rnf(ji,jj) == 0._wp   ) THEN   ;  nk_rnf(ji,jj) = 1
             ELSEIF( h_rnf(ji,jj) == -999._wp ) THEN   ;  nk_rnf(ji,jj) = mbkt(ji,jj)
             ELSE
-               CALL ctl_stop( 'sbc_rnf_init: runoff depth not positive, and not -999 or -1, rnf value in file fort.999'  )
+               CALL ctl_stop( 'sbc_rnf_init: runoff depth not positive, and not -999,0. or -1., rnf value in file fort.999'  )
                WRITE(999,*) 'ji, jj, h_rnf(ji,jj) :', ji, jj, h_rnf(ji,jj)
             ENDIF
          END_2D

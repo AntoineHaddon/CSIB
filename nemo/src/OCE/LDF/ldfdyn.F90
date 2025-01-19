@@ -7,6 +7,7 @@ MODULE ldfdyn
    !!   NEMO     1.0  ! 2002-09  (G. Madec)  F90: Free form and module
    !!            3.7  ! 2014-01  (F. Lemarie, G. Madec)  restructuration/simplification of ahm specification,
    !!                 !                                  add velocity dependent coefficient and optional read in file
+   !!                 ! 2024-12  (G. Stanley) make the surface to bottom viscosity ratio a parameter, not hardcoded
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -50,6 +51,7 @@ MODULE ldfdyn
    REAL(wp), PUBLIC ::   rn_maxfac             !: Multiplicative factor of theorectical maximum Smagorinsky viscosity
    !                                        ! iso-neutral laplacian (ln_dynldf_lap=ln_dynldf_iso=T)
    REAL(wp), PUBLIC ::   rn_ahm_b              !: lateral laplacian background eddy viscosity  [m2/s]
+   REAL(wp), PUBLIC ::   rn_ahm_ratio          !: surface to bottom ratio of lateral viscosity (nn_ahm_ijk_t = 10 or 30)
 
    !                                    !!* Parameter to control the type of lateral viscous operator
    INTEGER, PARAMETER, PUBLIC ::   np_ERROR   =-10                      !: error in setting the operator
@@ -116,7 +118,8 @@ CONTAINS
       NAMELIST/namdyn_ldf/ ln_dynldf_OFF, nn_dynldf_typ, ln_dynldf_lap, ln_dynldf_blp,   &   ! type of operator
          &                 ln_dynldf_lev, ln_dynldf_hor, ln_dynldf_iso,                  &   ! acting direction of the operator
          &                 nn_ahm_ijk_t , rn_Uv        , rn_Lv        ,   rn_ahm_b,      &   ! lateral eddy coefficient
-         &                 rn_csmc      , rn_minfac    , rn_maxfac                           ! Smagorinsky settings
+         &                 rn_csmc      , rn_minfac    , rn_maxfac,                      &   ! Smagorinsky settings
+         &                 rn_ahm_ratio                                                      ! surface to bottom ratio of lateral eddy coefficient
       !!----------------------------------------------------------------------
       !
       READ  ( numnam_ref, namdyn_ldf, IOSTAT = ios, ERR = 901)
@@ -147,6 +150,9 @@ CONTAINS
          WRITE(numout,*) '         type of time-space variation         nn_ahm_ijk_t  = ', nn_ahm_ijk_t
          WRITE(numout,*) '         lateral viscous velocity  (if cst)      rn_Uv      = ', rn_Uv, ' m/s'
          WRITE(numout,*) '         lateral viscous length    (if cst)      rn_Lv      = ', rn_Lv, ' m'
+         IF ( nn_ahm_ijk_t == 10 .or. nn_ahm_ijk_t == 30 ) THEN
+            WRITE(numout,*) '         viscosity ratio surface to bottom     rn_ahm_ratio = ', rn_ahm_ratio
+         ENDIF
          WRITE(numout,*) '         background viscosity (iso-lap case)     rn_ahm_b   = ', rn_ahm_b, ' m2/s'
          !
          WRITE(numout,*) '      Smagorinsky settings (nn_ahm_ijk_t  = 32) :'
@@ -275,7 +281,7 @@ CONTAINS
             IF(lwp) WRITE(numout,*) '           surface viscous coef. = constant = ', zah0, cl_Units
             ahmt(:,:,1) = zah0                        ! constant surface value
             ahmf(:,:,1) = zah0
-            CALL ldf_c1d( 'DYN', ahmt(:,:,1), ahmf(:,:,1), ahmt, ahmf )
+            CALL ldf_c1d( 'DYN', ahmt(:,:,1), ahmf(:,:,1), ahmt, ahmf, rn_ahm_ratio )
             !
          CASE ( -20 )      !== fixed horizontal shape read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy viscosity = F(i,j) read in eddy_viscosity.nc file'
@@ -306,7 +312,7 @@ CONTAINS
             IF(lwp) WRITE(numout,*) '           using a fixed viscous velocity = ', rn_Uv  ,' m/s   and   Ld = Max(e1,e2)'
             IF(lwp) WRITE(numout,*) '           maximum reachable coefficient (at the Equator) = ', zah_max, cl_Units, '  for e1=1°)'
             CALL ldf_c2d( 'DYN', zUfac      , inn        , ahmt, ahmf )         ! surface value proportional to scale factor^inn
-            CALL ldf_c1d( 'DYN', ahmt(:,:,1), ahmf(:,:,1), ahmt, ahmf )  ! reduction with depth
+            CALL ldf_c1d( 'DYN', ahmt(:,:,1), ahmf(:,:,1), ahmt, ahmf, rn_ahm_ratio )  ! reduction with depth
             !
          CASE(  31  )       !==  time varying 3D field  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy viscosity = F( latitude, longitude, depth , time )'
