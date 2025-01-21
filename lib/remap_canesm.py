@@ -36,6 +36,7 @@ parser.add_argument('-X','--Xdeg',help='Slice to contain X degrees either side o
 parser.add_argument('-B','--bdyFile',help='Map to a specific boundary coordinate file (if type=1), e.g., to the Med. Otherwise maps to presumed north/south boudary.',default=None)
 parser.add_argument('-F','--forcing',help='Type of forcing CanESM (default) or OMIP',default='CanESM')
 parser.add_argument('-i','--ic_ind',help='Index in file of desired time for initial condition. Default: 0',default=0)
+parser.add_argument('-H','--hot_start',help='If remapping IC, generate hotstart file from NEMO restart. Default: 0',default=0)
 parser.add_argument('-R','--run_start_year',help='Run start year if type==-1',default=0)
 parser.add_argument('-r','--run_start_month',help='Run start month if type==-1',default=0)
 parser.add_argument('-l','--loop',help='Sequencer loop if type==-1',default=0)
@@ -134,9 +135,95 @@ def cellAreas(meshFile):
 
     return gridArea
 
+def rs_remap(args):
+    """
+    Remap restart files for hot start.
+    """
+
+    # loop through each variable
+    print(f'Finding and processing data from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    # get mesh file in correct format and find lat/lon bounds
+    checkMeshFile(args.meshfile)
+    with xr.open_dataset('grd.tmp.nc') as ds0:
+        # latitude range of grid
+        bN=np.nanmax(ds0['nav_lat'])
+        bS=np.nanmin(ds0['nav_lat'])
+
+    if args.outfile is None:
+        outFile='TYPE.nc'
+    else:
+        outFile=args.outfile
+
+    # find directory containing restart files
+    filePath=np.array(sorted(glob.glob(os.path.join(args.parent_path,f'mc_{args.parent_name}_{min(args.years)}_m*_nemors.*'))))
+    if len(filePath) > 1:
+        # do not want tiled files
+        iP = np.array(['tiled' not in fP for fP in filePath])
+        filePath=filePath[iP]
+    if len(filePath) > 1:
+        # only keep the highest suffix
+        sfxs=np.array([int(fP[-3::]) for fP in filePath])
+        iP = np.array([f'nemors.{max(sfxs):03}' in fP for fP in filePath])
+        filePath=filePath[iP]
+    if len(filePath) > 1:
+        # only keep the correct month
+        iP = np.array([f'm{args.ic_ind+1:02}_nemors' in fP for fP in filePath])
+        filePath=filePath[iP]
+    if len(filePath) != 1:
+        sys.exit('No restart files found!')
+
+    # loop through different restart file types
+    for tT in ['restart','restart_ice','restart_trc']:
+        # ensure coordinates are correctly assigned to variable metadata (for remapping)
+        subprocess.run(f"ncatted -h -a _CoordinateAxisType,nav_lon,o,c,Lon -a units,nav_lon,o,c,degrees_east -a _CoordinateAxisType,nav_lat,o,c,Lat -a units,nav_lat,o,c,degrees_north {os.path.join(filePath[0],f'{args.parent_name}*_{tT}.nc')} -O {outFile.replace('TYPE',tT)}.atts.tmp.nc",shell=True)
+        # loop through variables in file and assign coordinates as appropriate
+        geoVars=[]; scalars=[]
+        with xr.open_dataset(f"{outFile.replace('TYPE',tT)}.atts.tmp.nc") as attFle:
+            for vV in attFle.keys():
+                if vV not in ['nav_lon','nav_lat'] and len(np.shape(attFle.variables[vV]))>2:
+                    # keep track of variables with geographic coordinates to modify metadata
+                    geoVars.append(vV)
+                elif len(np.shape(attFle.variables[vV]))==0:
+                    # keep track of scalars to add back to file at end
+                    scalars.append(vV)
+        for gV in geoVars:
+            subprocess.run(f"ncatted -h -a coordinates,{gV},o,c,\"nav_lat nav_lon\" {outFile.replace('TYPE',tT)}.atts.tmp.nc -O {outFile.replace('TYPE',tT)}.atts.tmp.nc",shell=True)
+
+        # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
+        subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{max([-90,bS-args.Xdeg])},{min([90,bN+args.Xdeg])} {outFile.replace('TYPE',tT)}.atts.tmp.nc {outFile.replace('TYPE',tT)}.sliced.tmp.nc',shell=True)
+        
+        # fill any gaps in the sliced srcFile (two iterations)
+        subprocess.run(f'cdo --no_history fillmiss2,2 {outFile.replace('TYPE',tT)}.sliced.tmp.nc {outFile.replace('TYPE',tT)}.filled.tmp.nc',shell=True)
+
+        # remap to child grid
+        subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile.replace('TYPE',tT)}.filled.tmp.nc {outFile.replace('TYPE',tT)}.remapped.tmp.nc",shell=True)
+
+        # interpolate vertically if appropriate
+        if args.outfile is None and tT != 'restart':
+            tSuff='_in'
+        else:
+            tSuff=''
+        if tT == 'restart_ice':
+            # No interpolate for ice files
+            subprocess.run(f"mv {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
+        else:
+            # interpolate vertical levels
+            getZ(args.meshfile,outFile)
+            subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
+
+        # add scalars back to file
+        for sS in scalars:
+            subprocess.run(f"ncks -h -A -v {sS} {outFile.replace('TYPE',tT)}.atts.tmp.nc {outFile.replace('TYPE',tT)}.nc",shell=True)
+
+        # remove intermediate variable files
+        subprocess.run(f"rm -f {outFile.replace('TYPE',tT)}*.tmp.nc*",shell=True)
+    # remove intermediate files
+    subprocess.run(f'rm -f grd.tmp.nc {outFile}*.tmp.nc',shell=True)
+
 def ic_remap(args):
     """
-    Remap initial condition.
+    Remap initial condition for cold start.
     """
 
     # get month index as integer
@@ -792,7 +879,12 @@ start=time.time()
 if args.type==-1:
     calc_nemo_chunk_dates(args)
 elif args.type==0:
-    ic_remap(args)
+    if args.hot_start==0:
+        # restart from rest using history/CMORized files
+        ic_remap(args)
+    else:
+        # hot start
+        rs_remap(args)
     print(f'Done making IC files!\n{time.time()-start} s elapsed.')
 elif args.type==1:
     fcount=bdy_remap(args)

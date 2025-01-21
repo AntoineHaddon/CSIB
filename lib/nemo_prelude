@@ -475,104 +475,108 @@ echo "#################### Start NEMO pre-processing #################"
     ln_rstart=.true.
     [ "$nemo_trc" = "on" ] && ln_rsttr=.true.
 
-    # Determine what restart to use
-    # -----------------------------
-    # We start by trying to use the tiled restart, which is produced directly
-    #   by the previous model run, but it won't be present for the first chunk
-    rebuilt_restart_suffix="nemors"
-    tiled_restart_suffix="tiled_nemors"
-    restart_prefix=${uxxx}_${runid}_${input_rs_date_string}
-    if fdb exists ${restart_prefix}_${tiled_restart_suffix}; then
-        rs_file=${restart_prefix}_${tiled_restart_suffix}
-    else
-        rs_file=${restart_prefix}_${rebuilt_restart_suffix}
-    fi
+    if [[ ( $runmode != *"CanTODS"* && $dada_run==0 ) || $chunk_start_date != $run_start_date ]] ; then
+      # If a CanTODS or DADA run, then initial restart is determined by DADA parameters
 
-    # Access the restart and retrieve the contents
-    # ----------------------------------------------
-    echo "##########################"
-    echo "###   Restarting from file $rs_file"
-    echo "##########################"
+      # Determine what restart to use
+      # -----------------------------
+      # We start by trying to use the tiled restart, which is produced directly
+      #   by the previous model run, but it won't be present for the first chunk
+      rebuilt_restart_suffix="nemors"
+      tiled_restart_suffix="tiled_nemors"
+      restart_prefix=${uxxx}_${runid}_${input_rs_date_string}
+      if fdb exists ${restart_prefix}_${tiled_restart_suffix}; then
+          rs_file=${restart_prefix}_${tiled_restart_suffix}
+      else
+          rs_file=${restart_prefix}_${rebuilt_restart_suffix}
+      fi
 
-    rm -f RESTART_ARC
-    access RESTART_ARC $rs_file nocp=off || bail "Failed to access nemo restart!"
+      # Access the restart and retrieve the contents
+      # ----------------------------------------------
+      echo "##########################"
+      echo "###   Restarting from file $rs_file"
+      echo "##########################"
 
-    # checksum the contents
-    sha1sum RESTART_ARC/*restart* >> xnemo_access_log
-    mv RESTART_ARC/*restart* . || bail "Cannot get files from restart directory"
-    release RESTART_ARC
+      rm -f RESTART_ARC
+      access RESTART_ARC $rs_file nocp=off || bail "Failed to access nemo restart!"
+  
+      # checksum the contents
+      sha1sum RESTART_ARC/*restart* >> xnemo_access_log
+      mv RESTART_ARC/*restart* . || bail "Cannot get files from restart directory"
+      release RESTART_ARC
 
-    # Rename each task specific restart files (extracted above)
-    # ---------------------------------------------------------
-    # - When starting a new run from an existing restart the ocean and ice restart
-    #   file names found in the restart tar file will be prefixed with the runid used
-    #   in the previous run.
+      # Rename each task specific restart files (extracted above)
+      # ---------------------------------------------------------
+      # - When starting a new run from an existing restart the ocean and ice restart
+      #   file names found in the restart tar file will be prefixed with the runid used
+      #   in the previous run.
 
-    # Define the names that nemo will look for
-    # - these files get extracted from the 'rs_file' file
-    # - for INPUT files each domain's specific file will look like ${cn_*rst_in}_MMMM.nc
-    #   while for OUTPUT files, each domain's specific file will look like ${runid}_NNNNNNN_${cn_*rst_out}_MMMM.nc
-    #       - where MMMM is the MPI task number and NNNNNNNN is the timestep
-    cn_ocerst_in="restart"          # ocean input
-    cn_ocerst_out="restart"         # ocean output
-    cn_icerst_in="restart_ice_in"   # ice input
-    cn_icerst_out="restart_ice"     # ice output
-    cn_trcrst_in="restart_trc_in"   # pisces input
-    cn_trcrst_out="restart_trc"     # pisces output
+      # Define the names that nemo will look for
+      # - these files get extracted from the 'rs_file' file
+      # - for INPUT files each domain's specific file will look like ${cn_*rst_in}_MMMM.nc
+      #   while for OUTPUT files, each domain's specific file will look like ${runid}_NNNNNNN_${cn_*rst_out}_MMMM.nc
+      #       - where MMMM is the MPI task number and NNNNNNNN is the timestep
+      cn_ocerst_in="restart"          # ocean input
+      cn_ocerst_out="restart"         # ocean output
+      cn_icerst_in="restart_ice_in"   # ice input
+      cn_icerst_out="restart_ice"     # ice output
+      cn_trcrst_in="restart_trc_in"   # pisces input
+      cn_trcrst_out="restart_trc"     # pisces output
 
-    # Ocean restart files
-    found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && bail "No ocean restart files were found in $rs_file"
-    rm -f input_ocn_restart_file_names
-    touch input_ocn_restart_file_names
-    for rsfile in $found_rs; do
-      [ $rsfile = 'cpl_restart.nc' ] && continue
-      sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
-      [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
-      mv $rsfile ${cn_ocerst_in}$sfx
-      echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
-    done
-
-    # Ice restart files
-    rm -f input_ice_restart_file_names
-    touch input_ice_restart_file_names
-    found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icerst_out}.nc || : ) 2>/dev/null`
-    if [ -z "$found_rs" ]; then
-      [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $rs_file"
-      with_ice=off
-    else
+      # Ocean restart files
+      found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && bail "No ocean restart files were found in $rs_file"
+      rm -f input_ocn_restart_file_names
+      touch input_ocn_restart_file_names
       for rsfile in $found_rs; do
         [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
-        mv $rsfile ${cn_icerst_in}$sfx
-        echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+        mv $rsfile ${cn_ocerst_in}$sfx
+        echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
       done
-    fi
 
-    # trc restart files
-    rm -f input_trc_restart_file_names
-    touch input_trc_restart_file_names
-    found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
-    if [ -z "$found_rs" ]; then
-      [ "$nemo_trc" = "on" ] && bail "No trc restart files were found in $nemo_rs"
-    else
-      for rsfile in $found_rs; do
-        [ $rsfile = 'cpl_restart.nc' ] && continue
-        sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
-        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
-        mv $rsfile ${cn_trcrst_in}$sfx
-        echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
-      done
+      # Ice restart files
+      rm -f input_ice_restart_file_names
+      touch input_ice_restart_file_names
+      found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icerst_out}.nc || : ) 2>/dev/null`
+      if [ -z "$found_rs" ]; then
+        [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $rs_file"
+        with_ice=off
+      else
+        for rsfile in $found_rs; do
+          [ $rsfile = 'cpl_restart.nc' ] && continue
+          sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+          [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
+          mv $rsfile ${cn_icerst_in}$sfx
+          echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+        done
+      fi
+
+      # trc restart files
+      rm -f input_trc_restart_file_names
+      touch input_trc_restart_file_names
+      found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
+      if [ -z "$found_rs" ]; then
+        [ "$nemo_trc" = "on" ] && bail "No trc restart files were found in $nemo_rs"
+      else
+        for rsfile in $found_rs; do
+          [ $rsfile = 'cpl_restart.nc' ] && continue
+          sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+          [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
+          mv $rsfile ${cn_trcrst_in}$sfx
+          echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
+        done
+      fi
     fi
   fi
 
   # make namelist mods foir the restart switch 
-    mod_nl namelist_cfg ln_rstart 
-    [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
+  mod_nl namelist_cfg ln_rstart 
+  [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
 
   # in case of CanTODS (which has open boundaries), turn off tide ramp
   # on restart (it may not have been on, but this ensures it is off!)
