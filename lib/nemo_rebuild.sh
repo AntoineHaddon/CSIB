@@ -310,6 +310,18 @@ if [[ ${inrs} == ${outrs} ]]; then
    fdb mdelete $inrs
 fi
 
+# Compress restart files if desired
+if  (( with_nemo_compress == 1 )) ; then
+  # loop over restarts and compress
+  cd in_${inrs}
+  for fF in *_restart*.nc ; do
+     ncks -L 2 $fF -O $fF
+     #cdo -f nc4c -z zip_2 copy $fF $fF.cmpr
+     #mv -f $fF.cmpr $fF
+  done
+  cd -
+fi
+
 # Finally, save new directory with the rebuilt files
 mkdir out_${outrs}
 mv in_${inrs}/* out_${outrs}/
