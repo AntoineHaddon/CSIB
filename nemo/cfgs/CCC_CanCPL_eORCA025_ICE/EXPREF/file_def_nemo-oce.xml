@@ -70,7 +70,7 @@
           <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
           <!-- <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  -->
 	      <field field_ref="avt"         name="avt"      level="0" />
-          <field field_ref="av_tmx"         name="av_tmx"      level="0" />
+          <!--field field_ref="av_tmx"         name="av_tmx"      level="0" /-->
         </file>
           <!-- CMIP6 variables, started by NL, to be completed -->
         <file id="file15" name_suffix="_grid_T_ar6" description="ocean T grid variables">
