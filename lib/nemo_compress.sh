@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# Compress stored history files
+set -e
 
-# get relevant parameters
-#source ${WRK_DIR}/config/canesm-shell-params.sh
+# Compress stored history files
 
 # only proceed if files will actually be kept!
 if (( with_delhist==0 )) && (( with_nemo_compress==1)) ; then

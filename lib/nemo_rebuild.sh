@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 #~~~~~~~~~~~~~~~
 # Function Defs
 #~~~~~~~~~~~~~~~
@@ -315,9 +317,7 @@ if  (( with_nemo_compress == 1 )) ; then
   # loop over restarts and compress
   cd in_${inrs}
   for fF in *_restart*.nc ; do
-     ncks -L 2 $fF -O $fF
-     #cdo -f nc4c -z zip_2 copy $fF $fF.cmpr
-     #mv -f $fF.cmpr $fF
+     ncks -4 -L 2 $fF -O $fF
   done
   cd -
 fi
