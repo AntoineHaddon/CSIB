@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # get necessary variables
 #source ${WRK_DIR}/config/canesm-shell-params.sh
 
@@ -18,25 +20,25 @@ python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y $(($NEMO_CHUNK_START_Y
 # initial conditions
 if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; then
   if [[ $runmode == *"CanTODS"* ]]; then
-    if [[ $nemo_from_rest=="on" ]] ; then
+    if [[ $nemo_from_rest == "on" ]] ; then
       # Start from rest
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
     else
       # hot start; interpolate restart files from parent run
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) -H 1 > ic_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path%%nc_output*} -p ${dada_parent_name/CanESM5-NEMO4-/} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) -H 1 > ic_status
     fi
   else
     # eORCA grids slightly different, so interpolate to an existing IC file
     acc_cp tmp_ic.nc $nemo_data_1m_temperature_rest
-    if [[ $nemo_from_rest=="on" ]] ; then
+    if [[ $nemo_from_rest == "on" ]] ; then
       # Start from rest
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
     else
       # hot start; interpolate restart files
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) -H 1 > ic_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path%%nc_output*} -p ${dada_parent_name/CanESM5-NEMO4-/} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) -H 1 > ic_status
     fi
   fi
-  if [ -z "$(ls ./data_1m_*_nomask.nc)" ] ; then
+  if [[ -z "$(ls ./data_1m_*_nomask.nc)" && -z "$(ls ./restart*.nc)" ]] ; then
     echo "ERROR: No IC files generated!"
     exit 29
   fi

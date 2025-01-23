@@ -45,6 +45,7 @@ parser.add_argument('-M','--mor',help='CMOR frequency/directory (e.g., 3hr or Am
 parser.add_argument('-v','--rvr',help='River file for remapping/scaling of frehswater inputs (if type==3)',default=None)
 parser.add_argument('-A','--iaf_year_offset',help='Year offset if wanting to use cyclical forcing.',default=None)
 parser.add_argument('-a','--iaf_loop_year',help='Reference year for loop if offset for cyclical forcing.',default=None)
+parser.add_argument('-c','--his2cmor',help='If 1, look for history file rather than CMORized file. Default: 0',default=0)
 
 #-----------#
 # FUNCTIONS #
@@ -151,7 +152,7 @@ def rs_remap(args):
         bS=np.nanmin(ds0['nav_lat'])
 
     if args.outfile is None:
-        outFile='TYPE.nc'
+        outFile='TYPE'
     else:
         outFile=args.outfile
 
@@ -191,10 +192,10 @@ def rs_remap(args):
             subprocess.run(f"ncatted -h -a coordinates,{gV},o,c,\"nav_lat nav_lon\" {outFile.replace('TYPE',tT)}.atts.tmp.nc -O {outFile.replace('TYPE',tT)}.atts.tmp.nc",shell=True)
 
         # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
-        subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{max([-90,bS-args.Xdeg])},{min([90,bN+args.Xdeg])} {outFile.replace('TYPE',tT)}.atts.tmp.nc {outFile.replace('TYPE',tT)}.sliced.tmp.nc',shell=True)
+        subprocess.run(f"cdo --no_history sellonlatbox,-180,180,{np.nanmax([-90,bS-args.Xdeg])},{np.nanmin([90,bN+args.Xdeg])} {outFile.replace('TYPE',tT)}.atts.tmp.nc {outFile.replace('TYPE',tT)}.sliced.tmp.nc",shell=True)
         
         # fill any gaps in the sliced srcFile (two iterations)
-        subprocess.run(f'cdo --no_history fillmiss2,2 {outFile.replace('TYPE',tT)}.sliced.tmp.nc {outFile.replace('TYPE',tT)}.filled.tmp.nc',shell=True)
+        subprocess.run(f"cdo --no_history fillmiss2,2 {outFile.replace('TYPE',tT)}.sliced.tmp.nc {outFile.replace('TYPE',tT)}.filled.tmp.nc",shell=True)
 
         # remap to child grid
         subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile.replace('TYPE',tT)}.filled.tmp.nc {outFile.replace('TYPE',tT)}.remapped.tmp.nc",shell=True)
@@ -204,17 +205,20 @@ def rs_remap(args):
             tSuff='_in'
         else:
             tSuff=''
-        if tT == 'restart_ice':
-            # No interpolate for ice files
-            subprocess.run(f"mv {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
-        else:
-            # interpolate vertical levels
-            getZ(args.meshfile,outFile)
-            subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
+        # Interpolate vertical levels...doesn't seem to work properly?! For now, leave out since grids all eORCA
+        # with same vertical resolution.
+        # if tT == 'restart_ice':
+        #     # No vertical interpolation for ice files
+        #     subprocess.run(f"mv {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}.tmp.zmap.nc",shell=True)
+        # else:
+        #     # interpolate vertical levels
+        #     getZ(args.meshfile,outFile)
+        #     subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}.tmp.zmap.nc",shell=True)
 
         # add scalars back to file
+        subprocess.run(f"cp {outFile.replace('TYPE',tT)}.remapped.tmp.nc {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
         for sS in scalars:
-            subprocess.run(f"ncks -h -A -v {sS} {outFile.replace('TYPE',tT)}.atts.tmp.nc {outFile.replace('TYPE',tT)}.nc",shell=True)
+            subprocess.run(f"ncks -h -v {sS} {outFile.replace('TYPE',tT)}.atts.tmp.nc -A {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
 
         # remove intermediate variable files
         subprocess.run(f"rm -f {outFile.replace('TYPE',tT)}*.tmp.nc*",shell=True)
@@ -246,16 +250,18 @@ def ic_remap(args):
     vRep={'thetao':'potential_temperature','so':'salinity'}
 
     for iV,vV in enumerate(['thetao','so']):
-        varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
-        # find all files that match format in Omon
-        flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
-
-        # identify file based on desired year
         print(f'{vV}')
         startYear=min(args.years)
-        file,fileDates,_=matchFileYear(startYear,flist)
+        if args.his2cmor==1:
+            file=his2cmor(vV,startYear,outFile,args)
+        else:
+            varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+            # find all files that match format in Omon
+            flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+
+            # identify file based on desired year
+            file,fileDates,_=matchFileYear(startYear,flist)
         if file is None:
-            searchSTR=os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc')
             print(f"No files found.\n{searchSTR}")
         else:
             # extract desired year from file
@@ -464,10 +470,12 @@ def bdy_remap(args):
     # loop through each variable and interpolate to the regional boundaries
     vars2interp=['thetao','so','uo','vo','zos']
     for iV,vV in enumerate(vars2interp):
-        varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+         
+        if args.his2cmor != 1:
+            varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
 
-        # find all files that match format
-        flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+            # find all files that match format
+            flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
         
         # identify and process file based on desired year
         # slow on first pass, but then much quicker on subsequent years if reading from same file
@@ -491,10 +499,16 @@ def bdy_remap(args):
                 fy=year + int(args.iaf_year_offset)
                 yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
                 yr=fy-int((year-1)/yd)*yd
-                file,fdates,sameFile=matchFileYear(yr,flist,file0=file0)
+                if args.his2cmor==1:
+                    file=his2cmor(vV,yr,outFile,args)
+                else:
+                    file,fdates,sameFile=matchFileYear(yr,flist,file0=file0)
             else:
                 # find matching file
-                file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
+                if args.his2cmor==1:
+                    file=his2cmor(vV,year,outFile,args)
+                else:
+                    file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
                 yr=int(year)
             
             if (file is not None) and (not sameFile):
@@ -793,6 +807,34 @@ def rvr_remap(args):
                 # delete temporary file
                 subprocess.run(f"rm -f {outFile.replace('yYYYY',f'y{year:04}')}.rmask.nc",shell=True)
     return
+
+def his2cmor(var4cmor,fYear,fOut,args):
+    """
+    Naive conversion from history files to "CMORized" file to use with scripts above
+    """
+    ftype={'thetao':'grid_t','so':'grid_t','zos':'grid_t','uo':'grid_u','vo':'grid_v'}
+    lev={'grid_t':'deptht','grid_v':'depthu','grid_v':'depthv'}
+
+    # find correct file
+    pPath=args.parent_path.split('nc_output')[0]
+    varPath=os.path.join(pPath,f"mc_{args.paren_name.replace('CanESM5-NEMO4-','')}_{fYear}_*{ftype[var4cmor]}.nc.*")
+    
+    # find all files that match format
+    flist=np.array(sorted(glob.glob(varPath)))
+
+    if len(flist) == 0:
+        cmfile=None
+    else:
+        # get highest value of file version
+        hisFile=flist[-1]
+        cmfile=f"{fOut.replace('VAR',var4cmor)}.tmp.nc"
+        
+        # slice file to get desired variable
+        subprocess.run(f"ncks -h -v {var4cmor} {hisFile} -O {cmfile}",shell=True)
+        # rename coordinates
+        subprocess.run(f"ncrename -h -v {lev[var2cmor]},lev -d x,i -d y,j -d {lev[var2cmor]},lev {hisFile} -O {cmfile}",shell=True)
+
+    return cmfile
 
 def calc_nemo_chunk_dates(args):
     """
