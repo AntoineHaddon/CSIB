@@ -46,7 +46,7 @@ set -x
  # Merge sub-yearly files and save it (delete the sub-year files)
      if [ $nmon -gt 1 -a -e "${sfx}_$fmon" ] ; then
        diag_hist="mc_${runid}_${yr}_m${fmon}_${sfx}.nc"
-       cdo mergetime  ${sfx}_?? ${sfx}_merged
+       ncrcat ${sfx}_?? ${sfx}_merged 
        for dfile in $(ls  ${sfx}_??)
        do
           delete ${dfile}
