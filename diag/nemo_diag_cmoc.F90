@@ -125,7 +125,7 @@ PROGRAM nemo_diag_cmoc
    !!-------------------
    !! Get grid/mask data   
    !!-------------------
-   CALL getvara ('e3t', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+   CALL getvara ('thkcello', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
    ! Mask out Caspian in CCCma ORCA1 grid
    IF ( (imt == 362) .AND. (jmt == 292) ) THEN

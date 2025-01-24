@@ -50,6 +50,7 @@
       integer nf_nowrite
       integer nf_write
       integer nf_clobber
+      integer nf_netcdf4
       integer nf_noclobber
       integer nf_fill
       integer nf_nofill
@@ -66,6 +67,7 @@
       parameter (nf_nofill = 256)
       parameter (nf_lock = 1024)
       parameter (nf_share = 2048)
+      parameter (nf_netcdf4 = 4096)
       parameter (nf_sizehint_default = 0)
       parameter (nf_align_chunk = -1)
 
