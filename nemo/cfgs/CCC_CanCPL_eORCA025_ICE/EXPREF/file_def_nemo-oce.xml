@@ -67,10 +67,15 @@
           <field field_ref="ymtrpsnw"         name="ymtrpsnw"      level="2"  /> <!-- (SImon*) <!-- Used for snmassacrossline in diag -->
         </file>
         <file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
-          <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
+          <field field_ref="woce"        name="wo"        level="0" /> <!-- (Omon) -->
           <!-- <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  -->
-	      <field field_ref="avt"         name="avt"      level="0" />
-          <field field_ref="av_tmx"         name="av_tmx"      level="0" />
+          <field field_ref="avt"         name="avt"       evel="0" />
+          <field field_ref="av_tmx"      name="av_tmx"    level="9" />
+          <field field_ref="av_wave"     name="av_wave"   level="0" />
+          <field field_ref="emix_iwm"    name="emix_iwm"  level="9" />
+          <field field_ref="av_ratio"    name="av_ratio"  level="9" />
+          <field field_ref="bflx_iwm"    name="bflx_iwm"  level="9" />
+          <field field_ref="pcmap_iwm"   name="pcmap_iwm" level="9" />
         </file>
           <!-- CMIP6 variables, started by NL, to be completed -->
         <file id="file15" name_suffix="_grid_T_ar6" description="ocean T grid variables">

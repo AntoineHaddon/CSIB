@@ -31,6 +31,7 @@ set -x
     n_suffix=${#nemo_diag_file_suffix_list_array_save[@]}
    for ifile in $(seq 0 $(($n_suffix-1))); do
      sfx=${nemo_diag_file_suffix_list_array_save[$ifile]}
+     [ $sfx == "1ts_cfg" ] || [ $sfx == "mesh_mask" ] && continue # skip the files (without temporal records)
      yr=$fyear
      mp=0
      for mm in $nemo_rtd_mons ; do
@@ -45,7 +46,7 @@ set -x
  # Merge sub-yearly files and save it (delete the sub-year files)
      if [ $nmon -gt 1 -a -e "${sfx}_$fmon" ] ; then
        diag_hist="mc_${runid}_${yr}_m${fmon}_${sfx}.nc"
-       cdo mergetime  ${sfx}_?? ${sfx}_merged 
+       cdo mergetime  ${sfx}_?? ${sfx}_merged
        for dfile in $(ls  ${sfx}_??)
        do
           delete ${dfile}
