@@ -69,7 +69,7 @@
         <file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
           <field field_ref="woce"        name="wo"        level="0" /> <!-- (Omon) -->
           <!-- <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  -->
-          <field field_ref="avt"         name="avt"       evel="0" />
+          <field field_ref="avt"         name="avt"       level="0" />
           <field field_ref="av_tmx"      name="av_tmx"    level="9" />
           <field field_ref="av_wave"     name="av_wave"   level="0" />
           <field field_ref="emix_iwm"    name="emix_iwm"  level="9" />
