@@ -31,6 +31,7 @@ set -ex
     n_suffix=${#nemo_diag_file_suffix_list_array_save[@]}
    for ifile in $(seq 0 $(($n_suffix-1))); do
      sfx=${nemo_diag_file_suffix_list_array_save[$ifile]}
+     [ $sfx == "1ts_cfg" ] || [ $sfx == "mesh_mask" ] && continue # skip the files (without temporal records)
      yr=$fyear
      mp=0
      for mm in $nemo_rtd_mons ; do
