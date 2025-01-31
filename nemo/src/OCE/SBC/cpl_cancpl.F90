@@ -34,6 +34,7 @@ MODULE cpl_cancpl
   use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop
   use lib_mpp, only : reconstruct_global_2d
   use cpl_types, only : srcv, ssnd, FLD_C, FLD_CPL, nmaxfld
+  USE iom            ! I/O library
 
   implicit none
   private
@@ -569,10 +570,10 @@ contains
 #endif
 
      !--- Set values for nemo_jpiglo and nemo_jpjglo, defined in com_cpl
-     !--- jpiglo and jpjglo are defined in the module par_oce
+     !--- Ni0glo and Nj0glo are defined in the namelist ("interior" grid, no halos)
      !--- NOTE: the nemo_* variables are sent to the coupler
-     cpl_jpiglo = jpiglo
-     cpl_jpjglo = jpjglo - 1  ! we remove the northfold
+     cpl_jpiglo = Ni0glo
+     cpl_jpjglo = Nj0glo 
      nemo_jpiglo = cpl_jpiglo
      nemo_jpjglo = cpl_jpjglo
 
@@ -728,78 +729,26 @@ contains
       !
       CALL iom_open( cn_domcfg, inum )
       !
-      CALL iom_get( inum, jpdom_unknown, 'glamt', plamt(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'glamu', plamu(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'glamv', plamv(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'glamf', plamf(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'glamt', plamt(1:Ni0glo,1:Nj0glo), cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'glamu', plamu(1:Ni0glo,1:Nj0glo), cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'glamv', plamv(1:Ni0glo,1:Nj0glo), cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'glamf', plamf(1:Ni0glo,1:Nj0glo), cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      CALL iom_get( inum, jpdom_unknown, 'gphit', pphit(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'gphiu', pphiu(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'gphiv', pphiv(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'gphif', pphif(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls), cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'gphit', pphit(1:Ni0glo,1:Nj0glo), cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'gphiu', pphiu(1:Ni0glo,1:Nj0glo), cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'gphiv', pphiv(1:Ni0glo,1:Nj0glo), cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'gphif', pphif(1:Ni0glo,1:Nj0glo), cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      CALL iom_get( inum, jpdom_unknown, 'e1t'  , pe1t(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e1u'  , pe1u(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e1v'  , pe1v(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e1f'  , pe1f(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e1t'  , pe1t(1:Ni0glo,1:Nj0glo) , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e1u'  , pe1u(1:Ni0glo,1:Nj0glo) , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e1v'  , pe1v(1:Ni0glo,1:Nj0glo) , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e1f'  , pe1f(1:Ni0glo,1:Nj0glo) , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      CALL iom_get( inum, jpdom_unknown, 'e2t'  , pe2t(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e2u'  , pe2u(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e2v'  , pe2v(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e2f'  , pe2f(nn_hls+1:Ni0glo+nn_hls,nn_hls+1:Nj0glo+nn_hls) , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e2t'  , pe2t(1:Ni0glo,1:Nj0glo) , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e2u'  , pe2u(1:Ni0glo,1:Nj0glo) , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e2v'  , pe2v(1:Ni0glo,1:Nj0glo) , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_unknown, 'e2f'  , pe2f(1:Ni0glo,1:Nj0glo) , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      IF( l_Iperio ) THEN! east-west periodocity
-          plamt(1,:) = plamt(Ni0glo+nn_hls,:)   ;   plamt(Ni0glo+nn_hls+1,:) = plamt(2,:)   
-          plamu(1,:) = plamu(Ni0glo+nn_hls,:)   ;   plamu(Ni0glo+nn_hls+1,:) = plamu(2,:)   
-          plamv(1,:) = plamv(Ni0glo+nn_hls,:)   ;   plamv(Ni0glo+nn_hls+1,:) = plamv(2,:)   
-          plamf(1,:) = plamf(Ni0glo+nn_hls,:)   ;   plamf(Ni0glo+nn_hls+1,:) = plamf(2,:)   
-          pphit(1,:) = pphit(Ni0glo+nn_hls,:)   ;   pphit(Ni0glo+nn_hls+1,:) = pphit(2,:)   
-          pphiu(1,:) = pphiu(Ni0glo+nn_hls,:)   ;   pphiu(Ni0glo+nn_hls+1,:) = pphiu(2,:)   
-          pphiv(1,:) = pphiv(Ni0glo+nn_hls,:)   ;   pphiv(Ni0glo+nn_hls+1,:) = pphiv(2,:)   
-          pphif(1,:) = pphif(Ni0glo+nn_hls,:)   ;   pphif(Ni0glo+nn_hls+1,:) = pphif(2,:)   
-          e1t(1,:) = e1t(Ni0glo+nn_hls,:)   ;   e1t(Ni0glo+nn_hls+1,:) = e1t(2,:)   
-          e1u(1,:) = e1u(Ni0glo+nn_hls,:)   ;   e1u(Ni0glo+nn_hls+1,:) = e1u(2,:)   
-          e1v(1,:) = e1v(Ni0glo+nn_hls,:)   ;   e1v(Ni0glo+nn_hls+1,:) = e1v(2,:)   
-          e1f(1,:) = e1f(Ni0glo+nn_hls,:)   ;   e1f(Ni0glo+nn_hls+1,:) = e1f(2,:)   
-          e2t(1,:) = e2t(Ni0glo+nn_hls,:)   ;   e2t(Ni0glo+nn_hls+1,:) = e2t(2,:)   
-          e2u(1,:) = e2u(Ni0glo+nn_hls,:)   ;   e2u(Ni0glo+nn_hls+1,:) = e2u(2,:)   
-          e2v(1,:) = e2v(Ni0glo+nn_hls,:)   ;   e2v(Ni0glo+nn_hls+1,:) = e2v(2,:)   
-          e2f(1,:) = e2f(Ni0glo+nn_hls,:)   ;   e2f(Ni0glo+nn_hls+1,:) = e2f(2,:)   
-      ENDIF
-      IF( l_Jperio ) THEN! north-south periodocity
-          plamt(:,1) = plamt(:,Nj0glo+nn_hls)   ;   plamt(:,Nj0glo+nn_hls+1) = plamt(:,2)   
-          plamu(:,1) = plamu(:,Nj0glo+nn_hls)   ;   plamu(:,Nj0glo+nn_hls+1) = plamu(:,2)   
-          plamv(:,1) = plamv(:,Nj0glo+nn_hls)   ;   plamv(:,Nj0glo+nn_hls+1) = plamv(:,2)   
-          plamf(:,1) = plamf(:,Nj0glo+nn_hls)   ;   plamf(:,Nj0glo+nn_hls+1) = plamf(:,2)   
-          pphit(:,1) = pphit(:,Nj0glo+nn_hls)   ;   pphit(:,Nj0glo+nn_hls+1) = pphit(:,2)   
-          pphiu(:,1) = pphiu(:,Nj0glo+nn_hls)   ;   pphiu(:,Nj0glo+nn_hls+1) = pphiu(:,2)   
-          pphiv(:,1) = pphiv(:,Nj0glo+nn_hls)   ;   pphiv(:,Nj0glo+nn_hls+1) = pphiv(:,2)   
-          pphif(:,1) = pphif(:,Nj0glo+nn_hls)   ;   pphif(:,Nj0glo+nn_hls+1) = pphif(:,2)   
-          e1t(:,1) = e1t(:,Nj0glo+nn_hls)   ;   e1t(:,Nj0glo+nn_hls+1) = e1t(:,2)   
-          e1u(:,1) = e1u(:,Nj0glo+nn_hls)   ;   e1u(:,Nj0glo+nn_hls+1) = e1u(:,2)   
-          e1v(:,1) = e1v(:,Nj0glo+nn_hls)   ;   e1v(:,Nj0glo+nn_hls+1) = e1v(:,2)   
-          e1f(:,1) = e1f(:,Nj0glo+nn_hls)   ;   e1f(:,Nj0glo+nn_hls+1) = e1f(:,2)   
-          e2t(:,1) = e2t(:,Nj0glo+nn_hls)   ;   e2t(:,Nj0glo+nn_hls+1) = e2t(:,2)   
-          e2u(:,1) = e2u(:,Nj0glo+nn_hls)   ;   e2u(:,Nj0glo+nn_hls+1) = e2u(:,2)   
-          e2v(:,1) = e2v(:,Nj0glo+nn_hls)   ;   e2v(:,Nj0glo+nn_hls+1) = e2v(:,2)   
-          e2f(:,1) = e2f(:,Nj0glo+nn_hls)   ;   e2f(:,Nj0glo+nn_hls+1) = e2f(:,2)   
-      ENDIF
-      plamt(:,1) = plamt(:,2)
-      plamu(:,1) = plamu(:,2)
-      plamv(:,1) = plamv(:,2)
-      plamf(:,1) = plamf(:,2)
-      pphit(:,1) = pphit(:,2)
-      pphiu(:,1) = pphiu(:,2)
-      pphiv(:,1) = pphiv(:,2)
-      pphif(:,1) = pphif(:,2)
-      e1t(:,1) = e1t(:,2)
-      e1u(:,1) = e1u(:,2)
-      e1v(:,1) = e1v(:,2)
-      e1f(:,1) = e1f(:,2)
-      e2t(:,1) = e2t(:,2)
-      e2u(:,1) = e2u(:,2)
-      e2v(:,1) = e2v(:,2)
-      e2f(:,1) = e2f(:,2)
       CALL iom_close( inum )
       !
    END SUBROUTINE hgr_read_glo
@@ -808,117 +757,124 @@ contains
     character(*), intent(in) :: vname
     integer(kind=impi), intent(in) :: rank
     real(wp), dimension(:, :), POINTER :: work
+    integer inum
 
-    IF (.NOT. ASSOCIATED(work)) ALLOCATE(work(jpiglo,jpjglo))
+    IF (.NOT. ASSOCIATED(work)) ALLOCATE(work(Ni0glo,Nj0glo))
  
+    ! initialize work array with 0. of the fields in cn_domcfg if present
+    work=0.
+    IF( ln_read_cfg ) then
+        CALL iom_open( cn_domcfg, inum )
+        if (iom_varid( inum, vname,ldstop=.false. ) > 0) CALL iom_get( inum, jpdom_unknown,vname, work)
+        CALL iom_close(inum)
+    ENDIF
     !--- Gather the variable vname into work, and then
     !       store it in global array named nemo_vname. work will contain the
     !       Nemo northfold, but we will avoid copying this into the nemo_* arrays
     !--- This data is then sent to the coupler in cpl_initialize_events
-
     select case (trim(adjustl(vname)))
       case ("glamt")
-        call reconstruct_global_2d_ptr(glamt,0,work,'T')
+        call reconstruct_global_2d(glamt,0,work)
         IF (.NOT. ASSOCIATED(nemo_glamt)) ALLOCATE(nemo_glamt(nemo_jpiglo,nemo_jpjglo))
         nemo_glamt(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("glamu")
-        call reconstruct_global_2d_ptr(glamu,0,work,'U')
+        call reconstruct_global_2d(glamu,0,work)
         IF (.NOT. ASSOCIATED(nemo_glamu)) ALLOCATE(nemo_glamu(nemo_jpiglo,nemo_jpjglo))
         nemo_glamu(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("glamv")
-        call reconstruct_global_2d_ptr(glamv,0,work,'V')
+        call reconstruct_global_2d(glamv,0,work)
         IF (.NOT. ASSOCIATED(nemo_glamv)) ALLOCATE(nemo_glamv(nemo_jpiglo,nemo_jpjglo))
         nemo_glamv(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("glamf")
-        call reconstruct_global_2d_ptr(glamf,0,work,'F')
+        call reconstruct_global_2d(glamf,0,work)
         IF (.NOT. ASSOCIATED(nemo_glamf)) ALLOCATE(nemo_glamf(nemo_jpiglo,nemo_jpjglo))
         nemo_glamf(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("gphit")
-        call reconstruct_global_2d_ptr(gphit,0,work,'T')
+        call reconstruct_global_2d(gphit,0,work)
         IF (.NOT. ASSOCIATED(nemo_gphit)) ALLOCATE(nemo_gphit(nemo_jpiglo,nemo_jpjglo))
         nemo_gphit(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("gphiu")
-        call reconstruct_global_2d_ptr(gphiu,0,work,'U')
+        call reconstruct_global_2d(gphiu,0,work)
         IF (.NOT. ASSOCIATED(nemo_gphiu)) ALLOCATE(nemo_gphiu(nemo_jpiglo,nemo_jpjglo))
         nemo_gphiu(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("gphiv")
-        call reconstruct_global_2d_ptr(gphiv,0,work,'V')
+        call reconstruct_global_2d(gphiv,0,work)
         IF (.NOT. ASSOCIATED(nemo_gphiv)) ALLOCATE(nemo_gphiv(nemo_jpiglo,nemo_jpjglo))
         nemo_gphiv(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("gphif")
-        call reconstruct_global_2d_ptr(gphif,0,work,'F')
+        call reconstruct_global_2d(gphif,0,work)
         IF (.NOT. ASSOCIATED(nemo_gphif)) ALLOCATE(nemo_gphif(nemo_jpiglo,nemo_jpjglo))
         nemo_gphif(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e1t")
-        call reconstruct_global_2d_ptr(e1t,0,work,'T')
+        call reconstruct_global_2d(e1t,0,work)
         IF (.NOT. ASSOCIATED(nemo_e1t)) ALLOCATE(nemo_e1t(nemo_jpiglo,nemo_jpjglo))
         nemo_e1t(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e1u")
-        call reconstruct_global_2d_ptr(e1u,0,work,'U')
+        call reconstruct_global_2d(e1u,0,work)
         IF (.NOT. ASSOCIATED(nemo_e1u)) ALLOCATE(nemo_e1u(nemo_jpiglo,nemo_jpjglo))
         nemo_e1u(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e1v")
-        call reconstruct_global_2d_ptr(e1v,0,work,'V')
+        call reconstruct_global_2d(e1v,0,work)
         IF (.NOT. ASSOCIATED(nemo_e1v)) ALLOCATE(nemo_e1v(nemo_jpiglo,nemo_jpjglo))
         nemo_e1v(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e1f")
-        call reconstruct_global_2d_ptr(e1f,0,work,'F')
+        call reconstruct_global_2d(e1f,0,work)
         IF (.NOT. ASSOCIATED(nemo_e1f)) ALLOCATE(nemo_e1f(nemo_jpiglo,nemo_jpjglo))
         nemo_e1f(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e2t")
-        call reconstruct_global_2d_ptr(e2t,0,work,'T')
+        call reconstruct_global_2d(e2t,0,work)
         IF (.NOT. ASSOCIATED(nemo_e2t)) ALLOCATE(nemo_e2t(nemo_jpiglo,nemo_jpjglo))
         nemo_e2t(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e2u")
-        call reconstruct_global_2d_ptr(e2u,0,work,'U')
+        call reconstruct_global_2d(e2u,0,work)
         IF (.NOT. ASSOCIATED(nemo_e2u)) ALLOCATE(nemo_e2u(nemo_jpiglo,nemo_jpjglo))
         nemo_e2u(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e2v")
-        call reconstruct_global_2d_ptr(e2v,0,work,'V')
+        call reconstruct_global_2d(e2v,0,work)
         IF (.NOT. ASSOCIATED(nemo_e2v)) ALLOCATE(nemo_e2v(nemo_jpiglo,nemo_jpjglo))
         nemo_e2v(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("e2f")
-        call reconstruct_global_2d_ptr(e2f,0,work,'F')
+        call reconstruct_global_2d(e2f,0,work)
         IF (.NOT. ASSOCIATED(nemo_e2f)) ALLOCATE(nemo_e2f(nemo_jpiglo,nemo_jpjglo))
         nemo_e2f(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("tmask_i")
-        call reconstruct_global_2d_ptr(tmask_i,0,work, 'T')
+        call reconstruct_global_2d(tmask_i,0,work)
         IF (.NOT. ASSOCIATED(nemo_tmask)) ALLOCATE(nemo_tmask(nemo_jpiglo,nemo_jpjglo))
         nemo_tmask(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("tmask")
-        call reconstruct_global_2d_ptr(tmask(:,:,1),0,work, 'T')
+        call reconstruct_global_2d(tmask(:,:,1),0,work)
         IF (.NOT. ASSOCIATED(nemo_tmask)) ALLOCATE(nemo_tmask(nemo_jpiglo,nemo_jpjglo))
         nemo_tmask(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("umask")
-        call reconstruct_global_2d_ptr(umask(:,:,1),0,work,'U')
+        call reconstruct_global_2d(umask(:,:,1),0,work)
         IF (.NOT. ASSOCIATED(nemo_umask)) ALLOCATE(nemo_umask(nemo_jpiglo,nemo_jpjglo))
         nemo_umask(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("vmask")
-        call reconstruct_global_2d_ptr(vmask(:,:,1),0,work,'V')
+        call reconstruct_global_2d(vmask(:,:,1),0,work)
         IF (.NOT. ASSOCIATED(nemo_vmask)) ALLOCATE(nemo_vmask(nemo_jpiglo,nemo_jpjglo))
         nemo_vmask(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
       case ("fmask")
-        call reconstruct_global_2d_ptr(fmask(:,:,1),0,work,'F')
+        call reconstruct_global_2d(fmask(:,:,1),0,work)
         IF (.NOT. ASSOCIATED(nemo_fmask)) ALLOCATE(nemo_fmask(nemo_jpiglo,nemo_jpjglo))
         nemo_fmask(1:nemo_jpiglo,1:nemo_jpjglo) = work(1:nemo_jpiglo,1:nemo_jpjglo)
 
@@ -927,36 +883,8 @@ contains
         call flush(6)
 
     end select
+    deallocate(work)
   end subroutine cpl_gather
-
-  SUBROUTINE reconstruct_global_2d_ptr( ptab, kp, pio, grid )
-      !!----------------------------------------------------------------------
-      !!                  ***  routine mppscatter  ***
-      !!
-      !! ** Purpose :   Reconstruct a global 2d array from each subdomain.
-      !!                This wrapper is needed for cpl_cancpl which might need
-      !!                to allocate memory
-      !!
-      !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpi,jpj)      , INTENT(IN   )  ::   ptab   ! subdomain array input
-      INTEGER                           , INTENT(IN   )  ::   kp     ! Tag (not used with MPI
-      REAL(wp), DIMENSION(:,:), POINTER , INTENT(  OUT)  ::   pio    ! output array
-      CHARACTER(LEN=1),         OPTIONAL, INTENT(IN)     ::   grid   ! grid type    (T,U,V,F)
-
-      REAL, DIMENSION(jpi,jpj) :: ptab_local
-
-      IF (.NOT. ASSOCIATED(pio)) ALLOCATE(pio(jpiglo,jpjglo))
-      IF (PRESENT(grid))  THEN
-         ptab_local(:,:) = ptab(:,:)
-         call lbc_lnk('cpl_cancpl_snd', ptab_local, grid, 1.)
-         CALL reconstruct_global_2d(ptab_local, kp, pio)
-      ELSE
-         CALL reconstruct_global_2d(ptab, kp, pio)
-      ENDIF
-
-
-  END SUBROUTINE reconstruct_global_2d_ptr
-
 
   subroutine cpl_cancpl_snd( kid, kstep, pdata, kinfo )
      !!---------------------------------------------------------------------
@@ -987,7 +915,7 @@ contains
      integer(kind=impi) :: rank, ierr
      integer :: idx, nwrds
      integer :: verbose=1
-     real(wp), dimension(jpiglo,jpjglo) :: global_array
+     real(wp), dimension(Ni0glo,Nj0glo) :: global_array
      !!--------------------------------------------------------------------
 
      !--- Determine the rank of the calling process in model_communicator
@@ -1046,6 +974,7 @@ contains
 
        IF( ln_timing )   call timing_start('cancpl_snd_gather')
        !--- Gather data into the global array global_array
+       global_array=0. 
        call reconstruct_global_2d(pdata(:,:,jc),0,global_array)
        IF( ln_timing )   call timing_stop('cancpl_snd_gather')
 
@@ -1062,11 +991,11 @@ contains
        endif
 
        !--- Map the the global 3D array global_array onto the 1D wrk array
-       wrk(1:jpiglo*jpjglo) = reshape(global_array,[jpiglo*jpjglo])
+       wrk(1:Ni0glo*Nj0glo) = reshape(global_array,[Ni0glo*Nj0glo])
 
        if ( verbose > 2 ) then
          !--- Count the number of NaNs in the wrk array
-         nwrds = jpiglo*jpjglo
+         nwrds = Ni0glo*Nj0glo
          idx = count( wrk(1:nwrds) /= wrk(1:nwrds) )
          write(numout,*)'cpl_cancpl_snd: ',trim(ssnd(kid)%clname),'  Nans in wrk = ',idx
          write(numout,*)'cpl_cancpl_snd: ',trim(ssnd(kid)%clname),'  min,max,avg = ', &
@@ -1131,7 +1060,7 @@ contains
      integer :: verbose=1
      integer (kind=impi) :: status(MPI_status_size)
      type(FLD_CPL), pointer :: cpl_ptr
-     real, dimension(jpiglo,jpjglo) :: global_array
+     real, dimension(Ni0glo,Nj0glo) :: global_array
      !!--------------------------------------------------------------------
 
      !---Determine the rank of the calling process in model_communicator
@@ -1186,7 +1115,7 @@ contains
 
        !--- Scatter the global array onto each NEMO task
        IF( ln_timing )   call timing_start('cancpl_rcv_scatter')
-       global_array = RESHAPE(wrk,[jpiglo,jpjglo])
+       global_array = RESHAPE(wrk,[Ni0glo,Nj0glo])
        call mppsync
        call mppscatter(global_array, 0, pdata(:,:,jc))
        call mppsync
