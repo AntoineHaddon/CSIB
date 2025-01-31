@@ -192,8 +192,6 @@ CONTAINS
       !!
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
-      RETURN  ! not functionality for sbc_ssm_ice here, but the "CALL" in sbcmod should be kept for SAS
-      WRITE(*,*) 'sbc_ssm_ice: You should not have seen this print! error?', kt
 
    END SUBROUTINE sbc_ssm_ice
 
@@ -280,8 +278,6 @@ CONTAINS
       !!                DUMMY subroutine only used with SAS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
-      RETURN  ! not functionality for sbc_ssm_ice_init here, but the "CALL" in sbcmod should be kept for SAS
-      WRITE(*,*) 'sbc_ssm_ice_init: You should not have seen this print! error?'
    END SUBROUTINE sbc_ssm_ice_init
    !!======================================================================
 END MODULE sbcssm
