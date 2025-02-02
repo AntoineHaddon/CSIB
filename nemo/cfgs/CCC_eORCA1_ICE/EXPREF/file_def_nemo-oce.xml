@@ -93,7 +93,6 @@
           <field field_ref="qla_oce"          name="hflso"       level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qsb_oce"          name="hfsso"       level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qsr3d"            name="rsdo"        level="2" /> <!-- (Omon*) -->
-          <field field_ref="fsal_virt_cea"    name="vsfsit"      level="2" /> <!-- (Omon*) -->
           <field field_ref="ssh2"             name="zossq"       level="3" /> <!-- (Omon*) -->
           <field field_ref="sst2"             name="tossq"       level="3" /> <!-- (Omon*) -->
           <field field_ref="sss2"             name="sossq"       level="3" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
