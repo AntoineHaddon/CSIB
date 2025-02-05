@@ -9,7 +9,7 @@
 # lib/jobdefs/canesm_nemo_bgc_diag_jobdef
 #########################################################
 
-set -x
+set -e
 
 # NEMO priority level
   output_level=${output_level}
