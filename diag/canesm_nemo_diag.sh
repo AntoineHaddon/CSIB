@@ -32,7 +32,7 @@ set -e
     # use the current year because output.init.nc is used in that case (below)
     yearm1=`echo $year | awk '{printf "%04d", $1}'`
     file_state="initial"
-    mon1=`echo $fmon $months_run | awk '{printf "%02d", $1 - 1 + $2 }'` 
+    mon1=`echo $fmon $months | awk '{printf "%02d", $1 - 1 + $2 }'` 
     t_state="votemper"
     s_state="vosaline"
   else
