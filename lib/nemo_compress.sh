@@ -37,7 +37,7 @@ if (( with_delhist==0 )) && (( with_nemo_compress==1)) ; then
         else
           # was successful; remove the local compressed file
           saved_list="${saved_list} ${fname}"
-          rm -f ${fname}.zip.nc
+          release ${fname}.zip.nc
         fi
       fi
     fi
