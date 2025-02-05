@@ -49,7 +49,7 @@ if (( with_delhist==0 )) && (( with_nemo_compress==1)) ; then
     rm -f *.zip.nc
     # remove any saved files
     for sname in $saved_list ; do
-      access lnk.nc ${sname}_zip2.nc
+      access lnk.nc ${sname}.nc
       delete lnk.nc
       release lnk.nc
     done

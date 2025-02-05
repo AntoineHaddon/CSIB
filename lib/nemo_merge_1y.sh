@@ -48,10 +48,12 @@ set -ex
        diag_hist="mc_${runid}_${yr}_m${fmon}_${sfx}.nc"
        if [ $with_delhist -eq 0 -a $with_nemo_compress -eq 1 ] ; then
          # if history files will be saved, compress as well as merge
-         cdo -f nc4c -z zip_2 mergetime  ${sfx}_?? ${sfx}_merged 
+         #cdo -f nc4c -z zip_2 mergetime  ${sfx}_?? ${sfx}_merged 
+         ncrcat -4 -L 2 ${sfx}_?? ${sfx}_merged
        else
          # otherwise, just merge
-         cdo mergetime ${sfx}_?? ${sfx}_merged 
+         #cdo mergetime ${sfx}_?? ${sfx}_merged 
+         ncrcat ${sfx}_?? ${sfx}_merged
        fi
        for dfile in $(ls  ${sfx}_??)
        do
