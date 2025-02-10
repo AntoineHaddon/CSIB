@@ -49,6 +49,7 @@ set -e
       # split to time series
       # Get the list of variable (use "coordinates" as the key word because it won't apply to the coordinates variables, e.g. nav_lat)
       vars_list=$( (ncdump -h ${sfx}_${fmon} | grep coordinates | awk -F: '{print $1}') )
+      [ -z "$vars_list" ] && sleep 30 && vars_list=$( (ncdump -h ${sfx}_${fmon} | grep coordinates | awk -F: '{print $1}') )
       [ -z "$vars_list" ] && bail 'error: fail to make var_lists'
       for var in $vars_list; do
           # produce one file per variables (3 times because the file system can failed)
