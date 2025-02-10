@@ -25,7 +25,7 @@ if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; t
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status
     else
       # hot start; interpolate restart files from parent run
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path%%nc_output*} -p ${dada_parent_name/CanESM5-NEMO4-/} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) -H 1 > ic_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path%%nc_output*} -p ${dada_parent_name/CanESM5-NEMO4-/} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 0 -i $(( $dada_ic_month - 1 )) -H 1 -V 1 > ic_status
     fi
   else
     # eORCA grids slightly different, so interpolate to an existing IC file

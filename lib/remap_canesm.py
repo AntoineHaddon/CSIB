@@ -37,6 +37,7 @@ parser.add_argument('-B','--bdyFile',help='Map to a specific boundary coordinate
 parser.add_argument('-F','--forcing',help='Type of forcing CanESM (default) or OMIP',default='CanESM')
 parser.add_argument('-i','--ic_ind',help='Index in file of desired time for initial condition. Default: 0',default=0)
 parser.add_argument('-H','--hot_start',help='If remapping IC, generate hotstart file from NEMO restart. Default: 0',default=0)
+parser.add_argument('-V','--flip_vel',help='Flip velocities in the "north" of the domain if regional fold',default=0)
 parser.add_argument('-R','--run_start_year',help='Run start year if type==-1',default=0)
 parser.add_argument('-r','--run_start_month',help='Run start month if type==-1',default=0)
 parser.add_argument('-l','--loop',help='Sequencer loop if type==-1',default=0)
@@ -220,6 +221,10 @@ def rs_remap(args):
         for sS in scalars:
             subprocess.run(f"ncks -h -v {sS} {outFile.replace('TYPE',tT)}.atts.tmp.nc -A {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
 
+        if tT == 'restart' and int(args.flip_vel)==1:
+            fixVelocities(f"{outFile.replace('TYPE',tT)}{tSuff}.nc",f"{outFile.replace('TYPE',tT)}{tSuff}.nc.velflip.nc")
+            subprocess.run(f"rm -f {outFile.replace('TYPE',tT)}{tSuff}.nc ; mv {outFile.replace('TYPE',tT)}{tSuff}.nc.velflip.nc {outFile.replace('TYPE',tT)}{tSuff}.nc",shell=True)
+
         # remove intermediate variable files
         subprocess.run(f"rm -f {outFile.replace('TYPE',tT)}*.tmp.nc*",shell=True)
     # remove intermediate files
@@ -252,7 +257,7 @@ def ic_remap(args):
     for iV,vV in enumerate(['thetao','so']):
         print(f'{vV}')
         startYear=min(args.years)
-        if args.his2cmor==1:
+        if int(args.his2cmor)==1:
             file=his2cmor(vV,startYear,outFile,args)
         else:
             varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
@@ -471,7 +476,7 @@ def bdy_remap(args):
     vars2interp=['thetao','so','uo','vo','zos']
     for iV,vV in enumerate(vars2interp):
          
-        if args.his2cmor != 1:
+        if int(args.his2cmor) != 1:
             varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
 
             # find all files that match format
@@ -499,14 +504,18 @@ def bdy_remap(args):
                 fy=year + int(args.iaf_year_offset)
                 yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
                 yr=fy-int((year-1)/yd)*yd
-                if args.his2cmor==1:
-                    file=his2cmor(vV,yr,outFile,args)
+                if int(args.his2cmor)==1:
+                    file=his2cmor(vV,yr,outFile.replace('YYYY',f'{yr:04}'),args)
+                    fdates=f'{yr}'
+                    sameFile=False
                 else:
                     file,fdates,sameFile=matchFileYear(yr,flist,file0=file0)
             else:
                 # find matching file
-                if args.his2cmor==1:
-                    file=his2cmor(vV,year,outFile,args)
+                if int(args.his2cmor)==1:
+                    file=his2cmor(vV,year,outFile.replace('YYYY',f'{year:04}'),args)
+                    fdates=f'{year}'
+                    sameFile=False
                 else:
                     file,fdates,sameFile=matchFileYear(year,flist,file0=file0)
                 yr=int(year)
@@ -560,7 +569,7 @@ def bdy_remap(args):
                 print('No files found.')
         
         # remove intermediate files
-        subprocess.run(f"rm -f {outFile.replace('BDY','*')}_y*-*.{vV}.tmp.nc*",shell=True)    
+        subprocess.run(f"rm -f {outFile.replace('BDY','*')}_y*-*.{vV}.tmp.nc*",shell=True)
     
     # remove all remaining intermediate files generated above
     subprocess.run(f"rm -f {outFile.replace('BDY','*')}*.tmp.nc*",shell=True)
@@ -575,6 +584,8 @@ def bdy_remap(args):
                 if os.path.isfile(f"{outFileBdy.replace('YYYY',f'{year}')}.{vV}.nc"):
                     flist+=f"{outFileBdy.replace('YYYY',f'{year}')}.{vV}.nc "
                     ccount+=1
+                else:
+                    print(f"{outFileBdy.replace('YYYY',f'{year}')}.{vV}.nc does not exist")
             if ccount > 0:
                 subprocess.run(f"cdo merge {flist} {outFileBdy.replace('YYYY',f'{year}')}",shell=True)
                 # remove individual variable files
@@ -813,11 +824,11 @@ def his2cmor(var4cmor,fYear,fOut,args):
     Naive conversion from history files to "CMORized" file to use with scripts above
     """
     ftype={'thetao':'grid_t','so':'grid_t','zos':'grid_t','uo':'grid_u','vo':'grid_v'}
-    lev={'grid_t':'deptht','grid_v':'depthu','grid_v':'depthv'}
+    lev={'grid_t':'deptht','grid_u':'depthu','grid_v':'depthv'}
 
     # find correct file
     pPath=args.parent_path.split('nc_output')[0]
-    varPath=os.path.join(pPath,f"mc_{args.paren_name.replace('CanESM5-NEMO4-','')}_{fYear}_*{ftype[var4cmor]}.nc.*")
+    varPath=os.path.join(pPath,f"mc_{args.parent_name.replace('CanESM5-NEMO4-','')}_{fYear}_*{ftype[var4cmor]}.nc.*")
     
     # find all files that match format
     flist=np.array(sorted(glob.glob(varPath)))
@@ -827,14 +838,115 @@ def his2cmor(var4cmor,fYear,fOut,args):
     else:
         # get highest value of file version
         hisFile=flist[-1]
-        cmfile=f"{fOut.replace('VAR',var4cmor)}.tmp.nc"
+        cmfile=f"{fOut.replace('VAR',var4cmor)}.{var4cmor}.nc"
         
         # slice file to get desired variable
         subprocess.run(f"ncks -h -v {var4cmor} {hisFile} -O {cmfile}",shell=True)
         # rename coordinates
-        subprocess.run(f"ncrename -h -v {lev[var2cmor]},lev -d x,i -d y,j -d {lev[var2cmor]},lev {hisFile} -O {cmfile}",shell=True)
+        subprocess.run(f"ncrename -h -d x,i -d y,j -v nav_lon,longitude -v nav_lat,latitude {cmfile} -O {cmfile}",shell=True)
+        #add dimension variables to file
+        with xr.open_dataset(cmfile) as cmtmp:
+          shp=np.shape(cmtmp.latitude.values)
+          ij=xr.Dataset.from_dict(
+              {'i':{'dims':('i'),'data':range(shp[1]),'attrs':{'units':'1','long_name':'first spatial index for variables stored on an unstructured grid'}},
+               'j':{'dims':('j'),'data':range(shp[0]),'attrs':{'units':'1','long_name':'second spatial index for variables stored on an unstructured grid'}}})
+          cmtmp2=xr.merge([cmtmp,ij])
+          cmtmp2.to_netcdf(cmfile.replace('.nc','.ij.tmp.nc'))
+
+        cmfile=[cmfile.replace('.nc','.ij.tmp.nc')]
 
     return cmfile
+
+def fixVelocities(vFile,outVFile):
+    """
+    Flip meridional velocities in the "northern" portion of a domain (if applicable)
+    TODO: CanTODS CMORization will require correction step?!
+    """
+    with xr.open_dataset(vFile) as vds:
+        if 'vo' in vds.keys() or 'uo' in vds.keys():
+            # history or CMORized file
+            vV='vo'; uU='uo'
+            if 'nav_lon' in vds.keys():
+                # history file
+                lt='nav_lat'; ydim='y'
+            else:
+                lt='latitude'; ydim='j'
+            velFile=True
+        elif 'vn' in vds.keys():
+            # restart file
+            vV='vn'; uU='un'
+            lt='nav_lat'; ydim='y'
+            velFile=True
+        else:
+            velFile=False
+            outVFile=vFile
+            print(f'Velocity not found in {vFile}.')
+
+        if velFile:
+            # check if sorted order is identical to original order
+            vlat=vds[lt].values
+            vInFile=False ; uInFile=False
+            try:
+                # may only have v in file
+                vlat[np.isnan(vds[vV].values[0,0,:,:])]=np.nan
+                vInFile=True
+            except:
+                # may only have u in file
+                vlat[np.isnan(vds[uU].values[0,0,:,:])]=np.nan
+                uInFile=True
+            iX=np.argmax(np.nanmax(vlat,axis=0)) ; vlat=vlat[:,iX]
+            vy=vds[ydim].values
+            if np.nansum(np.abs(vy-np.argsort(vlat)))!=0 and np.nanmax(vlat) > 70:
+                # there is a transition over the pole if latitudes are not monotonic
+                # i.e., sorting doesn't match index order
+                # restrict to only search near pole
+                i90=vlat>80
+                vy=vy[i90]
+                vlat=vlat[i90]
+                
+                # find transition by looping over latitudes from top
+                iTransY=None
+                for iY,VY in enumerate(vy):
+                    # check if latitude is larger than previous
+                    # if not, then assume transition point and break
+                    if vlat[iY] < vlat[iY-1]:
+                        iTransY=VY
+                        break
+                if iTransY is not None:
+                    # create mask with negative signs in "northern" portion
+                    if vInFile:
+                        nMask=np.ones(np.shape(vds[vV].values))
+                    else:
+                        nMask=np.ones(np.shape(vds[uU].values))
+                    nMask[:,:,iTransY::,:]=-1
+                    # replace velocities with those multiplied by negative sign
+                    if vInFile:
+                        v2=nMask*vds[vV].values
+                    try:
+                        # u not always with v in file
+                        u2=nMask*vds[uU].values
+                        uInFile=True
+                    except:
+                        pass
+                    # save velocities to new file
+                    vds2=vds.copy()
+                    if vInFile:
+                        vds2[vV][:]=v2
+                    if uInFile:
+                        vds2[uU][:]=u2
+                    if vV == 'vn':
+                        # also adjust vb and 'ub'
+                        if vInFile:
+                            vds2['vb'][:]=nMask*vds['vb'].values
+                        if uInFile:
+                            vds2['ub'][:]=nMask*vds['ub'].values
+                    vds2.to_netcdf(outVFile)
+                    print(f'Saved {outVFile}')
+                else:
+                    outVFile=vFile
+
+    return outVFile
+
 
 def calc_nemo_chunk_dates(args):
     """
