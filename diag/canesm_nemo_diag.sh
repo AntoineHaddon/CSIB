@@ -145,7 +145,7 @@ if [[ $output_level -ge 3 ]]; then
      # Append tstend.nc to 1y_grid_t_ar6_${fmon} if existing
      if [ -s tstend.nc ]; then
        access 1y_grid_t_ar6.nc mc_${runid}_${year}_m${fmon}_1y_grid_t_ar6.nc na
-       if [ -s 1y_grid_t_ar6.n ]; then
+       if [ -s 1y_grid_t_ar6.nc ]; then
          chmod u+w $(readlink -f 1y_grid_t_ar6.nc)
          ncks -A tstend.nc $(readlink -f 1y_grid_t_ar6.nc)
          chmod u-w $(readlink -f 1y_grid_t_ar6.nc)
