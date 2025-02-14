@@ -213,7 +213,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    !           !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
    !           !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
    sn_rnf      = 'runoffs'            ,    -1.   , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
-   sn_cnf      = 'runoffs'            ,     0.   , 'socoefr' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_cnf      = 'runoffs'            ,     0.   , 'riv_mask',   .false.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_dep_rnf  = 'runoffs'            ,     0.   , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
 /
 !-----------------------------------------------------------------------
