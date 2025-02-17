@@ -610,8 +610,7 @@ contains
 
      ! Mask fields not in the domcfg file, must relu on the calcuated done in dommsk
      !--- Gather tmask into nemo_tmask (found in com_cpl)
-     !--- tmask_i is found in module dom_oce
-     call cpl_gather("tmask_i", rank)
+     call cpl_gather("tmask", rank)
 
      !--- Gather umask (level 1) into nemo_umask (found in com_cpl)
      !--- umask is found in module dom_oce
@@ -769,8 +768,8 @@ contains
         CALL iom_close(inum)
     ENDIF
     !--- Gather the variable vname into work, and then
-    !       store it in global array named nemo_vname. work will contain the
-    !       Nemo northfold, but we will avoid copying this into the nemo_* arrays
+    !       store it in global array named nemo_vname. work will not contain the
+    !       Nemo northfold
     !--- This data is then sent to the coupler in cpl_initialize_events
     select case (trim(adjustl(vname)))
       case ("glamt")
