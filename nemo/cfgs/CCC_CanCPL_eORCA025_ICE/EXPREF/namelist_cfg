@@ -213,8 +213,8 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
    !___________!_____________!___________________!___________!_____________!_________!___________!__________!__________!_______________!
    !           !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
    !           !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_rnf      = 'runoffs'            ,    -1.   , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
-   sn_cnf      = 'runoffs'            ,     0.   , 'socoefr' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_rnf      = 'runoffs'            ,    -1.   , 'friver'  ,   .true.     , .true. , 'yearly'  , ''       , ''       , ''
+   sn_cnf      = 'runoffs'            ,     0.   , 'riv_mask',   .false.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_dep_rnf  = 'runoffs'            ,     0.   , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
 /
 !-----------------------------------------------------------------------
@@ -410,8 +410,9 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
    ln_dynldf_lap =  .false.    !  laplacian operator
    ln_dynldf_blp =  .true.     !  bilaplacian operator
    ln_dynldf_lev = .true.      !  iso-level
-   nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+   nn_ahm_ijk_t  =  30         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
                                !  = 20  F(i,j)=F(grid spacing)=c2d
+   rn_ahm_ratio  = 0.5         ! surface to bottom ratio of lateral eddy coefficient (nn_ahm_ijk_t = 10, 30)
    rn_Uv = 0.0838
    rn_Lv = 10.e+3              !  lateral viscous length   [m]   (nn_ahm_ijk_t= 0, 10)
 /

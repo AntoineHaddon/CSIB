@@ -153,7 +153,7 @@ PROGRAM nemo_diag
    CALL getvara ('e1v', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
    CALL getvara ('e3u', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3u , 1., 0.)
    CALL getvara ('e3v', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3v , 1., 0.)
-   CALL getvara ('e3t', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+   CALL getvara ('thkcello', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    CALL getvara ('umask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),umask , 1., 0.)
    CALL getvara ('vmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),vmask , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
@@ -294,14 +294,18 @@ PROGRAM nemo_diag
      &             , 'sections', 'sections', ' ')
       CALL defvar ('mfo', iou, 2, (/id_l, id_time/), 0., 0., ' ', 'F',  &
                    'Sea Water Transport', 'sea_water_transport_across_line', 'kg/s')
+      CALL putatttext (iou, 'mfo', 'coordinates', "time_counter line")
       CALL defvar ('line_ice', iou, 1, (/id_li/), 1, 5, ' ', 'I'     &
      &             , 'sections', 'sections', ' ')
       CALL defvar ('siareaacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
                    'Sea-Ice Area Flux Through Straits', 'sea_ice_area_transport_across_line', 'm2/s')
+      CALL putatttext (iou, 'siareaacrossline', 'coordinates', "time_counter line_ice")
       CALL defvar ('simassacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
                    'Sea-Ice Mass Transport Through Straits', 'sea_ice_transport_across_line', 'kg/s')
+      CALL putatttext (iou, 'simassacrossline', 'coordinates', "time_counter line_ice")
       CALL defvar ('snmassacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
                    'Snow Mass Transport Through Straits', 'snow_transport_across_line_due_to_sea_ice_dynamics', 'kg/s')
+      CALL putatttext (iou, 'snmassacrossline', 'coordinates', "time_counter line_ice")
       CALL enddef (iou)
       ! define the section axis
       !CALL putvara ('passage', iou, nline, (/1/), (/nline/)           &
@@ -383,7 +387,7 @@ PROGRAM nemo_diag
    ! NETCDF output tstend.nc
    ! If the output file does not exist, abort
    INQUIRE (file="tstend.nc", exist=exists)
-   IF (.not. exists) THEN
+   IF (.not. exists.and.tnsn_flag .eq. 1) THEN
       print*,"output file tstend.nc not found...creating a new file..."
       CALL opennew ("tstend.nc", iou)
       ntrec = 1
@@ -439,7 +443,8 @@ PROGRAM nemo_diag
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
-      print*, 'tstend.nc already exists'
+      IF (tnsn_flag .eq. 1) print*, 'tstend.nc already exists'
+      IF (tnsn_flag .eq. 0) print*, 'tstend.nc not produced (not needed)'
    ENDIF
 
 END PROGRAM nemo_diag

@@ -21,6 +21,7 @@
 !------------------------------------------------------------------------------
 &nampar         !   Generic parameters
 !------------------------------------------------------------------------------
+  nlay_i           =   5             !  number of ice  layers
   cn_icerst_in = "restart_ice_in"
   cn_icerst_out = "restart_ice"
 /

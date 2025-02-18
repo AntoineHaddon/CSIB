@@ -271,8 +271,10 @@ CONTAINS
                msftbarot(i,j,l) = 0.
                ztmp = 0. 
                DO k=1,km
-                  ztmp = ztmp+u(i,j,k,l)*e3u(i,j,k,l)*umask(i,j,k)
+                 if (umask(i,j,k).eq.0) cycle
+                 ztmp = ztmp+u(i,j,k,l)*e3u(i,j,k,l)*umask(i,j,k)
                ENDDO
+               if (ztmp.eq.0.) cycle
                uzint(i,j) = ztmp + ssh(i,j,l)*u(i,j,1,l)*umask(i,j,1)
             ENDDO
          ENDDO
@@ -285,10 +287,6 @@ CONTAINS
             ENDDO
          ENDDO 
       ENDDO
-      ! msftbarot(144,45,1) = -6.18654e+09 [ kg/s ]
-      ! msftbarot(144,45,4) = -3.07254e+09 [ kg/s ]
-      ! WRITE(*,*) 'msftbarot'
-      ! WRITE(*,*) msftbarot(144,45,1), msftbarot(144,45,4), msftbarot(225,135,1)
 
    END SUBROUTINE cmip6_msftbarot
 
