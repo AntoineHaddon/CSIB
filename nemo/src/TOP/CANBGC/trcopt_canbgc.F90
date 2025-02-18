@@ -63,7 +63,7 @@ MODULE trcopt_canbgc
 CONTAINS
 
    ! SUBROUTINE trc_opt( kt )
-   SUBROUTINE trc_opt( kt, knt , Kmm)
+   SUBROUTINE trc_opt( kt, knt , Kbb, Kmm)
    ! O Riche Aug 16th 2022
    ! knt is for time splitting, not implemented 
    ! at least for now
@@ -78,7 +78,7 @@ CONTAINS
       !!                based on Morel et al 1981
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, knt   ! ocean time step 
-      INTEGER, INTENT(in) ::    Kmm  ! time level indices
+      INTEGER, INTENT(in) ::    Kbb, Kmm  ! time level indices
       ! INTEGER, INTENT(in) ::   kt        ! ocean time step 
       ! O Riche Aug 16th 2022
       ! knt is for time splitting in PISCES
@@ -170,14 +170,14 @@ CONTAINS
           IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
-          ztotchla(:,:,:) = tr(:,:,:,jrnch, Kmm)
+          ztotchla(:,:,:) = tr(:,:,:,jrnch, Kbb)
         ENDIF
         IF( iom_use("DCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: DCHL detected by iom_use S/R.'
           IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrdch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
-          ztotchla(:,:,:) = ztotchla(:,:,:) + tr(:,:,:,jrdch, Kmm)
+          ztotchla(:,:,:) = ztotchla(:,:,:) + tr(:,:,:,jrdch, Kbb)
         ENDIF
       ENDIF
       
