@@ -167,14 +167,14 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)       
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kmm) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kbb) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
           ztotchla(:,:,:) = tr(:,:,:,jrnch, Kbb)
         ENDIF
         IF( iom_use("DCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: DCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrdch, Kmm) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrdch, Kbb) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
           ztotchla(:,:,:) = ztotchla(:,:,:) + tr(:,:,:,jrdch, Kbb)
