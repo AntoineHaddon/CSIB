@@ -87,7 +87,7 @@
   yearmo=`echo $year $keep_old_rtdiag_number | awk '{printf "%04d", $1 - $2}'`
 
   # current year rtd file names
-  year0=$(pad_integer $start_rtdiag 4)
+  year0=$(pad_integer $year_rtdiag_start 4)
   physical_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_physical_rtd.nc"
   ice_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_ice_rtd.nc"
   carbon_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_carbon_rtd.nc"
