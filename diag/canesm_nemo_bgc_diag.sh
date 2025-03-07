@@ -67,7 +67,7 @@ set -e
   ln -s 1m_diad_t_${fmon} diad_t  || ( echo "Link to diad_t failed" ; exit 1 )
   ln -s 1m_btrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 ) # OR Jan 09 '23 changed from ptrc_t 
 
-  if [[ $CanNEMO_CONFIG == *'CMOC'* && ${output_level} -gt 0 ]]; then
+  if [[ $CanNEMO_config == *'CMOC'* && ${output_level} -gt 0 ]]; then
 
     process_abio=0       # this flag needs to be set both here and inside nemo_diag_cmoc.F90 (process_abio = .false./.true.)
 
@@ -161,7 +161,7 @@ set -e
     fi
 
   # Similar but for CANOE configurations
-  elif [[ $CanNEMO_CONFIG == *'CANOE'* && ${output_level} -gt 0 ]]; then
+  elif [[ $CanNEMO_config == *'CANOE'* && ${output_level} -gt 0 ]]; then
     # Expected outputs from CMOC or CanOE offline diagnostics
     canoe_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D"
     canoe_outvars_l2="CO3 CO3sata CO3satc"
