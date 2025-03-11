@@ -173,7 +173,7 @@ CONTAINS
        !
         CALL canoe_sink( kt , jnt, Kbb, Kmm, Krhs )     ! particle sinking 
        !
-        CALL trc_opt( kt, jnt, Kmm )       ! 3-band PAR attenuation
+        CALL trc_opt( kt, jnt, Kbb, Kmm )       ! 3-band PAR attenuation
        !
        ! call CanOE production S/R
         CALL canoe_prod( kt, jnt, Kbb, Kmm, Krhs  )
