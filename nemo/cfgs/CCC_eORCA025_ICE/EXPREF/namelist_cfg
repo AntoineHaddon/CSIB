@@ -248,6 +248,7 @@
 &namdrg        !   top/bottom drag coefficient                          (default: NO selection)
 !-----------------------------------------------------------------------
    ln_non_lin  = .true.   !  non-linear  drag: Cd = Cd0 |U|
+      ln_drgice_imp = .true. ! implicit ice-ocean drag
 /
 !-----------------------------------------------------------------------
 &nambbc        !   bottom temperature boundary condition                (default: OFF)
