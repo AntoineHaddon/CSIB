@@ -127,7 +127,7 @@ CONTAINS
          ENDIF
          !
          IF( TRIM(sf_ssm_2d(jf_sal)%clrootname) == 'NOT USED' ) &
-            &     sf_ssm_2d(jf_sal)%fnow(:,:,1) = 35.35_wp
+            &     sf_ssm_2d(jf_sal)%fnow(:,:,1) = 33.252_wp
          IF( TRIM(sf_ssm_2d(jf_tem)%clrootname) == 'NOT USED' ) &
             &     CALL eos_fzp( sf_ssm_2d(jf_sal)%fnow(:,:,1), sf_ssm_2d(jf_tem)%fnow(:,:,1) )
          IF( TRIM(sf_ssm_2d(jf_ssh)%clrootname) == 'NOT USED' ) &
@@ -141,7 +141,7 @@ CONTAINS
             frq_m(:,:) = 1._wp
          ENDIF
       ELSE
-         sss_m(:,:) = 35.35_wp                             ! =32.2 to obtain a physical value for the freezing point
+         sss_m(:,:) = 33.252_wp                          ! =33.252 to obtain a physical value for the freezing point of 271.2K (teos10)
          CALL eos_fzp( sss_m(:,:), sst_m(:,:) )          ! sst_m is set at the freezing point
          ssu_m(:,:) = 0._wp
          ssv_m(:,:) = 0._wp
