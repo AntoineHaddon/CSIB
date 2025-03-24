@@ -64,9 +64,9 @@
     source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
 
     # year referenced to run_start_date
-    rtdYR=$(( year - run_start_time ))
-    echo $rtdYR
-    echo $run_start_time
+    rtdyear=$(expr $year + 0)           # strip leading zeros
+    rtdrst=$(expr $run_start_time + 0)
+    rtdYR=$(( rtdyear - rtdrst ))
 
     # run script
     python3 ${CCRNSRC}/CanESM/CanNEMO/rtd/cantods_rtd.py -r $runid -p  ${RUNPATH%%${runid_env}*} -o ${RUNPATH}/RTD -x [${rtdYR},${rtdYR}] -y ${run_start_time} -P True -s ${CCRNSRC}/CanESM/CanNEMO/rtd

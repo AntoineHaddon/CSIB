@@ -479,6 +479,7 @@ def bdy_remap(args):
          
         if int(args.his2cmor) != 1:
             varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+            print(varPath)
 
             # find all files that match format
             flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
@@ -500,7 +501,7 @@ def bdy_remap(args):
         mnY=int(mnY)
         mxY=int(mxY)
         for year in years:
-            print(f'{vV} - {year}')
+            print(f'{vV} - {year:04}')
             if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
                 fy=year + int(args.iaf_year_offset)
                 yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
@@ -513,6 +514,8 @@ def bdy_remap(args):
                     fdates=f'{yr}'
                     sameFile=False
                 else:
+                    print(yr)
+                    print(flist[0])
                     file,fdates,sameFile=matchFileYear(yr,flist,file0=file0)
             else:
                 # find matching file
@@ -599,8 +602,8 @@ def bdy_remap(args):
                 else:
                     print(f"{outFileBdy.replace('YYYY',f'{year}')}.{vV}.nc does not exist")
             if ccount > 0:
-                print(f"cdo merge {flist} {outFileBdy.replace('YYYY',f'{year}')}")
-                subprocess.run(f"cdo merge {flist} {outFileBdy.replace('YYYY',f'{year}')}",shell=True)
+                print(f"cdo merge {flist} {outFileBdy.replace('YYYY',f'{year:04}')}")
+                subprocess.run(f"cdo merge {flist} {outFileBdy.replace('YYYY',f'{year:04}')}",shell=True)
                 # remove individual variable files
                 subprocess.run(f'rm -f {flist}',shell=True)
             
@@ -632,6 +635,96 @@ def bdy_remap(args):
         subprocess.run(f'rm -f bdy.{bdy}.nc',shell=True)
 
     return fcount
+
+def frc_remap(args):
+    """
+    Remap forcing rather than just slicing in time.
+    """
+
+    # loop through each variable
+    print(f'Finding and processing data from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    # get mesh file in correct format and find lat/lon bounds
+    checkMeshFile(args.meshfile)
+    with xr.open_dataset('grd.tmp.nc') as ds0:
+        # latitude range of grid
+        bN=np.nanmax(ds0['nav_lat'])
+        bS=np.nanmin(ds0['nav_lat'])
+
+    if args.outfile is None:
+        outFile=f'VAR_cantods025_yYYYY'
+    else:
+        outFile=args.outfile
+    vars2process=['tas','uas','vas','huss','rsds','rlds','pr','prsn','psl','ps']
+    vRep={'tas':'tair','uas':'u','vas':'v','huss':'humi','rsds':'qsr',
+        'rlds':'qlw','pr':'prec','prsn':'snow','psl':'slp','ps':'slp'}
+
+    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    else:
+        years=np.array(args.years)
+
+    if args.forcing=='OMIP':
+        print(f'Finding OMIP forcing.')
+    else:
+        print(f'Finding forcing from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+    fexpect=0; fcount=0
+    for iV,vV in enumerate(vars2process):
+        if args.forcing=='OMIP':
+            varPath='/space/hall6/sitestore/eccc/crd/ccrn/users/rdy001/forcing/corev2-ciaf'
+            # find all files that match format
+            flist=glob.glob(os.path.join(varPath,f'{vV}.1948-2009.23OCT2012.nc'))
+        else:
+            varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'{args.mor}/{vV}/gn/v20190429/')
+            # find all files that match format
+            flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_{args.mor}_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+
+        # identify file based on desired year
+        for year in years:
+            fexpect+=1
+            if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+                fy=year + int(args.iaf_year_offset)
+                yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+                yr=fy-int((year-1)/yd)*yd
+                file=matchFileYear(yr,flist)[0]
+            else:
+                # find matching file
+                file=matchFileYear(year,flist)[0]
+                yr=year
+            print(f'{vV} - {year} ({yr})')
+            fdates=f'{yr}-{year}'
+            startYear=yr
+
+            if file is None:
+                print(f'No {vV} files found for {year} ({yr}).')
+            else:
+                # get desired time from file
+                # extract desired year from file
+                if len(file) > 1:
+                    # concatenate multiple files
+                    fstr=''
+                    for fle in file:
+                        fstr+=f'{fle} '
+                    subprocess.run(f'ncrcat -h {fstr} -O {outFile}_y{fdates}_{vV}.nc',shell=True)
+                    subprocess.run(f'cdo --no_history selyear,{startYear}/{startYear} {outFile}_y{fdates}_{vV}.nc {outFile}_y{startYear}_{vV}.nc',shell=True)
+                    subprocess.run(f'rm -f {outFile}_y{fdates}_{vV}.nc',shell=True)
+                else:
+                    subprocess.run(f'cdo --no_history selyear,{startYear}/{startYear} {file[0]} {outFile}_y{startYear}_{vV}.nc',shell=True)
+                
+                # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
+                subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},90 {outFile}_y{startYear}_{vV}.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
+                
+                # fill any gaps in the sliced srcFile (two iterations)
+                subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc',shell=True)
+
+                # remap to child grid
+                subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year}')}.nc",shell=True)
+                print(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year}')}.nc")
+                subprocess.run(f'rm -f *y{yr}.{vV}.nc',shell=True)
+                fcount+=1
+    # remove intermediate files
+    subprocess.run(f'rm -f *.tmp.nc',shell=True)
+    return fcount,fexpect
 
 def frc_slice(args):
     """
@@ -931,141 +1024,6 @@ def his2cmor(var4cmor,fYear,fOut,args):
 
     return cmfile
 
-# def glorys2cmor(var4cmor,fYear,fOut,args):
-#     """
-#     Naive conversion from GLORYS files to "CMORized" file to use with scripts above
-#     """
-#     ftype={'thetao':'grid_[tT]','so':'grid_[tT]','zos':'grid_[tT]','uo':'grid_[uU]','vo':'grid_[vV]'}
-#     lev={'grid_[tT]':'deptht','grid_[uU]':'depthu','grid_[vV]':'depthv'}
-
-#     # find correct file
-#     pPath=args.parent_path.split('nc_output')[0]
-#     varPath=os.path.join(pPath,f"mc_{args.parent_name.replace('CanESM5-NEMO4-','')}_{fYear}_*{ftype[var4cmor]}.nc*")
-    
-#     # find all files that match format
-#     flist=np.array(sorted(glob.glob(varPath)))
-
-#     if len(flist) == 0:
-#         cmfile=None
-#     else:
-#         # get highest value of file version
-#         hisFile=flist[-1]
-#         cmfile=f"{fOut.replace('VAR',var4cmor)}.{var4cmor}.2cmor.tmp.nc"
-
-#         # open glorys file for reading
-#         with xr.open_dataset(hisFile) as hF:
-#             # gridded coordinates
-#             ln=hF.longitude.values
-#             lt=hF.latitude.values
-#             LN,LT=np.meshgrid(ln,lt)
-#             shpi=len(ln)
-#             shpj=len(lt)
-#             # open new file for writing
-#             with Dataset(cmfile,'w') as cF:
-#                 # create dimensions
-#                 cF.createDimension('time',None)
-#                 if var4cmor != 'zos':
-#                     cF.createDimension('lev',len(hF.depth.values))
-#                 cF.createDimension('j',len(hF.latitude.values))
-#                 cF.createDimension('i',len(hF.longitude.values))
-#                 # create variables
-#                 time=cF.createVariable('time','f8',('time',)); time.units="hours since 1950-01-01"; time.calendar="gregorian"
-#                 if var4cmor!='zos':
-#                     lev=cF.createVariable('lev','f4',('lev',))
-#                     var=cF.createVariable(var4cmor,'f8',('time','lev','j','i')); var.coordinates="latitude longitude"
-#                 else:
-#                     var=cF.createVariable(var4cmor,'f8',('time','j','i')); var.coordinates="latitude longitude"
-#                 lat=cF.createVariable('latitude','f4',('j','i')); lat._CoordinateAxisType='Lat'; lat.units='degrees_north'
-#                 lon=cF.createVariable('longitude','f4',('j','i')); lon._CoordinateAxisType='Lon'; lon.units='degrees_east'
-#                 ii=cF.createVariable('i','i8',('i',)); ii.units='1'; ii.long_name='first spatial index for variables stored on an unstructured grid'
-#                 jj=cF.createVariable('j','i8',('j',)); jj.units='1'; jj.long_name='second spatial index for variables stored on an unstructured grid'
-                
-#                 # write variables
-#                 time[:]=hF.time.values
-#                 if var4cmor!='zos':
-#                     lev[:]=hF.depth.values
-#                 lat[:]=LT
-#                 lon[:]=LN
-#                 ii[:]=range(shpi)
-#                 jj[:]=range(shpj)
-#                 var[:]=hF[var4cmor].values
-#             print(f'Wrote temporary GLORYS file {var4cmor}')
-#         cmfile=[cmfile]
-       
-        # # slice file to get desired variable
-        # if 'glorys' in cmfile:
-        #     # restrict latitude further as files are BIG
-        #     subprocess.run(f"cdo --no_history sellonlatbox,-180,180,30,45 {hisFile} {cmfile}",shell=True)
-        #     subprocess.run(f"ncks -v {var4cmor} {cmfile} -O {cmfile}",shell=True)
-        # else:
-        #     subprocess.run(f"ncks -v {var4cmor} {hisFile} -O {cmfile}",shell=True)
-        # # rename coordinates (if applicable)
-        # subprocess.run(f"ncrename -h -d .x,i -d .y,j -d .longitude,i -d .latitude,j -v .nav_lon,longitude -v .nav_lat,latitude {cmfile} -O {cmfile}",shell=True)
-        # # subprocess.run(f"ncrename -h -v .{lev[ftype[var4cmor]]},lev -d .{lev[ftype[var4cmor]]},lev {cmfile} -O {cmfile}",shell=True)
-        # # rename vertical coordinate (if applicable)
-        # # either a grid-specific name, or just generic 'depth'
-        # subprocess.run(f"ncrename -h -d .{lev[ftype[var4cmor]]},lev {cmfile} -O {cmfile}",shell=True)
-        # subprocess.run(f"ncrename -h -d .depth,lev {cmfile} -O {cmfile}",shell=True)
-        # # if var4cmor != 'zos':
-        # #     subprocess.run(f"ncks -h -x -v {lev[ftype[var4cmor]]} -d {lev[ftype[var4cmor]]}_bnds {cmfile} -O {cmfile}",shell=True)
-        # subprocess.run(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile} -O {cmfile}",shell=True)
-        # # add gridded lat/lon if necessary
-        # with xr.open_dataset(cmfile) as cmtmp:
-        #     shp=np.shape(cmtmp.latitude.values)
-        #     try:
-        #         shpi=shp[1]
-        #         shpj=shp[0]
-        #         reLat=False
-        #     except:
-        #         ln=cmtmp.longitude.values
-        #         lt=cmtmp.latitude.values
-        #         LN,LT=np.meshgrid(ln,lt)
-        #         shpi=len(ln)
-        #         shpj=len(lt)
-        #         reLat=True
-        # #add dimension variables to file         
-        # with xr.open_dataset(cmfile) as cmtmp:
-        #     if var4cmor=='zos':
-        #         ij=xr.Dataset.from_dict(
-        #             {'i':{'dims':('i'),'data':range(shpi),'attrs':{'units':'1','long_name':'first spatial index for variables stored on an unstructured grid'}},
-        #             'j':{'dims':('j'),'data':range(shpj),'attrs':{'units':'1','long_name':'second spatial index for variables stored on an unstructured grid'}}})
-        #     else:
-        #         with xr.open_dataset(hisFile) as hstmp:
-        #             try:
-        #                 depth=hstmp.variables[lev[ftype[var4cmor]]]
-        #             except:
-        #                 try:
-        #                     depth=hstmp.variables['lev']
-        #                 except:
-        #                     depth=hstmp.variables['depth']
-        #             ij=xr.Dataset.from_dict(
-        #                 {'i':{'dims':('i'),'data':range(shpi),'attrs':{'units':'1','long_name':'first spatial index for variables stored on an unstructured grid'}},
-        #                 'j':{'dims':('j'),'data':range(shpj),'attrs':{'units':'1','long_name':'second spatial index for variables stored on an unstructured grid'}},
-        #                 'lev':{'dims':('lev'),'data':depth,'attrs':{'long_name':"Vertical T levels",'units':'m','positive':"down",'axis':"Z"}}})
-        #     cmtmp2=xr.merge([cmtmp,ij])
-        #     cmtmp2.to_netcdf(f'{cmfile}.ij.tmp.nc')
-        #     subprocess.run(f"ncatted -h -a positive,lev,o,c,down {cmfile}.ij.tmp.nc -O {cmfile}.ij.tmp.nc",shell=True)
-        #     subprocess.run(f"ncatted -h -a axis,lev,o,c,Z {cmfile}.ij.tmp.nc -O {cmfile}.ij.tmp.nc",shell=True)
-        # if reLat:
-        #     # want lat/lon to be gridded, not vectors
-        #     # remove lon & lat from file
-        #     subprocess.run(f"ncks -v {var4cmor} {cmfile}.ij.tmp.nc {cmfile}.nolonlat.tmp.nc",shell=True)
-        #     lnlt=xr.Dataset.from_dict(
-        #             {'longitude':{'dims':('j','i'),'data':LN,'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
-        #              'latitude':{'dims':('j','i'),'data':LT,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}}})
-        #     lnlt.to_netcdf(f'{cmfile}.lonlat.tmp.nc')
-        #     # with xr.open_dataset(f"{cmfile}.nolonlat.tmp.nc") as cxlnlt:
-        #     #     dstmp=xr.merge([cxlnlt,lnlt])
-        #     # dstmp.to_netcdf(f'{cmfile}.lonlat.tmp.nc')
-        #     subprocess.run(f"cdo merge {cmfile}.nolonlat.tmp.nc {cmfile}.lonlat.tmp.nc {cmfile}.gridded.tmp.nc",shell=True)
-        #     print("I AM HERE!!")
-        #     subprocess.run(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile}.gridded.tmp.nc -O {cmfile}.gridded.tmp.nc",shell=True)
-        #     cmfile=[f'{cmfile}.gridded.tmp.nc']
-        # else:
-        #     cmfile=[f'{cmfile}.ij.tmp.nc']
-
-    # return cmfile
-
 def fixVelocities(vFile,outVFile):
     """
     Flip meridional velocities in the "northern" portion of a domain (if applicable)
@@ -1155,7 +1113,6 @@ def fixVelocities(vFile,outVFile):
                     outVFile=vFile
 
     return outVFile
-
 
 def calc_nemo_chunk_dates(args):
     """
@@ -1254,6 +1211,7 @@ elif args.type==1:
     print(f'Done making the boundary files!\n{fcount} files created.\n{time.time()-start} s elapsed.')
 elif args.type==2:
     fcount,fexpect=frc_slice(args)
+    #fcount,fexpect=frc_remap(args)
     print(f'Done finding forcing files!\n({fcount}/{fexpect} found)\n{time.time()-start} s elapsed.')
 elif args.type==3:
     print('Remapping/scaling rivers.')
