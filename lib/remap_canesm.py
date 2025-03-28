@@ -14,6 +14,7 @@ import math
 from netCDF4 import Dataset
 import numpy as np
 import os
+from scipy.interpolate import LinearNDInterpolator
 import subprocess
 import sys
 import time
@@ -159,7 +160,7 @@ def rs_remap(args):
         outFile=args.outfile
 
     # find directory containing restart files
-    filePath=np.array(sorted(glob.glob(os.path.join(args.parent_path,f'mc_{args.parent_name}_{min(args.years)}_m*_nemors.*'))))
+    filePath=np.array(sorted(glob.glob(os.path.join(args.parent_path,f'mc_{args.parent_name}_{min(args.years):04}_m*_nemors.*'))))
     if len(filePath) > 1:
         # do not want tiled files
         iP = np.array(['tiled' not in fP for fP in filePath])
@@ -456,6 +457,15 @@ def bdy_remap(args):
             # boundary max/min latitude
             bN=np.nanmax([bN,np.nanmax(bdyFile.nav_lat)])
             bS=np.nanmin([bS,np.nanmin(bdyFile.nav_lat)])
+            if 'P' in bbase:
+                # boundary max/min longitude (Note: may wrap around dateline or meridian)
+                blon=np.mod(bdyFile.nav_lon.values,360.) ; blon2=blon.copy(); blon2[blon>180]=blon[blon>180]-360.
+                bW=np.nanmin(blon[:,0])   # Western-most point of boundary   (   0 - 360)
+                bE=np.nanmax(blon[:,-1])  # Eastern-most point of boundary   (   0 - 360)
+                bW2=np.nanmin(blon2[:,0])   # Western-most point of boundary (-180 - 180)
+                bE2=np.nanmax(blon2[:,-1])  # Eastern-most point of boundary (-180 - 180)
+            else:
+                bW=None; bE=None
     else:
         # assumed boundary from grid
         blist=['north','south']
@@ -467,11 +477,12 @@ def bdy_remap(args):
                 subprocess.run(f'ncks -h -d y,-11,-2 grd.tmp.nc -O bdy.north.nc',shell=True)
 
             # get the maximum latitude extent of the boundary to slice file (quicker processing)
+            #TODO: NORTH VALUES ARE NOT SAVED FOR LATER USE; DEFAULTS TO SOUTHERN BOUNDARY ALL THE TIME?!
             with xr.open_dataset(f'bdy.{bdy}.nc') as ds0:
                 # boundary max/min latitude and longitude
                 bN=np.nanmax([bN,np.nanmax(ds0['nav_lat'].values)])
                 bS=np.nanmin([bS,np.nanmin(ds0['nav_lat'].values)])
-        subprocess.run(f'rm -f grd.tmp.nc',shell=True)
+                bE=None ; bW=None
 
     # loop through each variable and interpolate to the regional boundaries
     vars2interp=['thetao','so','uo','vo','zos']
@@ -479,7 +490,6 @@ def bdy_remap(args):
          
         if int(args.his2cmor) != 1:
             varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
-            print(varPath)
 
             # find all files that match format
             flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
@@ -514,8 +524,6 @@ def bdy_remap(args):
                     fdates=f'{yr}'
                     sameFile=False
                 else:
-                    print(yr)
-                    print(flist[0])
                     file,fdates,sameFile=matchFileYear(yr,flist,file0=file0)
             else:
                 # find matching file
@@ -540,7 +548,7 @@ def bdy_remap(args):
                         fstr+=f'{fle} '
                     subprocess.run(f'ncrcat -h {fstr} -O {outFile}.{vV}.concat.tmp.nc',shell=True)
                 else:
-                    subprocess.run(f'ln -s {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
+                    subprocess.run(f'ln -sf {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
                 with xr.open_dataset(file[0]) as src:
                     # find indices of region north and south of the boundary
                     try:
@@ -549,10 +557,56 @@ def bdy_remap(args):
                     except:
                         ilat=np.where(np.logical_and(src['latitude']>=bS-args.Xdeg,src['latitude']<=bN+args.Xdeg))[0]
                         latLen=len(src['latitude'])
+                    if bW is not None and bE is not None:
+                        # get longitude limits as well
+                        sln=np.mod(src['longitude'],360.)
+                        if bE > bW:
+                            # use positive longitudes
+                            ilon=np.where(np.logical_and(sln>=bW-args.Xdeg,sln<=bE+args.Xdeg))[0]
+                        else:
+                            # use negative longitudes
+                            sln[sln>180]=sln[sln>180]-360.
+                            ilon=np.where(np.logical_and(sln>=bW-args.Xdeg,sln<=bE+args.Xdeg))[0]
+                    else:
+                        ilon=range(np.shape(src['longitude'])[1])
+                    
+                    if bW is not None and bE is not None:
+                        # create index arrays in x and y
+                        # TODO: this doesn't work for case of assumed boundaries!!
+                        glt=src['latitude'].values; gln=np.mod(src['longitude'].values,360.)
+                        if bW > bE:
+                            gln[gln>180]=gln-360.
+                        y,x=np.shape(glt)
+                        Y=np.transpose(np.tile(range(y),(x,1)))
+                        X=np.tile(range(x),(y,1))
+                        # select only thoe values within the identified bounds
+                        Y=Y[np.nanmin(ilat):np.nanmax(ilat)+1,:] ; X=X[np.nanmin(ilat):np.nanmax(ilat)+1,:]
+                        glt=glt[np.nanmin(ilat):np.nanmax(ilat)+1,:] ; gln=gln[np.nanmin(ilat):np.nanmax(ilat)+1,:]
+                        Y=Y[:,np.nanmin(ilon):np.nanmax(ilon)+1]; X=X[:,np.nanmin(ilon):np.nanmax(ilon)+1]
+                        glt=glt[:,np.nanmin(ilon):np.nanmax(ilon)+1]; gln=gln[:,np.nanmin(ilon):np.nanmax(ilon)+1]
+                        # interpolate the indices to the boundary coordinates
+                        with xr.open_dataset(args.bdyFile) as grd:
+                            # get coordinates
+                            blt=grd['nav_lat'].values; bln=np.mod(grd['nav_lon'].values,360.)
+                            if bW > bE:
+                                bln[bln>180]=bln-360.
+                            # create interpolants
+                            yLin=LinearNDInterpolator(list(zip(gln.ravel(),glt.ravel())),Y.ravel())
+                            xLin=LinearNDInterpolator(list(zip(gln.ravel(),glt.ravel())),X.ravel())
+                            # interpolate to boundary coordinates
+                            Yint=yLin(bln,blt)
+                            Xint=xLin(bln,blt)
+                            # round down from smallest and up from largest
+                            ilat=[int(np.floor(np.nanmin(Yint))),int(np.ceil(np.nanmax(Yint)))]
+                            ilon=[int(np.floor(np.nanmin(Xint))),int(np.ceil(np.nanmax(Xint)))]
                 # add some extra latitude points if min and max the same, or only one point
                 if (np.nanmax(ilat)-np.nanmin(ilat)) <= 1:
                     ilat=[np.nanmax([0,np.nanmin(ilat)-1]),np.nanmin([np.nanmax(ilat)+1,latLen])]
-                subprocess.run(f'ncks -h -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc',shell=True)
+                #subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},{bN+args.Xdeg} {outFile}.{vV}.concat.tmp.nc {outFile}.{vV}.sliced.tmp.nc',shell=True)
+                if bW is not None and bE is not None:
+                    subprocess.run(f'ncks -h -d i,{np.nanmin(ilon)},{np.nanmax(ilon)} -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc',shell=True)
+                else:
+                    subprocess.run(f'ncks -h -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc',shell=True)
 
                 # subsample file to only include desired years
                 subprocess.run(f"cdo --no_history selyear,{mnY}/{mxY} {outFile}.{vV}.sliced.tmp.nc {outFile}.{vV}.sliced2.tmp.nc",shell=True)
@@ -587,6 +641,7 @@ def bdy_remap(args):
     
     # remove all remaining intermediate files generated above
     subprocess.run(f"rm -f {outFile.replace('YYYY','*')}*.tmp.nc*",shell=True)
+    subprocess.run(f'rm -f grd.tmp.nc',shell=True)
 
     # now concatenate physical variables and rename currents
     print(f'\rConcatenating files')
@@ -789,7 +844,7 @@ def frc_slice(args):
                         fstr+=f'{fle} '
                     subprocess.run(f'ncrcat -h {fstr} -O {outFile}.{vV}.concat.tmp.nc',shell=True)
                 else:
-                    subprocess.run(f'ln -s {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
+                    subprocess.run(f'ln -sf {file[0]} {outFile}.{vV}.concat.tmp.nc',shell=True)
                 subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.{vV}.concat.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
                 subprocess.run(f"rm -f {outFile}.{vV}.concat.tmp.nc",shell=True)
                 # fill missing points (e.g., in raw OMIP files)
