@@ -95,7 +95,8 @@ echo "#################### Start NEMO pre-processing #################"
   done
   # configuration input files
   is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
-  acc_cp domain_cfg.nc             $nemo_coordinates
+  acc_cp domain_cfg.nc             $nemo_coordinates na
+  [ ! -f domain_cfg.nc ] && ln -s $nemo_coordinates domain_cfg.nc # link to file not in database
 
   # Interannual forcing consideration
   if [[ $config == "ESM" ]]; then
@@ -113,18 +114,29 @@ echo "#################### Start NEMO pre-processing #################"
 	  acc_cp apr.nc              ${nemo_apr}
   elif [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
       # CanTODS setup
-      if [[ $dada_run == 1 ]] ; then
+      if [[ $dada_run != 0 ]] ; then
         cp_dada
-      else
+      fi
+      if [[ $dada_run == 0 ]] || [[ $ctds_dnscl == 1 ]]; then
+        # Get atmospheric forcing in case of OMIP-forced run, or not downscaling
         # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
         for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
           ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
           [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
           yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-          # In future, will want different forcing. For now, just repeat 2017.
           #forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-          forcing_year=2017
+          if [[ $dada_run == 0 ]]; then
+            # If not downscaling, repeat 2017 atmospheric forcing
+            # In future, will want different forcing.
+            forcing_year=2017
+          else
+            fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+            yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+            fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+            forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+          fi
+          # TODO: synchronize with non-CanTODS names so a common function can be used for the atmospheric forcing
           acc_cp tair_cantods025_y${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
           acc_cp u_cantods025_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
           acc_cp v_cantods025_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
@@ -135,10 +147,12 @@ echo "#################### Start NEMO pre-processing #################"
           acc_cp snow_cantods025_y${yearc}.nc        ${nemo_snow}_y${forcing_year}.nc
           acc_cp slp_cantods025_y${yearc}.nc        ${nemo_slp}_y${forcing_year}.nc
           acc_cp apr_cantods025_y${yearc}.nc        ${nemo_apr}_y${forcing_year}.nc
-          
-          # boundaries
-          acc_cp obc_north_cantods025_y${yearc}.nc     ${nemo_bn_north}_y${forcing_year}.nc
-          acc_cp obc_south_cantods025_y${yearc}.nc     ${nemo_bn_south}_y${forcing_year}.nc
+
+          if [[ $dada_run == 0 ]]; then
+            # boundaries if not downscaling
+            acc_cp obc_north_cantods025_y${yearc}.nc     ${nemo_bn_north}_y${forcing_year}.nc
+            acc_cp obc_south_cantods025_y${yearc}.nc     ${nemo_bn_south}_y${forcing_year}.nc
+          fi
         done
       fi
 	 
@@ -160,7 +174,7 @@ echo "#################### Start NEMO pre-processing #################"
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
 
     if [[ $dada_run == 1 ]] ; then
-      # get files prepared for DADA run (extracted from parent run)
+      # get files prepared for DADA run (downscaled from a parent run)
       cp_dada
     else
       for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
@@ -180,8 +194,8 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
         acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
         acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-	    acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
-	    acc_cp apr_y${yearc}.nc              ${nemo_apr}_y${forcing_year}.nc
+        acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
+        acc_cp apr_y${yearc}.nc              ${nemo_apr}_y${forcing_year}.nc
       done
     fi
   fi

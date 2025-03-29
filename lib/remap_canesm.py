@@ -5,8 +5,8 @@ Functions to remap CMORIZED outputs from CanESM runs onto a different domain
 Written by J. G. Izett (2024)
 """
 
-#TODO: Add rivers
-#TODO: hot start
+#TODO: Proper handling of rivers
+#TODO: CDO commands can likely be made more efficient, rather than creating multiple intermediate files (but it is easier for debugging)
 
 import argparse
 import glob
@@ -21,6 +21,8 @@ import time
 import xarray as xr
 
 # argument parser
+# TODO: The list of arguments has become very long and convoluted; better to read from a JSON file,
+# or pass as a dictionary with keys??
 # allows to be calculated at runtime, or a posteriori
 parser=argparse.ArgumentParser(description='Calculate CanTODS diagnostics.')
 
@@ -130,6 +132,9 @@ def getZ(meshFile,outFile):
     return
 
 def cellAreas(meshFile):
+    """
+    Calculate grid cell area
+    """
     with xr.open_dataset(meshFile) as mF:
         e1t = mF['e1t'].values.squeeze() # y,x
         e2t = mF['e2t'].values.squeeze() # y,x
@@ -208,7 +213,7 @@ def rs_remap(args):
             tSuff='_in'
         else:
             tSuff=''
-        # Interpolate vertical levels...doesn't seem to work properly?! For now, leave out since grids all eORCA
+        # TODO: Interpolate vertical levels...doesn't seem to work properly?! For now, leave out since grids all eORCA
         # with same vertical resolution.
         # if tT == 'restart_ice':
         #     # No vertical interpolation for ice files
@@ -300,14 +305,6 @@ def ic_remap(args):
                 subprocess.run(f"mv {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.remapped.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{startYear}')}.nc",shell=True)
             else:
                 getZ(args.meshfile,outFile)
-                # if not os.path.isfile(f'{outFile}.onlyz.tmp.nc'):
-                #     with xr.open_dataset(args.meshfile) as mF:
-                #         if 'e3t_0' in mF.keys():
-                #             subprocess.run(f'ncks -h -v e3t_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
-                #         elif 'tmask' in mF.keys():
-                #             subprocess.run(f'ncks -h -v tmask {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
-                #         else:
-                #             subprocess.run(f'ncks -h -v gdept_0 {args.meshfile} -O {outFile}.onlyz.tmp.nc',shell=True)
                 subprocess.run(f"cdo --no_history intlevelx$(cdo -s showlevel {outFile}.onlyz.tmp.nc | tr ' ' ',') {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.remapped.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{startYear}')}",shell=True)
 
             # remove intermediate variable files
@@ -475,9 +472,7 @@ def bdy_remap(args):
                 subprocess.run(f'ncks -h -d y,1,10 grd.tmp.nc -O bdy.south.nc',shell=True)
             elif bdy=='north':
                 subprocess.run(f'ncks -h -d y,-11,-2 grd.tmp.nc -O bdy.north.nc',shell=True)
-
-            # get the maximum latitude extent of the boundary to slice file (quicker processing)
-            #TODO: NORTH VALUES ARE NOT SAVED FOR LATER USE; DEFAULTS TO SOUTHERN BOUNDARY ALL THE TIME?!
+            # get the maximum latitude extent of the boundaries to slice file (quicker processing)
             with xr.open_dataset(f'bdy.{bdy}.nc') as ds0:
                 # boundary max/min latitude and longitude
                 bN=np.nanmax([bN,np.nanmax(ds0['nav_lat'].values)])
@@ -487,10 +482,9 @@ def bdy_remap(args):
     # loop through each variable and interpolate to the regional boundaries
     vars2interp=['thetao','so','uo','vo','zos']
     for iV,vV in enumerate(vars2interp):
-         
+        # get history file in format that matches CMORized files
         if int(args.his2cmor) != 1:
             varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
-
             # find all files that match format
             flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
         
@@ -517,9 +511,6 @@ def bdy_remap(args):
                 yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
                 yr=fy-int((year-1)/yd)*yd
                 if int(args.his2cmor)==1:
-                    # if args.parent_name.lower()=='glorys':
-                    #     file=glorys2cmor(vV,yr,outFile.replace('YYYY',f'{yr:04}'),args)
-                    # else:
                     file=his2cmor(vV,yr,outFile.replace('YYYY',f'{yr:04}'),args)
                     fdates=f'{yr}'
                     sameFile=False
@@ -528,9 +519,6 @@ def bdy_remap(args):
             else:
                 # find matching file
                 if int(args.his2cmor)==1:
-                    # if args.parent_name.lower()=='glorys':
-                    #     file=glorys2cmor(vV,year,outFile.replace('YYYY',f'{year:04}'),args)
-                    # else:
                     file=his2cmor(vV,year,outFile.replace('YYYY',f'{year:04}'),args)
                     fdates=f'{year}'
                     sameFile=False
@@ -572,7 +560,6 @@ def bdy_remap(args):
                     
                     if bW is not None and bE is not None:
                         # create index arrays in x and y
-                        # TODO: this doesn't work for case of assumed boundaries!!
                         glt=src['latitude'].values; gln=np.mod(src['longitude'].values,360.)
                         if bW > bE:
                             gln[gln>180]=gln-360.
@@ -602,7 +589,6 @@ def bdy_remap(args):
                 # add some extra latitude points if min and max the same, or only one point
                 if (np.nanmax(ilat)-np.nanmin(ilat)) <= 1:
                     ilat=[np.nanmax([0,np.nanmin(ilat)-1]),np.nanmin([np.nanmax(ilat)+1,latLen])]
-                #subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},{bN+args.Xdeg} {outFile}.{vV}.concat.tmp.nc {outFile}.{vV}.sliced.tmp.nc',shell=True)
                 if bW is not None and bE is not None:
                     subprocess.run(f'ncks -h -d i,{np.nanmin(ilon)},{np.nanmax(ilon)} -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc',shell=True)
                 else:
@@ -851,16 +837,6 @@ def frc_slice(args):
                 if args.forcing=='OMIP':
                     # need to rename lat/lon
                     subprocess.run(f"ncrename -h -v LON,nav_lon -v LAT,nav_lat {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
-                    # subprocess.run(f"ncatted -h -a _CoordinateAxisType,nav_lon,o,c,Lon -a _CoordinateAxisType,nav_lat,o,c,Lat {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
-                # subprocess.run(f"cdo --no_history fillmiss2 {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
-                # subprocess.run(f"rm -f {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.tmp*.nc",shell=True)
-                # else:
-                #     # subprocess.run(f"ncatted -a _FillValue,{vV},d,, {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-2.nc",shell=True)
-                #     # subprocess.run(f"ncatted -h -a coordinates,{vV},o,c,'lat lon' {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-2.nc",shell=True)
-                #     subprocess.run(f"cdo --no_history fillmiss2 {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-2.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-3.nc",shell=True)
-                #     subprocess.run(f"\mv {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-3.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
-                #     subprocess.run(f"ncrename -h -d lon,x -d lat,y -v lon,nav_lon -v lat,nav_lat {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc -O {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
-                    # subprocess.run(f"rm -f {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}-*.nc",shell=True)
                 # if OMIP precipitation, need to have snow and rain+snow variables
                     if vV == 'ncar_precip':
                         subprocess.run(f"ncap2 -O -s 'PRECIP=RAIN+SNOW' {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
@@ -871,7 +847,6 @@ def rvr_remap(args):
     """
     (Very) simple river remapping (simply scales one file to match another).
     """
-    #TODO: perform area-weighted sum of river discharges
     # calculate total disharge in kg/s
     # calculate ratio of total discharge
     # scale ratio of total discharge by ratio of water areas
@@ -949,10 +924,10 @@ def rvr_remap(args):
                         area1=cellAreas(args.meshfile)
                         with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp0.nc") as rvr0:
                             with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc") as rvr1:
-                                sum0=np.nansum(rvr0.friver*area0)#; ar0=np.nansum(area0[rvr0.friver > 0])
-                                sum1=np.nansum(rvr1.friver*area1)#; ar1=np.nansum(area1[rvr1.friver > 0])
+                                sum0=np.nansum(rvr0.friver*area0)
+                                sum1=np.nansum(rvr1.friver*area1)
                                 # get ratio
-                                ratio=sum0/sum1#; aratio=ar0/ar1
+                                ratio=sum0/sum1
                                 # check: does sum of rvr1*ratio == sum0??
                                 diffCheck=100*np.abs(np.nansum(ratio*rvr1.friver*area1)-sum0)/sum0
                                 if diffCheck > 0.1:
@@ -973,8 +948,6 @@ def rvr_remap(args):
                 
                 # write to temporary netCDF file
                 rset.to_netcdf(f"{outFile.replace('yYYYY',f'y{year:04}')}.rmask.nc")
-                # # scale friver by 0
-                # subprocess.run(f"cdo --no_history expr,\"friver=0.0*friver\" {outFile.replace('yYYYY',f'y{year:04}')}.nc {outFile.replace('yYYYY',f'y{year:04}')}.0scale.nc",shell=True)
                 # add to original file
                 subprocess.run(f"cdo --no_history merge {outFile.replace('yYYYY',f'y{year:04}')}.nc {outFile.replace('yYYYY',f'y{year:04}')}.rmask.nc {outFile.replace('yYYYY',f'y{year:04}')}.masked.nc",shell=True)
                 # delete temporary file
@@ -1015,13 +988,10 @@ def his2cmor(var4cmor,fYear,fOut,args):
             subprocess.run(f"ncks -v {var4cmor} {hisFile} -O {cmfile}",shell=True)
         # rename coordinates (if applicable)
         subprocess.run(f"ncrename -h -d .x,i -d .y,j -d .longitude,i -d .latitude,j -v .nav_lon,longitude -v .nav_lat,latitude {cmfile} -O {cmfile}",shell=True)
-        # subprocess.run(f"ncrename -h -v .{lev[ftype[var4cmor]]},lev -d .{lev[ftype[var4cmor]]},lev {cmfile} -O {cmfile}",shell=True)
         # rename vertical coordinate (if applicable)
         # either a grid-specific name, or just generic 'depth'
         subprocess.run(f"ncrename -h -d .{lev[ftype[var4cmor]]},lev {cmfile} -O {cmfile}",shell=True)
         subprocess.run(f"ncrename -h -d .depth,lev {cmfile} -O {cmfile}",shell=True)
-        # if var4cmor != 'zos':
-        #     subprocess.run(f"ncks -h -x -v {lev[ftype[var4cmor]]} -d {lev[ftype[var4cmor]]}_bnds {cmfile} -O {cmfile}",shell=True)
         subprocess.run(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile} -O {cmfile}",shell=True)
         # add gridded lat/lon if necessary
         with xr.open_dataset(cmfile) as cmtmp:
@@ -1068,9 +1038,6 @@ def his2cmor(var4cmor,fYear,fOut,args):
                     {'longitude':{'dims':('j','i'),'data':LN,'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
                      'latitude':{'dims':('j','i'),'data':LT,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}}})
             lnlt.to_netcdf(f'{cmfile}.lonlat.tmp.nc')
-            # with xr.open_dataset(f"{cmfile}.nolonlat.tmp.nc") as cxlnlt:
-            #     dstmp=xr.merge([cxlnlt,lnlt])
-            # dstmp.to_netcdf(f'{cmfile}.lonlat.tmp.nc')
             subprocess.run(f"cdo merge {cmfile}.nolonlat.tmp.nc {cmfile}.lonlat.tmp.nc {cmfile}.gridded.tmp.nc",shell=True)
             subprocess.run(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile}.gridded.tmp.nc -O {cmfile}.gridded.tmp.nc",shell=True)
             cmfile=[f'{cmfile}.gridded.tmp.nc']
@@ -1082,7 +1049,7 @@ def his2cmor(var4cmor,fYear,fOut,args):
 def fixVelocities(vFile,outVFile):
     """
     Flip meridional velocities in the "northern" portion of a domain (if applicable)
-    TODO: CanTODS CMORization will require correction step?!
+    NOTE: This is only relevant for, e.g., the CREG domain, which has an inverted Pacific Ocean
     """
     with xr.open_dataset(vFile) as vds:
         if 'vo' in vds.keys() or 'uo' in vds.keys():

@@ -2,9 +2,6 @@
 
 set -e
 
-# get necessary variables
-#source ${WRK_DIR}/config/canesm-shell-params.sh
-
 # get copy of the domain.cfg file
 is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
 acc_cp domain_cfg.nc $nemo_coordinates
@@ -46,12 +43,12 @@ fi
 
 # boundary conditions
 if [[ $ctds_dnscl != 0 ]] && [[ $runmode == *"CanTODS"* ]] ; then
-  if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
+  if [[ -z "${dada_year_offset}" ]] && [[ -z "${dada_loop_year}" ]] ; then
       # use current year for forcing
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 > bc_status
   else
       # use cyclical forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 -A ${iaf_year_offset} -a ${iaf_loop_year} > bc_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o obc_BDY_${dada_outfield}_yYYYY.nc -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t 1 -A ${dada_year_offset} -a ${dada_loop_year} > bc_status
   fi
   if [ -z "$(ls ./obc_*_${dada_outfield}_y*.nc)" ] ; then
     echo "ERROR: No OBC files generated!"
@@ -59,8 +56,10 @@ if [[ $ctds_dnscl != 0 ]] && [[ $runmode == *"CanTODS"* ]] ; then
   fi
 fi
 
-# atmospheric forcing
-if [[ $ctds_dnscl != 0 ]] ; then
+# atmospheric forcing if downscaling
+# if not downscaling (i.e., forced CanTODS run, or using OMIP forcing),
+# then forcing is obtained in nemo_prelude and weighting is used
+if [[ $ctds_dnscl > 1 ]] || [[ $runmode != *"CanTODS"* ]]; then
   # CanESM atmospheric forcing
   if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
@@ -76,7 +75,8 @@ if [[ $ctds_dnscl != 0 ]] ; then
 fi
 
 # river forcing
-if [[ $runmode != *"dada"* ]] && [[ $nemo_ln_rnf == "on" ]] ; then
+# TODO: rivers will need to be remapped properly
+if [[ $nemo_ln_rnf == "on" ]] ; then
   if [[ -z "${nemo_river_remap}" ]] ; then
    # don't remap/rescale rivers
     if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
@@ -90,10 +90,10 @@ if [[ $runmode != *"dada"* ]] && [[ $nemo_ln_rnf == "on" ]] ; then
     # remap/rescale rivers
     if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v ${nemo_river_remap} > rvr_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v ${nemo_river_remap} -g ${dada_parent_grid} > rvr_status
     else
       # use cyclical forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} -v ${nemo_river_remap} > rvr_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} -v ${nemo_river_remap} -g ${dada_parent_grid} > rvr_status
     fi
   fi
   if [ -z "$(ls ./rvr_${dada_outfield}).nc" ] ; then
