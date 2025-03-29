@@ -104,7 +104,7 @@
 
 # Access old RTD files from last year. Note, if these files exist, the RTD programs
 # below will automatically append to them.
-  if [ $yr1 -gt ${start_rtdiag} ] ; then
+  if [ $yr1 -gt ${year0} ] ; then
     access nemo_physical_rtd_old.nc $physical_rtdfile1 nocp=off ; cp nemo_physical_rtd_old.nc nemo_physical_rtd.nc ; chmod +w nemo_physical_rtd.nc
     access nemo_ice_rtd_old.nc $ice_rtdfile1 nocp=off ; cp nemo_ice_rtd_old.nc nemo_ice_rtd.nc ; chmod +w nemo_ice_rtd.nc
     if [ "$nemo_carbon" = "on" ] ; then
