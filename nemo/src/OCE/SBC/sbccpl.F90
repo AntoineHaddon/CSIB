@@ -2639,7 +2639,7 @@ CONTAINS
       !                                                      !  CO2 flux from BGC        !
       !                                                      ! ------------------------- !
       IF( ssnd(jps_co2)%laction )   THEN
-         ztmp1(:,:) = oce_co2(:,:) * 1000.  ! conversion in molC/m2/s
+         ztmp1(:,:) = oce_co2(:,:) * 1000. * tmask(:,:,1) ! conversion in molC/m2/s
          CALL cpl_snd( jps_co2, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ) , info )
       ENDIF
       !
