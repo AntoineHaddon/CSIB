@@ -487,7 +487,7 @@ CONTAINS
       !!      following the vertical level and the local subdomain array.
       !!
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpiglo,jpjglo), INTENT(IN   ) :: pio    ! global input array
+      REAL(wp), DIMENSION(Ni0glo,Nj0glo), INTENT(IN   ) :: pio    ! global input array
       INTEGER,                            INTENT(IN   ) :: kp     ! Root PE
       REAL(wp), DIMENSION(jpi,jpj),       INTENT(  OUT) :: ptab   ! subdomain array output
       REAL(wp), DIMENSION(jpdtot) :: ptab_1d
@@ -519,7 +519,8 @@ CONTAINS
       ptab_1d(:) = 0.
       CALL mpi_scatterv( pio1d, jpdtott, offsetst, mpi_double_precision,    &
          &               ptab_1d, itaille, mpi_double_precision, kp, mpi_comm_oce, ierror )
-      ptab(1:nlcit(narea),1:nlcjt(narea)) = reshape(ptab_1d,[nlcit(narea),nlcjt(narea)])
+      ptab(1+nn_hls:nlcit(narea)+nn_hls,1+nn_hls:nlcjt(narea)+nn_hls) = reshape(ptab_1d,[nlcit(narea),nlcjt(narea)])
+      ! ptab_1d not NOT include the halo, but ptab is so "nn_hls" is used to fit the values ptab_1d in the interior grid of ptab
 #else
       ptab(:,:) = pio(:,:,1)
 #endif
@@ -535,7 +536,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       REAL(wp), DIMENSION(jpi,jpj)       , INTENT(IN   )  ::   ptab   ! subdomain array input
       INTEGER                            , INTENT(IN   )  ::   kp     ! Tag (not used with MPI
-      REAL(wp), DIMENSION(jpiglo,jpjglo) , INTENT(  OUT)  ::   pio    ! output array
+      REAL(wp), DIMENSION(Ni0glo,Nj0glo) , INTENT(INOUT)  ::   pio    ! output array
 
       REAL(wp), DIMENSION(jpdtot_glo) :: pio1d
       REAL(wp), DIMENSION(jpdtot)  :: ptab_1d
@@ -544,13 +545,14 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       itaille = jpdtot
-      ptab_1d(:) = PACK(ptab(1:nlcit(narea),1:nlcjt(narea)),.TRUE.)
+      ! ptab_1d not NOT include the halo, but ptab is so "nn_hls" is used to fit the values of the interior grid of ptab in ptab_1d.
+      ptab_1d(:) = PACK(ptab(1+nn_hls:nlcit(narea)+nn_hls,1+nn_hls:nlcjt(narea)+nn_hls),.TRUE.)
       ! Aggregate the indoor parts of the domain this has to be an mpi_gatherv in the event that the
       ! subdomains are not all the same size
       CALL mpi_gatherv( ptab_1d, itaille, mpi_double_precision, pio1d, jpdtott, &
          &              offsetst, mpi_double_precision, kp, mpi_comm_oce, ierror )
 
-      pio(:,:) = 0.
+      !pio(:,:) = 0.
       IF (kp == (narea-1)) THEN ! nproc in NEMO 4.0 == narea-1 in NEMO 4.2
          ! Loop over every processor and reconstruct the global array
          DO jproc=1,jpnij

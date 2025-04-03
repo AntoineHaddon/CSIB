@@ -446,13 +446,13 @@ CONTAINS
       !
       ! Save global attribute  and 
       ! calculate additional parameters for the domain decomposition
-      jpdtot = jpi*jpj
+      jpdtot = (jpi-2*nn_hls)*(jpj-2*nn_hls)
       offsetst(1) = 0
       DO jp = 1, jpnij
         ii = iin(jp)
         ij = ijn(jp)
-        nlcit(jp) = ijpi(ii,ij) !
-        nlcjt(jp) = ijpj(ii,ij) !
+        nlcit(jp) = ijpi(ii,ij)-2*nn_hls !
+        nlcjt(jp) = ijpj(ii,ij)-2*nn_hls !
         nimppt(jp) = iimppt(ii,ij)
         njmppt(jp) = ijmppt(ii,ij)
         jpdtott(jp) = nlcit(jp)*nlcjt(jp)

@@ -6,7 +6,7 @@
 #
 #########################################################
 
-set -x
+set -e
 
   # ======================================================
   # Make sure we have necessary variables from parent code
@@ -31,6 +31,7 @@ set -x
     n_suffix=${#nemo_diag_file_suffix_list_array_save[@]}
    for ifile in $(seq 0 $(($n_suffix-1))); do
      sfx=${nemo_diag_file_suffix_list_array_save[$ifile]}
+     [ $sfx == "1ts_cfg" ] || [ $sfx == "mesh_mask" ] && continue # skip the files (without temporal records)
      yr=$fyear
      mp=0
      for mm in $nemo_rtd_mons ; do
@@ -45,14 +46,14 @@ set -x
  # Merge sub-yearly files and save it (delete the sub-year files)
      if [ $nmon -gt 1 -a -e "${sfx}_$fmon" ] ; then
        diag_hist="mc_${runid}_${yr}_m${fmon}_${sfx}.nc"
-       if (( with_delhist==0 )) ; then
-         # if keeping history files, compress and merge
+       if [ $with_delhist -eq 0 -a $with_nemo_compress -eq 1 ] ; then
+         # if history files will be saved, compress as well as merge
          #cdo -f nc4c -z zip_2 mergetime  ${sfx}_?? ${sfx}_merged 
-         ncrcat -4 -L 2 ${sfx}_?? ${sfx}_merged 
+         ncrcat -4 -L 2 ${sfx}_?? ${sfx}_merged
        else
-         # if keeping not keeping history files, simply merge
-         #cdo mergetime  ${sfx}_?? ${sfx}_merged 
-         ncrcat ${sfx}_?? ${sfx}_merged 
+         # otherwise, just merge
+         #cdo mergetime ${sfx}_?? ${sfx}_merged 
+         ncrcat ${sfx}_?? ${sfx}_merged
        fi
        for dfile in $(ls  ${sfx}_??)
        do

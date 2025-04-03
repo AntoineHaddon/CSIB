@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 #~~~~~~~~~~~~~~~
 # Function Defs
 #~~~~~~~~~~~~~~~
@@ -67,7 +67,7 @@ nemo_file_freqs_array=()
 for i in $(seq 0 $((n_suffix-1))); do
     fs=${nemo_hist_file_suffix_list_array[$i]}
     IFS='_' read -r freq param <<< $fs
-    if [[ $freq =~ ^[0-9]+[hdmy]$ ]]; then
+    if [[ $freq =~ ^[0-9]+[hdmyt] ]]; then
         nemo_file_suffixes_array+=("$param")
         nemo_file_freqs_array+=("$freq")
     else
@@ -110,8 +110,14 @@ if (( with_rbld_nemo == 1 )) ; then
          pfx=${runid}_${freq}_${start_date}_${stop_date}_$sfx
          ln -s ../rebuild_nemo.exe .
          rebuild_nemo_tiles
+         # compress files before saving if desired and not subsequently merging into yearly files
          ncsave=${model1}_${freq}_${sfx}.nc
-         save ${pfx}.nc $ncsave
+         if (( with_delhist==0 )) && (( with_merge_1y_nemo==0 )) && (( with_nemo_compress==1 )); then
+           cdo -f nc4c -z zip_2 ${pfx}.nc $ncsave.zip2
+           save ${ncsave}.zip2 $ncsave
+         else
+           save ${pfx}.nc $ncsave
+         fi
 
          # Move back up and cleanup
          cd $wrkdir
@@ -119,7 +125,7 @@ if (( with_rbld_nemo == 1 )) ; then
       fi
                # Replace the lat/lon to remove the hold made by the land processors elimination
       ncsave=${freq}_${lsfx}
-      access  $ncsave.nc $indir.nc na 
+      access  $ncsave.nc $indir.nc na
       if [ -e "$ncsave.nc" ] ; then
         chmod u+w $(readlink -f "$ncsave.nc")
         # detect the grid (U/V/F/T) with the suffix
@@ -196,7 +202,20 @@ cd in_${inrs}
 ln -sf ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
 nn_itend=$(cat rs_time.step)
+start_step=$(grep -m 1 -w nn_it000 rs_namelist_cfg | awk '{printf "%8.8d",$3 - 1}')
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
+
+# The initial ice state files
+pfx=output.init_ice
+# Check if the RS is already rebuilt, in which case do nothing.
+if [ -s "${pfx}_0000.nc" ]; then
+   rebuild_nemo_tiles
+   # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
+   ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
+   ncsave=${runid}_${start_step}_initial_ice.nc
+   mv  $pfx.nc $ncsave
+fi
 
 # The physics rs file
 pfx=${runid}_${end_step}_restart
@@ -269,7 +288,7 @@ pfx=output.init
 fnpatt=${pfx}_0000.nc
 if [ -s "$fnpatt" ]; then
    rebuild_nemo_tiles
-   mv $pfx.nc ${runid}_initial.nc
+   mv $pfx.nc ${runid}_${start_step}_initial.nc
 fi
 
 # The trc init file
@@ -278,7 +297,7 @@ pfx=output_trc.init
 fnpatt=${pfx}_0000.nc
 if [ -s "$fnpatt" ]; then
    rebuild_nemo_tiles
-   mv $pfx.nc ${runid}_initial_trc.nc
+   mv $pfx.nc ${runid}_${start_step}_initial_trc.nc
 fi
 
 release rebuild_nemo.exe $rbnl_file
@@ -289,6 +308,16 @@ cd $wrkdir
 #   for the initial restart)
 if [[ ${inrs} == ${outrs} ]]; then
    fdb mdelete $inrs
+fi
+
+# Compress restart files if desired
+if  (( with_nemo_compress == 1 )) ; then
+  # loop over restarts and compress
+  cd in_${inrs}
+  for fF in *_restart*.nc ; do
+     ncks -4 -L 2 $fF -O $fF
+  done
+  cd -
 fi
 
 # Finally, save new directory with the rebuilt files

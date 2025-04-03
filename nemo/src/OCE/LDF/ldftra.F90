@@ -14,6 +14,7 @@ MODULE ldftra
    !!                                        coefficien following Saenko, Yang & Gregory (2018) and Tréguier et al. (1997)
    !!                                        respectively. Note that the latter is the original code containing errors that is 
    !!                                        now recovered for traceability. 
+   !!                 ! 2024-12  (G. Stanley) make the surface to bottom diffusivity ratio a parameter, not hardcoded
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -68,6 +69,7 @@ MODULE ldftra
    !                                            !                                bht_0 = 1/12 Ud*Ld^3 (blp case)
    REAL(wp), PUBLIC ::      rn_Ud               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Ld               !: lateral diffusive length    [m]
+   REAL(wp), PUBLIC ::      rn_aht_ratio        !: surface to bottom ratio of lateral diffusivity (nn_aht_ijk_t = 10, 30)
 
    !                                   !!* Namelist namtra_eiv : eddy induced velocity param. *
    !                                    != Use/diagnose eiv =!
@@ -80,6 +82,7 @@ MODULE ldftra
    INTEGER , PUBLIC ::   nn_aei_ijk_t        !: choice of time/space variation of the eiv coeff.
    REAL(wp), PUBLIC ::      rn_Ue               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Le               !: lateral diffusive length    [m]
+   REAL(wp), PUBLIC ::      rn_aei_ratio        !: surface to bottom ratio of eiv coeff (nn_aei_ijk_t = 10, 30)
    REAL(wp), PUBLIC ::      rn_zRomax           !: Rossby radius in the tropical regions at w-point
    REAL(wp), PUBLIC ::      rn_zRocoef          !: a prescribed "typical" eddy scale
    REAL(wp), PUBLIC ::      rn_eiwmin           !: lower limit of eddy induced velocity
@@ -153,7 +156,7 @@ CONTAINS
          &                 ln_traldf_lev, ln_traldf_hor  , ln_traldf_triad,   &   ! acting direction of the operator
          &                 ln_traldf_iso, ln_traldf_msc  , rn_slpmax     ,    &   ! option for iso-neutral operator
          &                 ln_triad_iso , ln_botmix_triad, rn_sw_triad    ,   &   ! option for triad operator
-         &                 nn_aht_ijk_t , rn_Ud          , rn_Ld                  ! lateral eddy coefficient
+         &                 nn_aht_ijk_t , rn_Ud          , rn_Ld, rn_aht_ratio    ! lateral eddy coefficient
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                      ! control print
@@ -192,6 +195,9 @@ CONTAINS
          WRITE(numout,*) '         type of time-space variation            nn_aht_ijk_t    = ', nn_aht_ijk_t
          WRITE(numout,*) '            lateral diffusive velocity (if cst)  rn_Ud           = ', rn_Ud, ' m/s'
          WRITE(numout,*) '            lateral diffusive length   (if cst)  rn_Ld           = ', rn_Ld, ' m'
+         IF ( nn_aht_ijk_t == 10 .or. nn_aht_ijk_t == 30 ) THEN
+            WRITE(numout,*) '            lateral diffusivity ratio            rn_aht_ratio    = ', rn_aht_ratio
+         ENDIF
       ENDIF
       !
       !
@@ -322,7 +328,7 @@ CONTAINS
             IF(lwp) WRITE(numout,*) '           surface eddy diffusivity = constant = ', aht0, cl_Units
             ahtu(:,:,1) = aht0                        ! constant surface value
             ahtv(:,:,1) = aht0
-            CALL ldf_c1d( 'TRA', ahtu(:,:,1), ahtv(:,:,1), ahtu, ahtv )
+            CALL ldf_c1d( 'TRA', ahtu(:,:,1), ahtv(:,:,1), ahtu, ahtv, rn_aht_ratio )
             !
          CASE ( -20 )      !== fixed horizontal shape and magnitude read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy diffusivity = F(i,j) read in eddy_diffusivity.nc file'
@@ -364,7 +370,7 @@ CONTAINS
             IF(lwp) WRITE(numout,*) '           using a fixed diffusive velocity = ', rn_Ud,' m/s   and   Ld = Max(e1,e2)'
             IF(lwp) WRITE(numout,*) '           maximum reachable coefficient (at the Equator) = ', zah_max, cl_Units, '  for e1=1°)'
             CALL ldf_c2d( 'TRA', zUfac      , inn        , ahtu, ahtv )    ! surface value proportional to scale factor^inn
-            CALL ldf_c1d( 'TRA', ahtu(:,:,1), ahtv(:,:,1), ahtu, ahtv )    ! reduction with depth
+            CALL ldf_c1d( 'TRA', ahtu(:,:,1), ahtv(:,:,1), ahtu, ahtv, rn_aht_ratio )    ! reduction with depth
             !
          CASE(  31  )      !==  time varying 3D field  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy diffusivity = F( latitude, longitude, depth , time )'
@@ -512,6 +518,7 @@ CONTAINS
          &                 ln_syg2018  , ln_thl1997,      &   ! flags controling computation of mesoscale eddy transfer
                                                               ! coefficien following Saenko, Yang & Gregory (2018) or Tréguier et al. (1997)
          &                 nn_aei_ijk_t, rn_Ue, rn_Le,    &   ! eiv  coefficient
+         &                 rn_aei_ratio,                  &   
          &                 rn_zRomax   , rn_zRocoef ,     &   ! Rossby radius in the tropical regions & a prescribed "typical" eddy scale
          &                 rn_eiwmin   , rn_eiwmax , rn_gm    ! lower & upper limits & scaling of eddy induced velocity
       !!----------------------------------------------------------------------
@@ -539,6 +546,9 @@ CONTAINS
          WRITE(numout,*) '         type of time-space variation            nn_aei_ijk_t  = ', nn_aei_ijk_t
          WRITE(numout,*) '         lateral diffusive velocity (if cst)     rn_Ue         = ', rn_Ue, ' m/s'
          WRITE(numout,*) '         lateral diffusive length   (if cst)     rn_Le         = ', rn_Le, ' m'
+         IF ( nn_aei_ijk_t == 10 .or. nn_aei_ijk_t == 30 ) THEN
+            WRITE(numout,*) '         eddy induced velocity ratio             rn_aei_ratio  = ', rn_aei_ratio
+         ENDIF
          WRITE(numout,*) '         Rossby radius in the tropical regions   rn_zRomax     = ', rn_zRomax
          WRITE(numout,*) '         a prescribed "typical" eddy scale       rn_zRocoef    = ', rn_zRocoef
          WRITE(numout,*) '         lower limit of eddy induced velocity    rn_eiwmin     = ', rn_eiwmin
@@ -590,7 +600,7 @@ CONTAINS
             IF(lwp) WRITE(numout,*) '           surface eddy diffusivity = constant = ', aht0, ' m2/s'
             aeiu(:,:,1) = aei0                  ! constant surface value
             aeiv(:,:,1) = aei0
-            CALL ldf_c1d( 'TRA', aeiu(:,:,1), aeiv(:,:,1), aeiu, aeiv )
+            CALL ldf_c1d( 'TRA', aeiu(:,:,1), aeiv(:,:,1), aeiu, aeiv, rn_aei_ratio )
             !
          CASE ( -20 )                        !--  fixed horizontal shape read in file  --!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy induced velocity coef. = F(i,j) read in eddy_diffusivity_2D.nc file'
@@ -633,7 +643,7 @@ CONTAINS
          CASE(  30  )                        !--  fixed 3D shape  --!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy induced velocity coef. = F( latitude, longitude, depth )'
             CALL ldf_c2d( 'TRA', zUfac      , inn        , aeiu, aeiv )    ! surface value proportional to scale factor^inn
-            CALL ldf_c1d( 'TRA', aeiu(:,:,1), aeiv(:,:,1), aeiu, aeiv )    ! reduction with depth
+            CALL ldf_c1d( 'TRA', aeiu(:,:,1), aeiv(:,:,1), aeiu, aeiv, rn_aei_ratio )    ! reduction with depth
             !
          CASE DEFAULT
             CALL ctl_stop('ldf_tra_init: wrong choice for nn_aei_ijk_t, the type of space-time variation of aei')

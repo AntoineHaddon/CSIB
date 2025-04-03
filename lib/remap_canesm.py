@@ -23,7 +23,7 @@ import xarray as xr
 # argument parser
 # TODO: The list of arguments has become very long and convoluted; better to read from a JSON file,
 # or pass as a dictionary with keys??
-# allows to be calculated at runtime, or a posteriori
+# allows to be calculated at runtime, or offline
 parser=argparse.ArgumentParser(description='Calculate CanTODS diagnostics.')
 
 # add arguments
@@ -50,7 +50,7 @@ parser.add_argument('-M','--mor',help='CMOR frequency/directory (e.g., 3hr or Am
 parser.add_argument('-v','--rvr',help='River file for remapping/scaling of frehswater inputs (if type==3)',default=None)
 parser.add_argument('-A','--iaf_year_offset',help='Year offset if wanting to use cyclical forcing.',default=None)
 parser.add_argument('-a','--iaf_loop_year',help='Reference year for loop if offset for cyclical forcing.',default=None)
-parser.add_argument('-c','--his2cmor',help='If 1, look for history file rather than CMORized file. Default: 0',default=0)
+parser.add_argument('-c','--his2cmor',help='If 1, look for history file rather than CMORized file. Default: 0 (CMOR)',default=0)
 
 #-----------#
 # FUNCTIONS #

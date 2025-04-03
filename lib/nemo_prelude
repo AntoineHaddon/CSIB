@@ -95,8 +95,7 @@ echo "#################### Start NEMO pre-processing #################"
   done
   # configuration input files
   is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
-  acc_cp domain_cfg.nc             $nemo_coordinates na
-  [ ! -f domain_cfg.nc ] && ln -s $nemo_coordinates domain_cfg.nc # link to file not in database
+  acc_cp domain_cfg.nc             $nemo_coordinates
 
   # Interannual forcing consideration
   if [[ $config == "ESM" ]]; then
@@ -203,13 +202,8 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ $nemo_ln_weight == "on" ]];then
     is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
         bail "The variables nemo_weights_bicubic2 and nemo_weights_bilinear2 must be defined in the configuration file"
-    if [[ $ctds_dnscl != 0 ]]; then
-      ln -s $nemo_weights_bicubic2 weights_bic2.nc
-      ln -s $nemo_weights_bilinear2 weights_bil2.nc
-    else
-      acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
-      acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
-    fi
+    acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
+    acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
   fi
   if [[ $nemo_ln_rnf == "on" ]] ; then
     if [[ ${dada_run} != 1 ]] || [[ ${runmode} == "CanTODS" ]]; then
@@ -218,7 +212,7 @@ echo "#################### Start NEMO pre-processing #################"
       if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
         acc_cp runoff_1m_nomask.nc    $nemo_runoff_core_monthly na
       else
-        acc_cp runoff.nc    $nemo_runoff_core_monthly na
+        acc_cp runoffs.nc    $nemo_runoff_core_monthly na
       fi
       if [[ -n "$nemo_runoff" ]]; then # empty nemo_runoff means yearly files are not used. 
         for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
@@ -230,7 +224,7 @@ echo "#################### Start NEMO pre-processing #################"
           yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
           fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
           forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
-          acc_cp runoff_y${yearc}.nc          ${nemo_runoff}_y${forcing_year}.nc
+          acc_cp runoffs_y${yearc}.nc          ${nemo_runoff}_y${forcing_year}.nc
         done
       fi
     fi
@@ -286,7 +280,7 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
 
-  if [[ $nemo_ln_use_calving == "on" ]]; then
+  if [[ $nemo_ln_use_calving == "on" ]] || [[ nemo_nn_test_icebergs -eq -1 ]]; then
     is_defined $nemo_calving || bail "The variable nemo_calving must be defined in the configuration file."
     acc_cp calving.nc                $nemo_calving 
   fi 
@@ -536,6 +530,8 @@ echo "#################### Start NEMO pre-processing #################"
       cn_icerst_out="restart_ice"     # ice output
       cn_trcrst_in="restart_trc_in"   # pisces input
       cn_trcrst_out="restart_trc"     # pisces output
+      cn_icbrst_in="restart_icb_in"   # icb input
+      cn_icbrst_out="restart_icb"     # icb output
 
       # Ocean restart files
       found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -569,6 +565,7 @@ echo "#################### Start NEMO pre-processing #################"
         done
       fi
 
+
       # trc restart files
       rm -f input_trc_restart_file_names
       touch input_trc_restart_file_names
@@ -585,6 +582,22 @@ echo "#################### Start NEMO pre-processing #################"
           echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
         done
       fi
+
+    # icb restart files
+    rm -f input_icb_restart_file_names
+    touch input_icb_restart_file_names
+    found_rs=`(ls -1 *_${cn_icbrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icbrst_out}.nc || : ) 2>/dev/null`
+    if [ -z "$found_rs" ]; then
+      [[ "$nemo_ln_icebergs" == "on" && $nemo_nn_test_icebergs -lt 0 ]] && bail "No icb restart files were found in $nemo_rs"
+    else
+      for rsfile in $found_rs; do
+        [ $rsfile = 'cpl_restart.nc' ] && continue
+        sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
+        mv $rsfile ${cn_icbrst_in}$sfx
+        echo "${cn_icbrst_in}$sfx" >> input_icb_restart_file_names
+      done
     fi
   fi
 

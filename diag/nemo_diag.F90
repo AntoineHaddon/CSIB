@@ -47,7 +47,7 @@ PROGRAM nemo_diag
    CHARACTER(len=100) :: long_name, time_origin, bounds
    CHARACTER(len=100) :: dimnm
    INTEGER   :: iou, iou1, iou2, iou3, iou4, iou5, iou6, iou7, iou8
-   INTEGER   :: ntrec, id_time, id_tbnds, id_l, id_s, id_x, id_y, id_z
+   INTEGER   :: ntrec, id_time, id_tbnds, id_li,id_l, id_s, id_x, id_y, id_z
    INTEGER   :: ntbnds, ndim, ntdim
    INTEGER   :: i, l
    INTEGER   :: tnsn_flag = 1     ! flag to indicate tn & sn files exist
@@ -58,6 +58,7 @@ PROGRAM nemo_diag
    REAL, DIMENSION(:), ALLOCATABLE   :: ytime
    REAL, DIMENSION(:), ALLOCATABLE   :: deptht
    REAL, DIMENSION(nline)            :: line
+   REAL, DIMENSION(nline_ice)            :: line_ice
    REAL, DIMENSION(:), ALLOCATABLE   :: x, y
    REAL, DIMENSION(:,:), ALLOCATABLE :: nav_lon_u, nav_lat_u
    REAL, DIMENSION(:,:), ALLOCATABLE :: nav_lon_t, nav_lat_t
@@ -95,6 +96,8 @@ PROGRAM nemo_diag
    ALLOCATE( tnc(imt,jmt,km), tnp(imt,jmt,km), STAT=ierr(8) )
    ALLOCATE( snc(imt,jmt,km), snp(imt,jmt,km), STAT=ierr(9) )
    ALLOCATE( time_bnds(ntbnds,lm), STAT=ierr(10) )
+   !ALLOCATE(xmtrpice(imt,jmt,lm), xmtrpsnw(imt,jmt,lm), xatrp(imt,jmt,lm)  )
+   ALLOCATE(ymtrpice(imt,jmt,lm), ymtrpsnw(imt,jmt,lm), yatrp(imt,jmt,lm)  )
       
    IF (MAXVAL(ierr) /=0) THEN
       STOP 'Memory allocation error in cmip6_nemo_offl'
@@ -148,26 +151,18 @@ PROGRAM nemo_diag
    !!-------------------
    CALL getvara ('e2u', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
    CALL getvara ('e1v', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
-   CALL getvara ('e3u_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
-   CALL getvara ('e3v_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
-   CALL getvara ('e3t_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+   CALL getvara ('e3u', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3u , 1., 0.)
+   CALL getvara ('e3v', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3v , 1., 0.)
+   CALL getvara ('thkcello', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    CALL getvara ('umask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),umask , 1., 0.)
    CALL getvara ('vmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),vmask , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
-   ! WRITE(*,*) 'umask'
-   ! umask(144,45,1) = 1
-   ! WRITE(*,*) umask(144,45,1)
-   ! WRITE(*,*) 'e3u'
-   ! e3u(144,45,1)=6.19056967037
-   ! WRITE(*,*) e3u(144,45,1)
 
    !!-------------------------------------
    !! Read in the monthly data from NetCDF
    !!-------------------------------------
    ! time_counter
    CALL getvara ('time_counter', iou2, lm, (/1/), (/lm/), time, 1., 0.)
-   !WRITE(*,*) 'time'
-   !WRITE(*,*) time
    ! time_counter attribute
    CALL getatttext (iou2, 'time_counter', 'axis', axis)
    CALL getatttext (iou2, 'time_counter', 'standard_name', standard_name)
@@ -178,26 +173,24 @@ PROGRAM nemo_diag
    CALL getatttext (iou2, 'time_counter', 'bounds', bounds)
    ! time_counter_bounds
    CALL getvara ('time_counter_bounds', iou2, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-   !WRITE(*,*) 'time_bnds'
-   !WRITE(*,*) time_bnds
    ! nav_lon on grid_U
    CALL getvara ('nav_lon', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lon_u, 1., 0.)
    ! nav_lat on grid_U
    CALL getvara ('nav_lat', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lat_u, 1., 0.)
    ! u-velocity
    CALL getvara ('uo', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), u, 1., 0.)
-   ! WRITE(*,*) 'uo'
-   ! u(144,45,1,1)=0.0234638 m/s
-   ! WRITE(*,*) u(144,45,1,1)
+   ! i-direction ice transport (not needed for our ice-section)
+   !CALL getvara ('xmtrpice', iou2, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), xmtrpice, 1., 0.)
+   !CALL getvara ('xmtrpsnw', iou2, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), xmtrpsnw, 1., 0.)
+   !CALL getvara ('xatrp', iou2, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), xatrp, 1., 0.)
    ! v-velocity 
    CALL getvara ('vo', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), v, 1., 0.)
-   ! WRITE(*,*) 'vo'
-   ! v(144,45,1,1)=-0.0440831 m/s     
-   ! WRITE(*,*) v(144,45,1,1) 
+   ! j-direction ice transport 
+   CALL getvara ('ymtrpice', iou3, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ymtrpice, 1., 0.)
+   CALL getvara ('ymtrpsnw', iou3, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ymtrpsnw, 1., 0.)
+   CALL getvara ('yatrp', iou3, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), yatrp, 1., 0.)
    ! nav_lon on grid_T
    CALL getvara ('nav_lon', iou4, imt*jmt, (/1,1/), (/imt,jmt/), nav_lon_t, 1., 0.)
-   !WRITE(*,*) 'nav_lon_t'
-   !WRITE(*,*) nav_lon_t(144,45)
    ! nav_lat on grid_T
    CALL getvara ('nav_lat', iou4, imt*jmt, (/1,1/), (/imt,jmt/), nav_lat_t, 1., 0.)
    ! deptht 
@@ -242,6 +235,7 @@ PROGRAM nemo_diag
    !! Computations of mfo, msftbarot, opottemptend & osalttend
    !!---------------------------------------------------------
    CALL cmip6_mfo
+   CALL cmip6_mfo_ice
    CALL cmip6_msftbarot
    DO l = 1, ly
       CALL cmip6_tstend(l)
@@ -255,6 +249,7 @@ PROGRAM nemo_diag
    id_time = 0
    id_tbnds = 0
    id_l = 0
+   id_li = 0
    id_s = 0
    id_x = 0
    id_y = 0
@@ -265,6 +260,9 @@ PROGRAM nemo_diag
    ! NETCDF output mfo.nc
    DO i = 1, nline
       line(i) = i
+   ENDDO
+   DO i = 1, nline_ice
+      line_ice(i) = i
    ENDDO
 
    ! If the output file does not exist, abort
@@ -281,6 +279,7 @@ PROGRAM nemo_diag
       CALL defdim ('time_counter', iou, 0, id_time)
       CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('line', iou, nline, id_l)
+      CALL defdim ('line_ice', iou, nline_ice, id_li)
       !CALL defdim ('strlen', iou, 31, id_s)
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
@@ -295,19 +294,34 @@ PROGRAM nemo_diag
      &             , 'sections', 'sections', ' ')
       CALL defvar ('mfo', iou, 2, (/id_l, id_time/), 0., 0., ' ', 'F',  &
                    'Sea Water Transport', 'sea_water_transport_across_line', 'kg/s')
+      CALL putatttext (iou, 'mfo', 'coordinates', "time_counter line")
+      CALL defvar ('line_ice', iou, 1, (/id_li/), 1, 5, ' ', 'I'     &
+     &             , 'sections', 'sections', ' ')
+      CALL defvar ('siareaacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
+                   'Sea-Ice Area Flux Through Straits', 'sea_ice_area_transport_across_line', 'm2/s')
+      CALL putatttext (iou, 'siareaacrossline', 'coordinates', "time_counter line_ice")
+      CALL defvar ('simassacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
+                   'Sea-Ice Mass Transport Through Straits', 'sea_ice_transport_across_line', 'kg/s')
+      CALL putatttext (iou, 'simassacrossline', 'coordinates', "time_counter line_ice")
+      CALL defvar ('snmassacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
+                   'Snow Mass Transport Through Straits', 'snow_transport_across_line_due_to_sea_ice_dynamics', 'kg/s')
+      CALL putatttext (iou, 'snmassacrossline', 'coordinates', "time_counter line_ice")
       CALL enddef (iou)
       ! define the section axis
       !CALL putvara ('passage', iou, nline, (/1/), (/nline/)           &
      !&              , line, 1., 0.)
       CALL putvara ('line', iou, nline, (/1/), (/nline/)           &
      &              , line, 1., 0.)
+      CALL putvara ('line_ice', iou, nline_ice, (/1/), (/nline_ice/)           &
+     &              , line_ice, 1., 0.)
 
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bounds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      ! WRITE(*,*) 'time_bnds'
-      ! WRITE(*,*) time_bnds
       ! mfo    
       CALL putvara ('mfo', iou, nline*lm, (/1,1/), (/nline, lm/), mfo(:,:), 1., 0.)
+      CALL putvara ('siareaacrossline', iou, nline_ice*lm, (/1,1/), (/nline_ice, lm/), siareaacrossline(:,:), 1., 0.)
+      CALL putvara ('simassacrossline', iou, nline_ice*lm, (/1,1/), (/nline_ice, lm/), simassacrossline(:,:), 1., 0.)
+      CALL putvara ('snmassacrossline', iou, nline_ice*lm, (/1,1/), (/nline_ice, lm/), snmassacrossline(:,:), 1., 0.)
       !ENDDO
       print*, '------------------'
       print*, 'mfo.nc written OK!'
@@ -373,7 +387,7 @@ PROGRAM nemo_diag
    ! NETCDF output tstend.nc
    ! If the output file does not exist, abort
    INQUIRE (file="tstend.nc", exist=exists)
-   IF (.not. exists) THEN
+   IF (.not. exists.and.tnsn_flag .eq. 1) THEN
       print*,"output file tstend.nc not found...creating a new file..."
       CALL opennew ("tstend.nc", iou)
       ntrec = 1
@@ -429,7 +443,8 @@ PROGRAM nemo_diag
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
-      print*, 'tstend.nc already exists'
+      IF (tnsn_flag .eq. 1) print*, 'tstend.nc already exists'
+      IF (tnsn_flag .eq. 0) print*, 'tstend.nc not produced (not needed)'
    ENDIF
 
 END PROGRAM nemo_diag

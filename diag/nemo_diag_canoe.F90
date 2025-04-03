@@ -149,7 +149,7 @@ PROGRAM nemo_diag_canoe
    CALL getvara ('nav_lat', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lat_t, 1., 0.)
    ! deptht 
    CALL getvara ('deptht', iou2, km, (/1/), (/km/), deptht, 1., 0.)
-   CALL getvara ('e3t', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+   CALL getvara ('thkcello', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    ! temperature
    CALL getvara ('thetao', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), TT, 1., 0.)
    ! salinity
