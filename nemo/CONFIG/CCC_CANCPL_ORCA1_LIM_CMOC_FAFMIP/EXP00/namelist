@@ -136,7 +136,7 @@
    nn_ice      = 2         !  =0 no ice boundary condition   ,
                            !  =1 use observed ice-cover      ,
                            !  =2 ice-model used                         ("key_lim3" or "key_lim2)
-   ln_dm2dc    = .false.   !  daily mean to diurnal cycle on short wave
+   ln_dm2dc    = .false.   !  daily mean to diurna<l cycle on short wave
    ln_rnf      = .false.   !  runoffs                                   (T => fill namsbc_rnf)
    ln_ssr      = .false.   !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
    nn_fwb      = 4         !  FreshWater Budget: =0 unchecked 
@@ -659,7 +659,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namzdf        !   vertical physics
 !-----------------------------------------------------------------------
    rn_avm0     =   1.5e-4  !  vertical eddy viscosity   [m2/s]          (background Kz if not "key_zdfcst")
-   rn_avt0     =   0.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
+   rn_avt0     =   1.0e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
    nn_avb      =    0      !  profile for background avt & avm (=1) or not (=0)
    nn_havtb    =    0      !  horizontal shape for avtb (=1) or not (=0)
    ln_zdfevd   = .true.    !  enhanced vertical diffusion (evd) (T) or not (F)
@@ -701,7 +701,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    rn_mxl0     =   0.04    !  surface  buoyancy lenght scale minimum value
    ln_lc       = .true.    !  Langmuir cell parameterisation (Axell 2002)
    rn_lc       =   0.15    !  coef. associated to Langmuir cells
-   nn_etau     =   1       !  penetration of tke below the mixed layer (ML) due to internal & intertial waves
+   nn_etau     =   0       !  penetration of tke below the mixed layer (ML) due to internal & intertial waves
                            !        = 0 no penetration
                            !        = 1 add a tke source below the ML
                            !        = 2 add a tke source just at the base of the ML

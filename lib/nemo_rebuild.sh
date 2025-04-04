@@ -244,6 +244,7 @@ fi
 release rebuild_nemo.exe $rbnl_file
 cd $wrkdir
 
+
 # since rebuild has gone successfully, cleanup tile directories from RUNPATH,
 #   removing the input restart (inrs) if inrs==outrs (which should only happen
 #   for the initial restart)
