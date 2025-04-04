@@ -126,11 +126,10 @@ for arg in "$@"; do
         		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
-                cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
+                cfg)        CanNEMO_CONFIG="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
         		util_arch)  nemo_util_arch_file="$val" ;; # utility arch name (for RTD, REBUILD and so on)
-                comp_env)   compilation_env_file="$val";;   # filename containing the compilation environment
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
@@ -148,7 +147,7 @@ done
 [[ -z "$storage_loc" ]]             && bail "-p must be followed by a directory in which to store the execs! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$CanNEMO_CONFIG" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$CanNEMO_CONFIG" ]]          && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch" ]]               && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 
@@ -272,7 +271,7 @@ echo "NEMO arch file = $nemo_arch"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
-    ./makenemo -r $nemo_config clean
+    ./makenemo -r $CanNEMO_CONFIG clean
 fi
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
