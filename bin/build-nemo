@@ -81,7 +81,7 @@ bail(){
 #===========================================
 nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
-nemo_ref_config=''      # The reference configuration to be used with nemo_config
+nemo_ref_config=''      # The reference configuration to be used with CanNEMO_CONFIG
 storage_method="link"   # Define how the execs will be stored (copy|link|move)
 storage_loc=$(pwd)      # tells build-nemo where to store executables
 comp_np=12              # Number of processors to use during compilation
@@ -118,7 +118,7 @@ for arg in "$@"; do
             case $var in
                 srcpath)    nemo_source_path="$val" ;;      # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;             # name for the executable created here
-                cfg)        nemo_config="$val" ;;           # name of subdir in which config lives
+                cfg)        CanNEMO_CONFIG="$val" ;;           # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;       # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch_identifier="$val" ;;  # makenemo identifier for file with arch specific make defs
                 util_arch)  nemo_util_arch_file="$val" ;;   # filename of the make template for nemo utilities
@@ -140,7 +140,7 @@ done
 [[ -z "$storage_loc" ]]             && bail "-p must be followed by a directory in which to store the execs! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_config" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$CanNEMO_CONFIG" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch_identifier" ]]    && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -z "$compilation_env_file" ]]    && bail "comp_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
@@ -167,7 +167,7 @@ nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # whe
 make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
 
 # define target executables (must be consistent with makenemo and other makefiles)
-target_model_exec=${nemo_model_build_dir}/${nemo_config}/BLD/bin/nemo.exe
+target_model_exec=${nemo_model_build_dir}/${CanNEMO_CONFIG}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
@@ -212,7 +212,7 @@ source $compilation_env_file ||
     bail "Failed to source the nemo compilation environment file - $compilation_env_file! Does it exist? Are the modules available?"
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
-ARGS=( -j $comp_np -m $nemo_arch_identifier -n $nemo_config )
+ARGS=( -j $comp_np -m $nemo_arch_identifier -n $CanNEMO_CONFIG )
 [[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
@@ -227,7 +227,7 @@ echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
-files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
+files_to_reset="cfg.txt ${CanNEMO_CONFIG}/cpp_${CanNEMO_CONFIG}.fcm"
 for f in $files_to_reset; do
     is_diff=0
 

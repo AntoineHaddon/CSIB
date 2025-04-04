@@ -98,15 +98,29 @@ set -e
         # access input variables for computing vars with priority level 1
         
         if [[ $fmon -eq 1 && $nemo_calc_diag == 1 ]] ; then
-          ln -sf 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
-          ln -sf 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
-          ln -sf 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
+          if is_file_or_valid_link "1m_grid_t_${fmon}"; then
+            ln -sf 1m_grid_t_${fmon} grid_t  
+          else
+            bail "Link to grid_t failed"
+          fi
+
+          if is_file_or_valid_link "1m_grid_u_${fmon}"; then
+            ln -sf 1m_grid_u_${fmon} grid_u  
+          else
+            bail "Link to grid_u failed"
+          fi
+
+          if is_file_or_valid_link "1m_grid_v_${fmon}"; then
+            ln -sf 1m_grid_v_${fmon} grid_v  
+          else  
+            bail "Link to grid_v failed"
+          fi
 
           ################################################################
           # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
           ################################################################
           # make sure inputs exist and run!
-          if [[ -L grid_t && $output_level -eq 1 ]]; then
+          if [[ -L grid_t ]] && ([[ $output_level -eq 1 ]] || [[ $output_level -eq 2 ]]); then
             $diag_exe
           elif [ ! -L grid_t ]; then
             bail "Inputs for $diag_exe (grid_t) don't exist!"
