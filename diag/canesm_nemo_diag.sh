@@ -132,17 +132,19 @@ set -e
         [[ -L 1d_diaptr_${fmon} || -s 1d_diaptr_${fmon} ]] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
         # Replace 1d_diaptr with 1m_diaptr after doing time mean
         nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
-        ;;
-      # output_level=3 and only if starting from January
-      3)
-        if [ $nemo_calc_diag -eq 1 ] ; then
-          # access input variables for computing tstend (yearly) with priority level 3
-          if [[ $nmon -eq 1 && $fmon -eq 1 ]] ; then
+        # access input yearly variables with priority level 1 (Ofx) and 3 (tstend)
+        if [[ ${nmon} -eq 1 && $fmon -eq 1 ]] ; then
             for sfx in $nemo_diag_file_1y_suffix_list ; do
               diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
               access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
             done
-          fi
+           # Append yearly diagnostics suffix list
+           nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+        fi
+        ;;
+      # output_level=3 and only if starting from January
+      3)
+        if [ $nemo_calc_diag -eq 1 ] ; then
           if [ $fmon -eq 1 ] ; then
             # Run offline computation of tendency terms only if starting from January and yearly chunk
             # Access the nemo restart files
@@ -221,8 +223,6 @@ set -e
               ncks -A tstend.nc 1y_grid_t_ar6.nc
               rm -f 1y_grid_t_ar6_${fmon}
               mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
-              # Append yearly diagnostics suffix list
-              nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
             else
               bail "tstend.nc does not exist"
             fi
