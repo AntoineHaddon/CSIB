@@ -7,7 +7,7 @@
 # Summary of tasks:
 #   - save history files
 #   - create restart archive
-#       - includes the main netcdf files and many other extra files added for 
+#       - includes the main netcdf files and many other extra files added for
 #         logging purposes
 #
   # ======================================================
@@ -35,37 +35,48 @@
   # Part of the input ocean restart name (default restart)
   # The input ocean restart file name will be ${cn_ocerst_in}_MMMM.nc
   # where MMMM is the MPI task number (I4.4)
-  cn_ocerst_in="restart"
+  cn_ocerst_in=${nemo_cn_ocerst_in:="restart"}
 
   # Part of output ocean restart name (default restart)
   # The output ocean restart file name will be ${cn_exp}_NNNNNNNN_${cn_ocerst_out}_MMMM.nc
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
-  cn_ocerst_out="restart"
+  cn_ocerst_out=${nemo_cn_ocerst_out:="restart"}
 
   # Part of input ice restart name (default restart_ice_in)
   # The input ice restart file name will be ${cn_icerst_in}_MMMM.nc
   # where MMMM is the MPI task number (I4.4)
-  cn_icerst_in="restart_ice_in"
+  cn_icerst_in=${nemo_cn_icerst_in:="restart_ice_in"}
 
   # Part of output ice restart name (default restart_ice)
   # The output ice restart file name will be ${cn_exp}_NNNNNNNN_${cn_icerst_out}_NNNN.nc
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
-  cn_icerst_out="restart_ice"
+  cn_icerst_out=${nemo_cn_icerst_out:="restart_ice"}
 
   # Part of input pisces restart name (default restart_trc_in)
   # The input pisces restart file name will be ${cn_trcrst_in}_MMMM.nc
   # where MMMM is the MPI task number (I4.4)
-  cn_trcrst_in="restart_trc_in"
+  cn_trcrst_in=${nemo_cn_trcrst_in:="restart_trc_in"}
 
   # Part of output pisces restart name (default restart_trc)
   # The output pisces restart file name will be ${cn_exp}_NNNNNNNN_${cn_trcrst_out}_NNNN.nc
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
-  cn_trcrst_out="restart_trc"
+  cn_trcrst_out=${nemo_cn_trcrst_out:="restart_trc"}
+
+  # Part of input icb restart name (default restart_icb_in)
+  # The input icb restart file name will be ${cn_icb_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_icbrst_in=${nemo_cn_icbrst_in:="restart_icb_in"}
+
+  # Part of output icb restart name (default restart_icb)
+  # The output icb restart file name will be ${cn_exp}_NNNNNNNN_${cn_icbrst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_icbrst_out=${nemo_cn_icbrst_out:="restart_icb"}
 
   # After the job has run remove input restart files (if any)
   [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
   [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
   [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
+  [ -s input_icb_restart_file_names ] && cat input_icb_restart_file_names | xargs rm -f
 
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
@@ -86,7 +97,7 @@
     for i in $(seq 0 $((n_suffix-1))); do
         fs=${nemo_hist_file_suffix_list_save_array[$i]}
         IFS='_' read -r freq param <<< $fs
-        if [[ $freq =~ ^[0-9]+[hdmy]$ ]]; then
+        if [[ $freq =~ ^[0-9]+[hdmyt] ]]; then
             nemo_file_suffixes_array+=("$param")
             nemo_file_freqs_array+=("$freq")
         else
@@ -98,11 +109,10 @@
     # Save History Files
     # ====================
     nemo_save_hist=${nemo_save_hist:-on}
-    ToF nemo_save_hist
 
     nemo_start_date=$(printf "%04d%02d%02d" $chunk_start_year $chunk_start_month 1)
     nemo_stop_date=$(printf "%04d%02d%02d" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
-    if [ $nemo_save_hist -eq 1 ] ; then
+    if [ "$nemo_save_hist" = "on" ] ; then
       for i in $(seq 0 $(($n_suffix-1))); do
           sfx=${nemo_file_suffixes_array[$i]}
           freq=${nemo_file_freqs_array[$i]}
@@ -155,10 +165,11 @@
     mkdir NEXT_RESTART_ARC
 
     # Identify the last NEMO timestep, which will be in the rs names
-    end_step=$(get_namelist_var nn_itend namelist | awk '{printf "%8.8d",$1}')
+    end_step=$(get_namelist_var nn_itend namelist_cfg | awk '{printf "%8.8d",$1}')
 
     # Look for ocean restart files matching the pattern below
-    eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+    ofnpatt="${cn_exp}_${end_step}_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc ${cn_exp}_${end_step}_${cn_ocerst_out}.nc"
+
     found_rs=$(ls -1 $ofnpatt || : 2>/dev/null)
     if [ -z "$found_rs" ]; then
       # No ocean restart files exist
@@ -167,63 +178,105 @@
       mv $found_rs NEXT_RESTART_ARC
     fi
 
-    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-        # Look for pisces restart files matching the pattern below
-        eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-        found_rs=$(ls -1 $pfnpatt || : 2>/dev/null)
-        if [ -z "$found_rs" ]; then
-          # No pisces restart files exist
-          bail "Attempting to save restarts but no pisces restart files exist. Looking for $pfnpatt"
-        else
-          mv $found_rs NEXT_RESTART_ARC
-        fi
+    if [ "$nemo_trc" = "on" ] || [ "$nemo_carbon" = "on" ]; then
+          # Look for pisces restart files matching the pattern below
+          pfnpatt="${cn_exp}_${end_step}_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc ${cn_exp}_${end_step}_${cn_trcrst_out}.nc"
+          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+          if [ -z "$found_rs" ]; then
+            # No pisces restart files exist
+            bail "Attempting to save restarts but no pisces restart files exist. Looking for $pfnpatt"
+          else
+            mv $found_rs NEXT_RESTART_ARC
+          fi
     fi
 
     if [ $with_ice -eq 1 ]; then
-       # Look for ice restart files
-       eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-       found_rs=$(ls -1 $ifnpatt || : 2>/dev/null)
-       if [ -z "$found_rs" ]; then
-          # No ice restart files exist
-          bail "Attempting to save restarts but no ice restart files exist. Looking for $ifnpatt"
-       else
-          mv $found_rs NEXT_RESTART_ARC
-       fi
+         # Look for ice restart files
+         ifnpatt="${cn_exp}_${end_step}_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc ${cn_exp}_${end_step}_${cn_icerst_out}.nc"
+         found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+         if [ -z "$found_rs" ]; then
+            # No ice restart files exist
+            bail "Attempting to save restarts but no ice restart files exist. Looking for $ifnpatt"
+         else
+            mv $found_rs NEXT_RESTART_ARC
+         fi
+    fi
+
+    if [[ "$nemo_ln_icebergs" == "on" && "$nemo_nn_test_icebergs" -lt 0 ]]; then
+          # Look for icb restart files matching the pattern below
+          eval pfnpatt=${cn_exp}_${end_step}_${cn_icbrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+          if [ -z "$found_rs" ]; then
+            # No icb restart files exist
+            bail "Attempting to save restarts but no icb restart files exist. Looking for $pfnpatt"
+          else
+            mv $found_rs NEXT_RESTART_ARC
+          fi
     fi
 
     # ADD ADDITIONAL FILES
     filelist=''
 
-    # namelist files
-    cp -f namelist rs_namelist || :
-    [ -s rs_namelist ] && filelist="$filelist rs_namelist"
-    cp -f namelist_top rs_namelist_top || :
-    [ -s rs_namelist_top ] && filelist="$filelist rs_namelist_top"
-    cp -f namelist_ice rs_namelist_ice || :
-    [ -s rs_namelist_ice ] && filelist="$filelist rs_namelist_ice"
-    if [ $nemo_carbon -eq 1 ]; then
-      cp -f namelist_pisces rs_namelist_pisces || :
-      [ -s rs_namelist_pisces ]  && filelist="$filelist rs_namelist_pisces"
+    # Copy init files if exist
+    [ -n "$(ls output.init_[0-9][0-9][0-9][0-9].nc 2>/dev/null)" ] && mv output.init_[0-9][0-9][0-9][0-9].nc NEXT_RESTART_ARC
 
-      if [ $nemo_cmoc -eq 1 ]; then
-        cp -f namelist_cmoc rs_namelist_cmoc || :
-        if [ -s rs_namelist_cmoc ]; then
-          chmod u+rw rs_namelist_cmoc
-          filelist="$filelist rs_namelist_cmoc"
-        fi
-      fi
+    # Create copies of the namelists used and include them in the tar file
+    cp -f namelist_cfg rs_namelist_cfg || :
+    [ -s rs_namelist_cfg ] && filelist="$filelist rs_namelist_cfg"
+    cp -f namelist_ref rs_namelist_ref || :
+    [ -s rs_namelist_ref ] && filelist="$filelist rs_namelist_ref"
+
+    case $nn_ice in
+        0) ;; # no ice boundary condition
+        1) ;; # use observed ice cover
+        2) # SI3  ice-model
+           cp -f namelist_ice_cfg rs_namelist_ice_cfg || :
+           [ -s rs_namelist_ice_cfg ] && filelist="$filelist rs_namelist_ice_cfg"
+           cp -f namelist_ice_ref rs_namelist_ice_ref || :
+           [ -s rs_namelist_ice_ref ] && filelist="$filelist rs_namelist_ice_ref"
+    	   # ice module output namelist
+    	   cp -f output.namelist.ice rs_output.namelist.ice  || :
+    	   [ -s rs_output.namelist.ice ] && filelist="$filelist rs_output.namelist.ice"
+           ;;
+        3) # CICE ice-model (_cfg and _ref namelist for CICE ? )
+           cp -f ice_in rs_ice_in || :
+           [ -s rs_ice_in ] && filelist="$filelist rs_ice_in"
+           ;;
+        *) bail "Invalid value for nn_ice = $nn_ice" ;;
+    esac
+
+    if [ "$nemo_trc" = "on" ]; then
+        cp -f namelist_top_cfg    rs_namelist_top_cfg    || :
+        [ -s rs_namelist_top_cfg ]     && filelist="$filelist rs_namelist_top_cfg"
+        cp -f namelist_top_ref    rs_namelist_top_ref    || :
+        [ -s rs_namelist_top_ref ]     && filelist="$filelist rs_namelist_top_ref"
+    	# tracer module output namelist
+    	cp -f output.namelist.top rs_output.namelist.top  || :
+    	[ -s rs_output.namelist.top ] && filelist="$filelist rs_output.namelist.top"
+
     fi
 
+    if [ "$nemo_carbon" = "on" ]; then 
+        cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || : 
+        [ -s rs_namelist_cmoc_cfg ]  && filelist="$filelist rs_namelist_cmoc_cfg" 
+        cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || : 
+        [ -s rs_namelist_cmoc_ref ]  && filelist="$filelist rs_namelist_cmoc_ref" 
+        cp -f namelist_canoe_cfg rs_namelist_canoe_cfg || : 
+        [ -s rs_namelist_canoe_cfg ]  && filelist="$filelist rs_namelist_canoe_cfg" 
+        cp -f namelist_canoe_ref rs_namelist_canoe_ref || : 
+        [ -s rs_namelist_canoe_ref ]  && filelist="$filelist rs_namelist_canoe_ref" 
+    	# bio module output namelist
+    	cp -f output.namelist.can rs_output.namelist.can  || :
+    	[ -s rs_output.namelist.can ] && filelist="$filelist rs_output.namelist.can"
+    	cp -f output.namelist.cmoc rs_output.namelist.cmoc  || :
+    	[ -s rs_output.namelist.cmoc ] && filelist="$filelist rs_output.namelist.cmoc"
+
+    fi 
     # current executable
     rm -f rs_${nemo_exec}
     cp -f ${nemo_exec} rs_${nemo_exec} || :
     [ -s rs_${nemo_exec} ] && filelist="$filelist rs_${nemo_exec}"
 
-    if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-      # Add a EMPave data for nn_fwb=2
-      cp -f EMPave.dat rs_EMPave.dat || :
-      [ -s rs_EMPave.dat ] && filelist="$filelist rs_EMPave.dat"
-    fi
 
     # time step file
     cp -f time.step rs_time.step || :
@@ -233,9 +286,13 @@
     cp -f ocean.output rs_ocean.output || :
     [ -s rs_ocean.output ] && filelist="$filelist rs_ocean.output"
 
+    # physics output namelist
+    cp -f output.namelist.dyn rs_output.namelist.dyn  || :
+    [ -s rs_output.namelist.dyn ] && filelist="$filelist rs_output.namelist.dyn"
+
     # checksum file of ocean prognostic state (for bit identity checks)
-    cp -f final.state rs_final.state || :
-    [ -s rs_final.state ] && filelist="$filelist rs_final.state"
+    #cp -f final.state rs_final.state || :
+    #[ -s rs_final.state ] && filelist="$filelist rs_final.state"
 
     # ocean timing stats
     cp -f timing.output rs_timing.output || :
@@ -267,5 +324,6 @@
 
     # SAVE
     rs_out=${model_rs}tiled_nemors
+    [ $nnode_o -eq 1 ] && rs_out=${model_rs}nemors # rename without the "tiled" if only one proc.
     save NEXT_RESTART_ARC $rs_out
     release NEXT_RESTART_ARC

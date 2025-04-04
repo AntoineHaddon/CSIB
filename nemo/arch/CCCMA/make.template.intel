@@ -1,0 +1,38 @@
+# Make variables for the intel compiler 
+#=======================================
+
+# Fortran
+FC = mpif90
+FFLAGS_OPT = -O2
+FFLAGS_DEBUG = -O0 -g -traceback
+FFLAGS_FLOAT_CONTROL = -mp1 -fp-model strict
+FFLAGS_64BIT_REAL = -r8
+FFLAGS_64BIT_INT = -i8
+FFLAGS_MOD = -module
+FFLAGS_CPP = -fpp
+FFLAGS_OMP = -qopenmp
+FFLAGS_NETCDF = $(shell nf-config --fflags)
+FFLAGS_MPI =
+FFLAGS_STATIC = -static-intel
+FFLAGS_PIC = -fpic
+
+# Unique/Implementation/Component Flags
+#   - Note: these are meant to allow for one off/easy additions of flags
+#           for specific components. If it decided that we want to apply
+#           them consistently, we make more evocative FFLAGS_* vars (as above)
+FFLAGS_CANDIAG = 
+
+# C 
+CC = cc
+### add C flags as necessary
+CFLAGS =
+
+# Note: we let the module system handle linking/includes on the xc50s
+# Include Flags
+INCLUDEFLAGS_USR =
+
+# Linking Flags 
+LDFLAGS_USR =
+LDFLAGS_NETCDF = $(shell nf-config --flibs)
+LDFLAGS_CANDIAG_PLT =-L/PATHU2 -lncarg -lncarg_gks -lncarg_c -lX11 -lXext -lXau -lXdmcp
+

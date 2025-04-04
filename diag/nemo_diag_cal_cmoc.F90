@@ -418,11 +418,16 @@ CONTAINS
          ENDDO
         ENDDO
        ENDDO
+       pH=0.
+       CO3=0.
+       Om_A=0.
+       Om_C=0.
 
        DO l=1,lm
         DO k=1,km
          DO j=1,jmt
           DO i=1,imt
+              if (tmask(i,j,k).eq.0. .or. hi(i,j,k,l).le.0.) cycle
               ! pH calculated from [H+] in mol L^-1
               pH(i,j,k,l)=ALOG10(hi(i,j,k,l))*(-1.)*tmask(i,j,k)
               ! convert [H+] to  mol kg^-1 (XDIC is in mmol m^-3; CO3 is in mol m^-3; hion and ak* are in mol kg^-1)

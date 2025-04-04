@@ -196,7 +196,7 @@
       name = fname
       call openchk (fname, ncid, notopen)
       if (notopen) then
-        i = nf_create (trim(name), nf_clobber, ncid)
+        i = nf_create (trim(name), nf_clobber + nf_netcdf4, ncid)
         call checkerror (i,'openfile '//trim(name))
         i = nf_enddef (ncid)
         call checkerror (i,'openfile nf_enddef')

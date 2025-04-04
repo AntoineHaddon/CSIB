@@ -60,10 +60,11 @@ PROGRAM nemo_diag_canoe
    call getdimlen ('deptht', iou, km)
    CALL getdimlen ('time_counter', iou, lm)      
    ! get grid size for tbnds/bnds
+   ntbnds=2
    Do i = 1, ntdim
       CALL getdimnm  (dimnm, iou, i, ndim)
       print*, 'DIM',i,':',dimnm, 'length:', ndim
-      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'bnds') ntbnds = ndim
+      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'bnds' .or. dimnm .eq. 'axis_nbounds' ) ntbnds = ndim
    END DO
 
    ly = lm / 12
@@ -71,7 +72,8 @@ PROGRAM nemo_diag_canoe
    !!----------------
    !! Allocate Arrays
    !!----------------
-   ALLOCATE( e3t(imt,jmt,km), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
+   ierr=0
+   ALLOCATE( e3t(imt,jmt,km,lm), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
    ALLOCATE( time(lm), ytime(ly), deptht(km), x(imt), y(jmt), STAT=ierr(2) )
    ALLOCATE( nav_lon_t(imt,jmt), nav_lat_t(imt,jmt), STAT=ierr(3) )
    ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), AA(imt,jmt,km,lm), &
@@ -82,6 +84,7 @@ PROGRAM nemo_diag_canoe
    ALLOCATE( zsat_c(imt,jmt,lm), zsat_a(imt,jmt,lm), o2min(imt,jmt,lm), zo2min(imt,jmt,lm), STAT=ierr(7) )
  
    IF (MAXVAL(ierr) /=0) THEN
+      print*,'ierr=',ierr
       STOP 'Memory allocation error in cmip6_nemo_offl'
    ENDIF
       
@@ -112,11 +115,13 @@ PROGRAM nemo_diag_canoe
    !!-------------------
    !! Get grid/mask data   
    !!-------------------
-   CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+   !CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
    ! Mask out Caspian in CCCma ORCA1 grid
    IF ( (imt == 362) .AND. (jmt == 292) ) THEN
      tmask( 332:344, 203:235, 1:km ) = 0.
+   ELSEIF ( (imt == 362) .AND. (jmt == 332) ) THEN ! eORCA1 grid (no jstart)
+     tmask( 332:344, 243:275, 1:km ) = 0.
    ELSE
      stop "NEMO BGC diagnostic deck expects ORCA R1 grid"
    ENDIF
@@ -133,26 +138,26 @@ PROGRAM nemo_diag_canoe
    CALL getatttext (iou2, 'time_counter', 'standard_name', standard_name)
    CALL getatttext (iou2, 'time_counter', 'units', units)
    CALL getatttext (iou2, 'time_counter', 'calendar', calendar)
-   CALL getatttext (iou2, 'time_counter', 'title', title)
    CALL getatttext (iou2, 'time_counter', 'long_name', long_name)
    CALL getatttext (iou2, 'time_counter', 'time_origin', time_origin)
    CALL getatttext (iou2, 'time_counter', 'bounds', bounds)
    ! time_counter_bnds
-   CALL getvara ('time_counter_bnds', iou2, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+   CALL getvara ('time_counter_bounds', iou2, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
    ! nav_lon on grid_T
    CALL getvara ('nav_lon', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lon_t, 1., 0.)
    ! nav_lat on grid_T
    CALL getvara ('nav_lat', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lat_t, 1., 0.)
    ! deptht 
    CALL getvara ('deptht', iou2, km, (/1/), (/km/), deptht, 1., 0.)
+   CALL getvara ('thkcello', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    ! temperature
-   CALL getvara ('votemper', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), TT, 1., 0.)
+   CALL getvara ('thetao', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), TT, 1., 0.)
    ! salinity
-   CALL getvara ('vosaline', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), SS, 1., 0.)
+   CALL getvara ('so', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), SS, 1., 0.)
    ! DIC
    CALL getvara ('DIC', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), CC, 1., 0.)
    ! alkalinity
-   CALL getvara ('TAlk', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), AA, 1., 0.)
+   CALL getvara ('Alkalini', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), AA, 1., 0.)
    ! Nitrate
    CALL getvara ('NO3', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), NO3, 1., 0.)
    ! Ammonium
@@ -212,9 +217,12 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
              , '', '', '')
       CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
@@ -260,7 +268,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -308,7 +319,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -356,7 +370,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -404,7 +421,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -452,7 +472,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -498,7 +521,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -543,7 +569,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -580,7 +609,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -617,7 +649,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -654,7 +689,10 @@ PROGRAM nemo_diag_canoe
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'axis', axis)
+      CALL putatttext (iou, 'time_counter', 'standard_name', standard_name)
+      CALL putatttext (iou, 'time_counter', 'units', units)
+      CALL putatttext (iou, 'time_counter', 'long_name', long_name)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &

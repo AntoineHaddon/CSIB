@@ -1,9 +1,16 @@
 PROGRAM nemo_ocean_diag
 ! ======================================================================
-!  Purpose: Run-time diagnostics for NEMO (ORCA2) 
+!  New purpose:      Run-time diagnostics in CanESM5 for NEMO4/CanBGC/CMOC (eORCA1)
+!  Obsolete purpose: Run-time diagnostics for NEMO (ORCA2) 
 !
 ! HISTORY:
+! E. Olson    Dec    2024   PHY, ZOO, POC are in units of C not N: switch conversions
 ! -------
+! N. Lambert  July   2023   Include the time variation of e3t
+!
+! O. Riche    Jan    2023   change PH to pH when reading the variable from the o/p file.
+!                           read e3t from grid_t instead of from mesh_mask (not present).
+!
 ! O. Riche    Jan    2016   Fix total N and C RTD, issue: unit problem across 
 !                           variables; outputs are in nitrogen except DIC/TA.
 !
@@ -78,13 +85,13 @@ PROGRAM nemo_ocean_diag
 !     Grid-related arrays
       REAL, DIMENSION(:, :),    ALLOCATABLE ::   lon2d, lat2d, e1t, e2t
       REAL, DIMENSION(:),       ALLOCATABLE ::   deptht
-      REAL, DIMENSION(:, :, :), ALLOCATABLE ::   e3t, t_mask
+      REAL, DIMENSION(:, :, :), ALLOCATABLE ::    t_mask
 
 !     Monthly DIC, CaCO3, TA, PH, O2
-      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, ph, oxy
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, oxy
 
 !     Monthly POC, GOC, DOC
-      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: poc, goc, doc
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: e3t, poc, goc, doc
 
 !     Monthly NO3, NH4, PO4, Si
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: no3, nh4, po4, si
@@ -96,7 +103,7 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: ppphy, ppphy2
 
 !     Monthly export fluxes of C (EPC100), CaCO3 (EPCAL100)
-      REAL, DIMENSION(:, :, :), ALLOCATABLE     :: epc100, epcal100
+      REAL, DIMENSION(:, :, :), ALLOCATABLE     :: epc100, epcal100, ph 
 
 !     Monthly surface fluxes of DIC, O2, N2, Fe
       REAL, DIMENSION(:, :, :), ALLOCATABLE :: cflux, oflux, nfix, irondep, denit !<CMOC code OR 15/01/2016> denitrification
@@ -105,7 +112,7 @@ PROGRAM nemo_ocean_diag
 !     Working arrays / variables  
 ! ======================================================================
       REAL :: dum, dvol, vol 
-      REAL :: dicz, caco3z, talz, phz, oxyz, pocz, gocz, docz,no3z, nh4z
+      REAL :: dicz, caco3z, talz, oxyz, pocz, gocz, docz,no3z, nh4z
       REAL :: po4z, siz, phyz, phy2z, zooz, zoo2z, ppphyz, ppphy2z
 
 !     total ocean carbon, nitrogen      
@@ -118,17 +125,17 @@ PROGRAM nemo_ocean_diag
 !     Output data 
 ! ======================================================================
 ! (1) Global-mean profiles for 3D data:
-      REAL, DIMENSION(:, :), ALLOCATABLE :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
+      REAL, DIMENSION(:, :), ALLOCATABLE :: dic_z, caco3_z, tal_z, oxy_z, poc_z
       REAL, DIMENSION(:, :), ALLOCATABLE :: goc_z, doc_z, no3_z, nh4_z, po4_z, si_z, phy_z, phy2_z
       REAL, DIMENSION(:, :), ALLOCATABLE :: zoo_z, zoo2_z, ppphy_z, ppphy2_z
 
 ! (2) Global-mean (volume weighted) or integral
 
 !     DIC, CaCO3 TA, PH, O2
-      REAL, DIMENSION(:), ALLOCATABLE :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
+      REAL, DIMENSION(:), ALLOCATABLE :: dicvol, caco3vol, talvol, oxyvol, pocvol, gocvol
       REAL, DIMENSION(:), ALLOCATABLE :: docvol, no3vol, nh4vol, po4vol, sivol, phyvol, phy2vol
       REAL, DIMENSION(:), ALLOCATABLE :: zoovol, zoo2vol, ppphyvol, ppphy2vol
-      REAL, DIMENSION(:), ALLOCATABLE :: epc100glo, epcal100glo, cglo, ofluxglo, nfixglo, irondepglo, denitglo !<CMOC code OR 15/01/2016> denitrification
+      REAL, DIMENSION(:), ALLOCATABLE :: epc100glo, epcal100glo, cglo, phglo, ofluxglo, nfixglo, irondepglo, denitglo !<CMOC code OR 15/01/2016> denitrification
 
 !----------------
 !  NetCDF-output specific
@@ -141,8 +148,8 @@ PROGRAM nemo_ocean_diag
 
 !----------------
 !     input file stuff
-      character fname05*100, fname06*100, fname07*100  
-      integer year, iou, iou4, iou5, iou6, recn, nrecon
+      character fname05*100, fname06*100, fname07*100, fname08*100 ! OR Jan 10th 2023  
+      integer year, iou, iou4, iou5, iou6, recn, nrecon, iou7 ! OR Jan 10th 2023
 
 !----------------
 ! Allocate Arrays
@@ -155,10 +162,10 @@ PROGRAM nemo_ocean_diag
 
       ALLOCATE( lon2d(imt,jmt), lat2d(imt,jmt), e1t(imt,jmt), e2t(imt,jmt),     &
          &      g_mask(imt,jmt), STAT=ierr(1) ) 
-      ALLOCATE( e3t(imt,jmt,km), t_mask(imt,jmt,km), STAT=ierr(2) )    
+      ALLOCATE( e3t(imt,jmt,km,lm), t_mask(imt,jmt,km), STAT=ierr(2) )    
       ALLOCATE( deptht(km), STAT=ierr(3) )
       ALLOCATE( dic(imt, jmt, km, lm), caco3(imt, jmt, km, lm),                 &
-         &      tal(imt, jmt, km, lm), ph(imt, jmt, km, lm),                    &
+         &      tal(imt, jmt, km, lm),                     &
          &      oxy(imt, jmt, km, lm), poc(imt, jmt, km, lm),                   &
          &      goc(imt, jmt, km, lm), doc(imt, jmt, km, lm),                   &
                 no3(imt, jmt, km, lm), nh4(imt, jmt, km, lm),                   &
@@ -170,18 +177,19 @@ PROGRAM nemo_ocean_diag
       ALLOCATE( epc100(imt,jmt,lm), epcal100(imt,jmt,lm),                       &
          &      cflux(imt,jmt,lm), oflux(imt,jmt,lm), nfix(imt,jmt,lm),         &
          &      irondep(imt,jmt,lm), denit(imt,jmt,lm),                         &
+         &      ph(imt, jmt, lm),                                               &
          &      STAT=ierr(5) )    
-      ALLOCATE( dic_z(km, lm), caco3_z(km, lm), tal_z(km, lm), ph_z(km, lm),    &
+      ALLOCATE( dic_z(km, lm), caco3_z(km, lm), tal_z(km, lm),    &
          &      oxy_z(km, lm), poc_z(km, lm), goc_z(km, lm), doc_z(km, lm),     & 
          &      no3_z(km, lm), nh4_z(km, lm), po4_z(km, lm), si_z(km, lm),      &
          &      phy_z(km, lm), phy2_z(km, lm), zoo_z(km, lm), zoo2_z(km, lm),   &
          &      ppphy_z(km, lm), ppphy2_z(km, lm),                               &
          &      STAT=ierr(6) )    
-      ALLOCATE( dicvol(lm), caco3vol(lm), talvol(lm), phvol(lm), oxyvol(lm),    &
+      ALLOCATE( dicvol(lm), caco3vol(lm), talvol(lm), oxyvol(lm),    &
          &      pocvol(lm), gocvol(lm), docvol(lm), no3vol(lm), nh4vol(lm),     &
          &      po4vol(lm), sivol(lm), phyvol(lm), phy2vol(lm), zoovol(lm),     &
          &      zoo2vol(lm), ppphyvol(lm), ppphy2vol(lm), epc100glo(lm),        &
-         &      epcal100glo(lm), cglo(lm), ofluxglo(lm), nfixglo(lm),           &
+         &      phglo(lm), epcal100glo(lm), cglo(lm), ofluxglo(lm), nfixglo(lm), &
          &      irondepglo(lm), denitglo(lm), toc(lm), ton(lm), STAT=ierr(7) )
 
          IF (MAXVAL(ierr) /=0) THEN
@@ -193,6 +201,7 @@ PROGRAM nemo_ocean_diag
          iou4 =0
          iou5 =0 
          iou6 =0 
+         iou7 =0 ! OR Jan 10th 2023
          recn =12.
          nrecon = int(recn + 0.001)
 !---------------------------------------------------
@@ -200,7 +209,8 @@ PROGRAM nemo_ocean_diag
 !---------------------------------------------------
         fname05='orca_mesh_mask'
         fname06='ptrc_t'   
-        fname07='diad_t'   
+        fname07='diad_t'
+        fname08='grid_t' ! OR Jan 10th 2023
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
@@ -211,7 +221,6 @@ PROGRAM nemo_ocean_diag
       CALL openfile (fname05,iou4)
       CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
       CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
       CALL closefile (iou4)
 
@@ -219,8 +228,11 @@ PROGRAM nemo_ocean_diag
       CALL openfile (fname06,iou5)
       CALL getvara ('nav_lon', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
       CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
-      CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
+      CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)   
       CALL closefile (iou5)
+      CALL openfile(fname08,iou7) 
+      CALL getvara ('thkcello', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+      CALL closefile(iou7)  
 
 !---------------------------------------------------
 ! Read in from NetCDF
@@ -255,11 +267,11 @@ PROGRAM nemo_ocean_diag
       
 !  Diagnostic variables
       if (exists) then 
-!       3-D: PH, PPPHY, PPPHY2, EPC100,
-          CALL getvara('PH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ph, 1., 0.)   
+!       3-D: PPPHY, PPPHY2, EPC100,
           CALL getvara('PPPHY',    iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ppphy, 1., 0.)   
 
-!       2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep
+!       2-D :  PH, EPCAL100, DIC flux, Oflux, Nfix, Irondep
+          CALL getvara('pH',       iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),       ph, 1., 0.)   
           CALL getvara('EPC100',   iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),   epc100, 1., 0.)    
           CALL getvara('EPCALC100',iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), epcal100, 1., 0.)    
           CALL getvara('Cflx',     iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),    cflux, 1., 0.)    
@@ -280,7 +292,7 @@ PROGRAM nemo_ocean_diag
       dicvol(:)   = 0.0_dp
       caco3vol(:) = 0.0_dp
       talvol(:)   = 0.0_dp
-      phvol(:)    = 0.0_dp
+      !phvol(:)    = 0.0_dp
       oxyvol(:)   = 0.0_dp
 !  POC, GOC, DOC
       pocvol(:)   = 0.0_dp
@@ -306,24 +318,23 @@ PROGRAM nemo_ocean_diag
              g_mask(:, :)  = t_mask(:, :, k) 
 
     !        DIC, TA, PH, O2 
-             CALL area_ave(e1t, e2t, e3t, g_mask, dic(:, :, k, l), imt, jmt, km, dicz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, tal(:, :, k, l), imt, jmt, km, talz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, oxy(:, :, k, l), imt, jmt, km, oxyz,   dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, dic(:, :, k, l), imt, jmt, km, dicz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, tal(:, :, k, l), imt, jmt, km, talz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, oxy(:, :, k, l), imt, jmt, km, oxyz,   dvol, k)
 
     !        POC, GOC, DOC
-             CALL area_ave(e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
 
     !        NO3, NH4, PO4, Si 
-             CALL area_ave(e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
 
     !        PHY, PHY2, ZOO, ZOO2
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),  imt, jmt, km, phyz,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),  imt, jmt, km, zooz,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, phy(:, :, k, l),  imt, jmt, km, phyz,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, zoo(:, :, k, l),  imt, jmt, km, zooz,  dvol, k)  
 
              if (exists) then
     !            PPPHY, PPPHY2      
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ph(:, :, k, l),     imt, jmt, km, phz,     dvol, k)  
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ppphy(:, :, k, l),  imt, jmt, km, ppphyz,  dvol, k) 
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ppphy(:, :, k, l),  imt, jmt, km, ppphyz,  dvol, k) 
              endif 
     !================================================================
     !        Assign outputs
@@ -344,7 +355,7 @@ PROGRAM nemo_ocean_diag
              zoo_z(k, l)   = zooz
          
              if (exists) then
-                 ph_z(k, l)    = phz  
+                 !ph_z(k, l)    = phz  
                  ppphy_z(k, l) = ppphyz
              endif 
 
@@ -365,7 +376,7 @@ PROGRAM nemo_ocean_diag
              zoovol(l)    = zoovol(l)  + zooz*dvol
 
              if (exists) then 
-                 phvol(l)     =     phvol(l) + phz*dvol    
+                 !phvol(l)     =     phvol(l) + phz*dvol    
                  ppphyvol(l)  =  ppphyvol(l) + ppphyz*dvol  
              endif
                        
@@ -373,11 +384,11 @@ PROGRAM nemo_ocean_diag
           enddo  ! depth, k        
 
     !     compute toc and ton
-          toc(l) = dicvol(l)  + 106./16. * ( pocvol(l) + phyvol(l) + zoovol(l) )                                         
+          toc(l) = dicvol(l)  +  pocvol(l) + phyvol(l) + zoovol(l)                                         
     !     convert from mmol C to Pg C      
           toc(l) = toc(l) * 12.0e-18
           print*,'toc', toc(l)
-          ton(l) = no3vol(l) + phyvol(l) + zoovol(l)  + pocvol(l)                                             
+          ton(l) = no3vol(l) + 16./106. * ( phyvol(l) + zoovol(l)  + pocvol(l) )                                            
     !     convert to Pg      
           ton(l) = ton(l) * 14.007e-18
 
@@ -391,7 +402,7 @@ PROGRAM nemo_ocean_diag
              no3vol(l) = no3vol(l)/vol  
 
              if (exists) then   
-                 phvol(l)  = phvol(l)/vol 
+                 !phvol(l)  = phvol(l)/vol 
     !            convert to PgC/yr
                  ppphyvol(l)  = ppphyvol(l) * 12.e-15 * 86400 * 365
              endif
@@ -411,6 +422,7 @@ PROGRAM nemo_ocean_diag
     !        EPC100, EPCAL100  
              CALL area_ave_flx(e1t, e2t, g_mask, epc100(:,:,l),   imt, jmt,   epc100glo(l), dum) 
              CALL area_ave_flx(e1t, e2t, g_mask, epcal100(:,:,l), imt, jmt, epcal100glo(l), dum) 
+             CALL area_ave_flx(e1t, e2t, g_mask, ph(:, :, l),  imt, jmt, phglo(l), dum)  
 
     !        Cflux, Oflux, Nfix, Irondep  
              CALL area_ave_flx (e1t, e2t, g_mask, cflux(:,:,l),   imt, jmt, cglo(l),       dum) 
@@ -539,9 +551,9 @@ PROGRAM nemo_ocean_diag
      &            , 1.e4,' ', 'F', 'Global mean pH'                              & 
      &            , 'PH', '')
 
-              CALL defvar ('PHz', iou, 2, (/id_z, id_time/), -1.e4               &
-     &            , 1.e4,' ', 'F', 'pH by level'                                 & 
-     &            , 'PHz', '')
+!              CALL defvar ('PHz', iou, 2, (/id_z, id_time/), -1.e4               &
+!     &            , 1.e4,' ', 'F', 'pH by level'                                 & 
+!     &            , 'PHz', '')
 
 !             PPPHY
               CALL defvar ('PPPHY', iou, 1, (/id_time/), -1.e4                   &
@@ -630,8 +642,8 @@ PROGRAM nemo_ocean_diag
 !       Diagnostic variables
         if (exists) then 
 !           PH
-            CALL putvars ('PH', iou, ntrec2, phvol(l), 1., 0.)
-            CALL putvara ('PHz', iou, km, (/1, ntrec2/), (/km, 1/), ph_z(:,l), 1., 0.)
+            CALL putvars ('PH', iou, ntrec2, phglo(l), 1., 0.)
+            !CALL putvara ('PHz', iou, km, (/1, ntrec2/), (/km, 1/), ph_z(:,l), 1., 0.)
 
 !           PHY
             CALL putvars ('PPPHY', iou, ntrec2, ppphyvol(l), 1., 0.)

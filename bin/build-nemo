@@ -1,11 +1,14 @@
 #!/bin/bash
+#=====================================
+# This script is adapted for NEMO4.0.3
+# (D. Yang, OCT 2020)
+#=====================================
 set -e
 #
 #   Usage: build-nemo [options] exec=name cfg=CONFIG \
 #                     srcpath=SRCPATH \
-#                     nemo_arch=NEMO_ARCH_IDENTIFIER \
+#                     nemo_arch=NEMO_ARCH \
 #                     util_arch=MAKE_TEMPLATE \
-#                     comp_env=ENVIRONMENT_FILE \
 #                     [refcfg=cfgdir] \
 #                     [add_key=keys] \
 #                     [del_key=keys]
@@ -38,7 +41,6 @@ set -e
 #                           of the nemo executable
 #   util_arch=name      ...name is the make template file to be used in the compilation of nemo diagnostic/rtd/utility
 #                           tools
-#   comp_env=name       ...name is the file containing any necessary environment considerations for the compilation
 #   add_key=keys        ...A whitespace separated list of cpp preprocessor keys to be added
 #                           for this complie. If there is more than one then keys will need
 #                           to be quoted. (e.g. add_keys="key_mpp_mpi key_vectopt_loop")
@@ -48,7 +50,7 @@ set -e
 #
 # Examples:
 #   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/ \
-#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template comp_env=/path/to/env/file
+#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template
 #
 #     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
 #        a dir structure the same as the default), using the intel.eccc-xc50 archfile.
@@ -83,8 +85,10 @@ nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at comp
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_ref_config=''      # The reference configuration to be used with CanNEMO_CONFIG
 storage_method="link"   # Define how the execs will be stored (copy|link|move)
-storage_loc=$(pwd)      # tells build-nemo where to store executables
-comp_np=12              # Number of processors to use during compilation
+storage_loc=$(pwd -P)      # tells build-nemo where to store executables
+comp_np=12              # Number of processors to use during nemo compilation
+xios_comp_np=12          # Number of processors to use during xios compilation
+debug=0                 # Set debug to 0 (turned off, regular optimizations used)
 clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
 CWD=$(pwd)
 
@@ -116,15 +120,19 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-                srcpath)    nemo_source_path="$val" ;;      # location of code in a dir structure (instead of cloning)
-                exec)       nemo_exec="$val" ;;             # name for the executable created here
-                cfg)        CanNEMO_CONFIG="$val" ;;           # name of subdir in which config lives
-                refcfg)     nemo_ref_config="$val" ;;       # name of subdir in which ref config lives
-                nemo_arch)  nemo_arch_identifier="$val" ;;  # makenemo identifier for file with arch specific make defs
-                util_arch)  nemo_util_arch_file="$val" ;;   # filename of the make template for nemo utilities
+                xios_comp)  xios_comp="$val"   ;;       # compile xios (=1) or not (=0)
+		        xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
+        		xios_arch)  xios_arch="$val"  ;;        # xios arch name
+        		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
+                srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
+                exec)       nemo_exec="$val" ;;         # name for the executable created here
+                cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
+                refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
+                nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
+        		util_arch)  nemo_util_arch_file="$val" ;; # utility arch name (for RTD, REBUILD and so on)
                 comp_env)   compilation_env_file="$val";;   # filename containing the compilation environment
-                add_key)    nemo_add_cpp_keys="$val" ;;     # a list of cpp keys to add before compiling nemo
-                del_key)    nemo_del_cpp_keys="$val" ;;     # a list of cpp keys to remove before compiling nemo
+                add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
+                del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
              esac
              ;;
@@ -141,9 +149,8 @@ done
 [[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$CanNEMO_CONFIG" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_arch_identifier" ]]    && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_arch" ]]               && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
-[[ -z "$compilation_env_file" ]]    && bail "comp_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 
 # make sure a valid storage method was given
 case $storage_method in
@@ -154,20 +161,34 @@ esac
 # make sure the source directory exists
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
+# make sure a valid storage method was given
+case $storage_method in
+    copy|link|move) : ;; # valid
+    *) bail "Accepted values for the storage method are 'link|copy|move'! See ${THIS_SCRIPT_PATH} -h";;
+esac
+
 #========================
 # Set inherited variables
 #========================
+
+xiosdir=xios-2.6
+cfgdir=cfgs
+xios_exec=xios_server.exe
+tooldir=tools
+
 # define build directories
-nemo_model_build_dir=${nemo_source_path}/nemo/CONFIG                       # where makenemo gets called to build the model exec
+nemo_xios_build_dir=${nemo_source_path}/nemo/${xiosdir}                    # where make_xios gets called to build the xios exec
+nemo_model_build_dir=${nemo_source_path}/nemo                              # where makenemo gets called to build the model exec
 nemo_diag_build_dir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
 nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
-nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
+nemo_rbld_build_dir=${nemo_source_path}/nemo/${tooldir}/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
-# define which build directories just use `make` and what compiler template they use
+# define which build directories just use `make`
 make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
 
-# define target executables (must be consistent with makenemo and other makefiles)
-target_model_exec=${nemo_model_build_dir}/${CanNEMO_CONFIG}/BLD/bin/nemo.exe
+# define target executables (must be consistent with make_xios, makenemo and other makefiles)
+target_xios_exec=${nemo_xios_build_dir}/bin/$xios_exec
+target_model_exec=${nemo_model_build_dir}/${cfgdir}/${CanNEMO_CONFIG}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
@@ -179,8 +200,21 @@ target_diag_execs=$(echo $target_diag_execs | sed "s#[^ ]*#${nemo_diag_build_dir
 target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&#g")
 target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
+if [[ $xios_comp -eq 1 ]]; then  
+    model_execs="$target_xios_exec $target_model_exec"
+else
+    model_execs=" $target_model_exec"
+fi
+
 # all non-model executables get saved without renamining, store in list
 non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
+
+# When debugging is requested, use the debug arch and update the name of the executable
+if (( debug == 1 )); then
+  xios_debug="--debug"
+  nemo_arch="$nemo_arch-debug"
+  nemo_exec="$nemo_exec-debug"
+fi
 
 # set the working directory if it hasn't been set
 if [[ -z "$WRK_DIR" ]]; then
@@ -204,30 +238,62 @@ echo ""
 echo "=================================="
 echo "      Compiling the Model!        "
 echo "=================================="
+
+# Compiling xios first
+echo "Compiling in:  ${nemo_xios_build_dir}"
+cd ${nemo_xios_build_dir}
+
+# build command line args into a bash array
+ARGS=( --job $xios_comp_np --arch $xios_arch )
+[[ -n $xios_full ]] && ARGS+=( $xios_full )
+[[ -n $xios_debug ]] && ARGS+=( $xios_debug )
+[[ -n $xios_dev ]] && ARGS+=( $xios_dev )
+[[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
+
+# Create xios executable (note that arch.env is sourced inside make_xios)
+# compile only if doesn't exist or clean_compile
+if ls ${storage_loc}/$xios_exec 1> /dev/null 2>&1 && [[ "$clean_compile" -ne 1 ]]; then
+echo 'Skip make_xios...'
+else 
+    if [[ $xios_comp -eq 1 ]]; then  
+        echo 'make_xios '"${ARGS[@]}"
+        ./make_xios "${ARGS[@]}"
+    else
+        echo 'No need to compile XIOS'
+    fi
+fi
+
+# Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
-# source compilation environment
-source $compilation_env_file ||
-    bail "Failed to source the nemo compilation environment file - $compilation_env_file! Does it exist? Are the modules available?"
-
-# build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
-ARGS=( -j $comp_np -m $nemo_arch_identifier -n $CanNEMO_CONFIG )
-[[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
-[[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
-[[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
+# nemo compilation environment
+echo "NEMO arch file = $nemo_arch"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
-    ./makenemo clean "${ARGS[@]}"
+    ./makenemo -r $nemo_config clean
 fi
+
+# build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
+ARGS=( -j $comp_np -m $nemo_arch -n $CanNEMO_CONFIG )
+[[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
+[[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
+[[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
 
 # Create model executable
 echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
-files_to_reset="cfg.txt ${CanNEMO_CONFIG}/cpp_${CanNEMO_CONFIG}.fcm"
+# files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
+files_to_reset="${cfgdir}/${CanNEMO_CONFIG}/cpp_${CanNEMO_CONFIG}.fcm"
+files_to_reset=
+
+# log cpp_${nemo_config}.fcm
+echo "${files_to_reset}:"
+cat $files_to_reset
+
 for f in $files_to_reset; do
     is_diff=0
 
@@ -259,15 +325,16 @@ for build_dir in $make_build_dirs; do
     if (( clean_compile == 1 )); then
         make clean
     fi
-    make COMPILER_TEMPLATE=${nemo_util_arch_file_basename}
+    make COMPILER_TEMPLATE=$nemo_util_arch_file_basename
+    [[ -n "$build_dir" ]] && make
 done
+
 
 #---------------------------------
 # confirm that compilation worked
 #---------------------------------
-[[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
-for executable in $non_model_execs; do
-    [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
+for executable in $model_execs $non_model_execs; do
+    [[ -f "$executable" ]] || echo  "WARNING: $executable doesn't exist! Did the compilation fail?"
 done
 
 #==================================
@@ -284,13 +351,14 @@ case $storage_method in
 esac
 
 rm -f ${storage_loc}/${nemo_exec}
-${storage_cmd} $target_model_exec ${storage_loc}/${nemo_exec}
-for executable in $non_model_execs; do
+for executable in $model_execs $non_model_execs; do
+    [[ ! -f "$executable" ]] && continue
     stored_exec=${storage_loc}/$(basename $executable)
     rm -f $stored_exec
     $storage_cmd $executable $stored_exec
 done
 echo "build-nemo: DONE!"
+
 
 # Return to the invocation directory
 cd $CWD

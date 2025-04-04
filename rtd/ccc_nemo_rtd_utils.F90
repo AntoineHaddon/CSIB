@@ -17,8 +17,8 @@ contains
 
                 s1=0.
                 ss=0.
-                do i=1,imt-2  ! not to double count the cyclic boundary
-                    do j=1,jmt-1 !avoid north fold
+                do i=1,imt
+                    do j=1,jmt 
                         if (mask(i,j).gt.0.5) then  ! mask the region of interst
                             vol = e1(i,j)*e2(i,j)*e3(i,j,kk)
                             ss=ss+vol
@@ -47,8 +47,8 @@ contains
 
                 s1=0.
                 ss=0.
-                do i=1,imt-2  ! not to double count the cyclic boundary
-                    do j=1,jmt-1 ! north fold
+                do i=1,imt
+                    do j=1,jmt
                             arc = e1(i,j)*e2(i,j)*mask(i,j)
                             ss=ss+arc
                             s1=s1+a(i,j)*arc
@@ -66,27 +66,29 @@ contains
       !=========================================================
       ! Global meridional overturning (Sv) (valid only south of 20N)  
       !=========================================================
-      SUBROUTINE moc(e1v, e3v, v, imt, jmt, km, over_psi)
+      SUBROUTINE moc(e1v, e3v, mask, v, imt, jmt, km, over_psi)
             implicit none
             integer imt, jmt, km, i, j, k
             REAL, DIMENSION(imt, jmt) :: e1v
-            REAL, DIMENSION(imt, jmt, km) :: e3v, v
+            REAL, DIMENSION(imt, jmt, km) :: e3v, v, mask
             REAL, DIMENSION(jmt, km) :: over_tran, over_psi
             REAL s
 
 
-            do j = 1, jmt-1 ! north fold
+            do j = 1, jmt
                 do k = km, 1, -1
                     s=0.
-                    do i = 1, imt - 2  ! not to double count the cyclic boundary
-                        s = s + v(i, j, k)*e1v(i, j)*e3v(i, j, k)
+                    do i = 1, imt
+                      if (mask(i,j,k).gt.0.5) then  ! mask the region of interst
+                        s = s + v(i, j, k)*e1v(i, j)*e3v(i, j, k) 
+                      endif  
                     enddo
                     over_tran(j, k) = s
                     over_psi(j, k)  = 0.
                 enddo
             enddo
 
-            do j = 1, jmt-1 !north fold
+            do j = 1, jmt
                 do k = km, 1, -1
                     if (k.eq.km) then
                         over_psi(j,k) = -over_tran(j,k)
@@ -96,7 +98,7 @@ contains
                 enddo
             enddo
 
-            do j = 1, jmt-1 !north fold
+            do j = 1, jmt
                 do k = 1, km
                     over_psi(j, k)  =  over_psi(j, k)*1.e-6 ! to Sv                      
                 enddo

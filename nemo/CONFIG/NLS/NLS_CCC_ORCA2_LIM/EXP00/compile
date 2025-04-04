@@ -1,1 +1,0 @@
-build-nemo ver=master repo=$CCRNSRC/ocean_dir/nemo-CCCma.git exec=runid_ccc_orca2_lim_exe arch=xlf_aix-cccma refcfg=CCC_ORCA2_LIM cfg=CCC_ORCA2_LIM

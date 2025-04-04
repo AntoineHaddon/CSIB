@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+
+<!--
+============================================================================================================
+=                                           output files definition                                        =
+=                                            Define your own filesfor ocean dynamics context               =
+=                                         put the variables you want...                                    =
+============================================================================================================
+    -->
+
+    	<file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4"> 
+	    <file_group id="1m" output_freq="1mo"  enabled=".TRUE.">
+    
+        <file id="file32" name_suffix="_btrc_T" description="CMOC sms variables + TOP tracers" >
+          <!-- BGCM standard : variables available with TOP activated alone  -->
+          <field field_ref="DIC"      name="DIC"        level="0" />
+          <field field_ref="Alkalini" name="Alkalini"   level="0" />
+          <field field_ref="O2"       name="O2"         level="0" />
+          <field field_ref="NO3"      name="NO3"        level="0" /> 
+          <!-- CMOC specific -->
+          <field field_ref="POC"      name="POC"    level="0" />
+          <field field_ref="PHY"      name="PHY"    level="0" />
+          <field field_ref="ZOO"      name="ZOO"    level="0" />
+          <field field_ref="NCHL"     name="NCHL"   level="0" />
+          <!-- <field ref="DICnat"     name="DICnat"    level="0" /> -->
+          <!-- <field ref="ALKabio"    name="ALKabio"   level="0" /> -->
+          <!-- <field ref="DICabio"    name="DICabio"   level="0" /> -->
+          <!-- <field ref="O2abio"     name="O2abio"    level="0" /> -->
+          <!-- <field ref="DI14C"      name="DI14C"     level="0" /> -->
+        </file>
+        
+        <file id="file33" name_suffix="_diad_T" description="additional CMOC diagnostics" >
+
+          <!-- 3D fields here -->
+          <field field_ref="pH"       name="pH"   level="0" />
+          <!-- <field field_ref="CO3"     name="CO3"       level="0" /> -->
+          <!-- <field field_ref="CO3sat"  name="CO3sat"    level="0" /> -->
+          <!-- <field field_ref="HCO3"    name="HCO3"      level="0" /> -->
+
+          <!-- PAR that we want to use in CanOE or CMOC production (1 or 3 bands) -->
+
+          <field field_ref="tmask"    name="tmask"     level="0" />
+          <field field_ref="closea"   name="closea"    level="0" />
+                                          
+         <!-- 2D fields here -->
+          <field field_ref="Cflx"     name="Cflx"   level="0" />
+          <field field_ref="Oflx"     name="Oflx"   level="0" />
+                                           
+          <field field_ref="KgCO2"    name="KgCO2"   level="0" />
+          <field field_ref="KgO2"     name="KgO2"   level="0" />
+                                           
+          <field field_ref="DpCO2"    name="DpCO2"   level="0" />
+          <field field_ref="DpO2"     name="DpO2"   level="0" />
+                                                 
+          <field field_ref="pCO2"     name="pCO2"   level="0" />
+          <field field_ref="pO2"      name="pO2"    level="0" />
+
+
+          <!-- CMOC PP diagnostics -->
+          <field field_ref="PPPHY"    name="PPPHY"     level="0" />
+          <field field_ref="Mumax"    name="Mumax"     level="0" />
+          <field field_ref="LNnut"    name="LNnut"     level="0" />
+          <field field_ref="LNFe"     name="LNFe"      level="0" />
+          <field field_ref="LNlight"  name="LNlight"   level="0" />
+          <field field_ref="PARCMOC"  name="PARCMOC"   level="0" />
+          <field field_ref="thchl2C"  name="thchl2C"   level="0" />
+          <field field_ref="chlaP"    name="chlaP"     level="0" />
+          <field field_ref="photor"   name="photor"    level="0" />
+          <!-- CMOC export diagnostics -->
+          <field field_ref="oomask"          name="oomask"    level="0" />
+          <field field_ref="EPC100"          name="EPC100"    level="0" />
+          <field field_ref="EPCALC100"       name="EPCALC100" level="0" />
+          <!-- CMOC N2 diagnostics -->                
+          <field field_ref="Nfix"            name="Nfix"      level="0" />
+          <field field_ref="Denit"           name="Denit"     level="0" />
+          
+          <!-- Temporary addition -->
+          <field field_ref="MORTP"     name="MORTP"      level="0" />
+          <field field_ref="REMNO3"    name="REMNO3"     level="0" /> 
+          <field field_ref="EPCz"      name="EPCz"       level="0" />
+          <field field_ref="GRAZZ"     name="GRAZZ"      level="0" />
+          <field field_ref="Z2POC"     name="Z2POC"      level="0" />
+          <field field_ref="ZEXUD"     name="ZEXUD"      level="0" />
+          <field field_ref="ZMORT"     name="ZMORT"      level="0" />         
+          <field field_ref="ZMORT2"    name="ZMORT2"     level="0" />         
+                                        
+          <!-- Ideal Age Tracer (IAT) from TOP -->
+          <!-- <field field_ref="Age"     level="0" /> -->
+
+          
+        </file>
+
+      </file_group>
+
+   </file_definition>
+    

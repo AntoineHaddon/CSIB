@@ -37,23 +37,18 @@
         bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, CanNEMO_CONFIG are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      cp ${nemo_repo}/nemo/CONFIG/$CanNEMO_CONFIG/EXP00/$1 .
+      cp ${nemo_repo}/nemo/cfgs/$CanNEMO_CONFIG/EXPREF/$1 .
       [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
 
 echo "#################### Start NEMO pre-processing #################"
-
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
   is_defined $chunk_start_date      || bail "nemo_prelude: chunk_start_date must be defined"
   is_defined $chunk_start_year      || bail "nemo_prelude: chunk_start_year must be defined"
   is_defined $chunk_start_month     || bail "nemo_prelude: chunk_start_month must be defined"
-  is_defined $chunk_stop_date       || bail "nemo_prelude: chunk_stop_date must be defined"
-  is_defined $chunk_stop_year       || bail "nemo_prelude: chunk_stop_year must be defined"
-  is_defined $chunk_stop_month      || bail "nemo_prelude: chunk_stop_month must be defined"
-  is_defined $current_year          || bail "nemo_prelude: current_year must be defined"
   is_defined $run_start_year        || bail "nemo_prelude: run_start_year must be defined"
   is_defined $run_start_month       || bail "nemo_prelude: run_start_month must be defined"
   is_defined $run_stop_year         || bail "nemo_prelude: run_stop_year must be defined"
@@ -62,99 +57,338 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
-  is_defined $nemo_namelists        || bail "nemo_prelude: nemo_namelists must be defined"
-  is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
   is_defined $input_rs_date_string  || bail "nemo_prelude: input_rs_date_string must be defined"
-
-  # ================================
-  # Set overrideable default values
-  # ================================
-  # location of the source code
-  nemo_repo=${nemo_repo:=$CCRNSRC/CanESM/CanNEMO}
-  
-  # nemo_from_rest is used to flag starting nemo from rest rather than a restart
-  nemo_from_rest=${nemo_from_rest:=0}
-
-  # For interannual forcing, iaf_year_offset gives the offset between
-  #     the current nemo year and the desired year in the forcing dataset
-  #     such that forcing_year = current_year + iaf_year_offset.
-  #     The data to be used will end in _y${forcing_year}.nc
-  iaf_year_offset=${iaf_year_offset:=0}
-
-  # For interannual forcing, iaf_loop_year gives the year at which the
-  #     forcing will loop back to the first specified year of forcing.
-  #     The number is given in terms of "forcing_year" as opposed to
-  #     nemo "current_year": forcing_year = current_year + iaf_year_offset
-  iaf_loop_year=${iaf_loop_year:=0}
 
   # This is the start of the simulation
   year_run_start=${run_start_time[0]:-1}
 
-  # nemo_trc = 0 means use physical ocean only
-  # nemo_trc = 1  means use passive tracers (general, CFC, MY_TRC, even if pisces/cmoc=off)
-  nemo_trc=${nemo_trc:=1}
+  # ===================
+  # Access input files
+  # ===================
+  # - many are only pulled in they don't already exist
 
-  # nemo_carbon = 0 means use physical ocean only
-  # nemo_carbon = 1 means include PISCES
-  nemo_carbon=${nemo_carbon:=0}
+  # run namelists
+  for f in ${nemo_namelists[@]}; do
+      ! is_file ${f}_ref && cp ${WRK_DIR}/config/namelists/${f}_ref .
+      ! is_file ${f}_cfg && cp ${WRK_DIR}/config/namelists/${f}_cfg .
+  done
+  # configuration input files
+  is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
+  acc_cp domain_cfg.nc             $nemo_coordinates
 
-  # IO specification files
-  #     If not defined a default version will be pulled for the given CanNEMO_CONFIG
-  nemo_iodef=${nemo_iodef:=''}
-  nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
+  # Interannual forcing consideration
+  if [[ $config == "ESM" ]]; then
+    echo config == "ESM" : no forcing files needed, fields from CanCPL
+  elif [[ $config == "OMIP" ]] && [[ $runmode == "CORE-NY" ]]; then
+    acc_cp tair10m.nc          ${nemo_t}
+    acc_cp uwnd10m.nc          ${nemo_u}
+    acc_cp vwnd10m.nc          ${nemo_v}
+    acc_cp humi10m.nc          ${nemo_q}
+    acc_cp qsr.nc              ${nemo_qsr}
+    acc_cp qlw.nc              ${nemo_qlw}
+    acc_cp precip.nc           ${nemo_precip}
+    acc_cp snow.nc             ${nemo_snow}
+	acc_cp slp.nc              ${nemo_slp}
+	acc_cp apr.nc              ${nemo_apr}
+  elif [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
+      # CanTODS setup
+      # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+        ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+        [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
-  # Switch to decide if we're using CFCs or not
-  nemo_cfc=${nemo_cfc:=0}
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        # In future, will want different forcing. For now, just repeat 2017.
+        #forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        forcing_year=2017
+        acc_cp tair_cantods025_y${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
+        acc_cp u_cantods025_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp v_cantods025_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp humi_cantods025_y${yearc}.nc        ${nemo_q}_y${forcing_year}.nc
+        acc_cp qsr_cantods025_y${yearc}.nc        ${nemo_qsr}_y${forcing_year}.nc
+        acc_cp qlw_cantods025_y${yearc}.nc       ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp prec_cantods025_y${yearc}.nc        ${nemo_precip}_y${forcing_year}.nc
+        acc_cp snow_cantods025_y${yearc}.nc        ${nemo_snow}_y${forcing_year}.nc
+        acc_cp slp_cantods025_y${yearc}.nc        ${nemo_slp}_y${forcing_year}.nc
+        acc_cp apr_cantods025_y${yearc}.nc        ${nemo_apr}_y${forcing_year}.nc
+        # boundaries
+        acc_cp obc_north_cantods025_y${yearc}.nc     ${nemo_bn_north}_y${forcing_year}.nc
+        acc_cp obc_south_cantods025_y${yearc}.nc     ${nemo_bn_south}_y${forcing_year}.nc
+      done
+	 
+      #ICE IC
+      if [[ $chunk_start_date == $run_start_date ]] ; then
+        if [ ! -f restart_ice_in.nc ]; then
+          acc_cp restart_ice_in.nc ctds-creg-2017-5y_ice_restart.nc
+        fi
+      fi
 
-  # Define nn_ice which identifies the ice model used in NEMO
-  #     0 : no ice boundary condition (does this mean NO ice?)
-  #     1 : observed ice cover
-  #     2 : LIM2 ice-model
-  #     3 : LIM3 ice-model
-  nn_ice=${nemo_nn_ice:=2}
+      # tides
+      for tidebound in {north,south}; do
+        acc_cp tide_${tidebound}_cantods025_grid_T.nc ${nemo_tide_elev}.nc 
+        acc_cp tide_${tidebound}_cantods025_grid_U.nc ${nemo_tide_uvel}.nc
+        acc_cp tide_${tidebound}_cantods025_grid_V.nc ${nemo_tide_vvel}.nc
+      done
 
-  # Default input files
-  nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
-  nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
-  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo_mod.nc}
-  nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
-  nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
-  nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
-  nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
-#  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
-  nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
-  nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
+  elif [[ $config == "OMIP" ]]; then  # all the other OMIP runmode (e.g. omip1 ) 
+      # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+        ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+        [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+        acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+        acc_cp qsr_y${yearc}.nc              ${nemo_qsr}_y${forcing_year}.nc
+        acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+        acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+	    acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
+	    acc_cp apr_y${yearc}.nc              ${nemo_apr}_y${forcing_year}.nc
+      done
+  fi
+
+if [[ $config != "AMIP" ]]; then 
+  # in AMIP configuration, nemo is in SAS mode, no need for ocean input files
+  if [[ $nemo_ln_weight == "on" ]];then
+    is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
+        bail "The variables nemo_weights_bicubic2 and nemo_weights_bilinear2 must be defined in the configuration file"
+    acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
+    acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
+  fi
+  if [[ $nemo_ln_rnf == "on" ]]; then
+    is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
+    # first try with climatology, if file don't exist in the database, try the yearly vervion (with _yYYYY.nc).
+    if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
+      acc_cp runoff_1m_nomask.nc    $nemo_runoff_core_monthly na
+    else
+      acc_cp runoffs.nc    $nemo_runoff_core_monthly na
+    fi
+    if [[ -n "$nemo_runoff" ]]; then # empty nemo_runoff means yearly files are not used. 
+      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+        ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+        [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
+
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        acc_cp runoffs_y${yearc}.nc          ${nemo_runoff}_y${forcing_year}.nc
+      done
+    fi
+  fi
+  if [[ $nemo_ln_zdftmx == "on" ]]; then
+    is_defined $nemo_mask_itf && is_defined $nemo_M2rowdrg && is_defined $nemo_K1rowdrg ||
+        bail "The files for tidal mixing sheme must be defined in the configuration file."
+    acc_cp mask_itf.nc               $nemo_mask_itf
+    acc_cp M2rowdrg.nc               $nemo_M2rowdrg
+    acc_cp K1rowdrg.nc               $nemo_K1rowdrg
+  fi
+  if [[ $nemo_ln_leewmx == "on" ]]; then
+    is_defined $nemo_Eddyengf || bail "The file for lee wave mixing scheme must be defined in the configuration file."
+    acc_cp Eddyengf.nc               $nemo_Eddyengf
+  fi
+  if [[ $nemo_ln_zdfiwm == "on" ]]; then
+    is_defined $nemo_zdfiwm || bail "The file for tidal mixing parameterization must be defined in the configuration file."
+    acc_cp zdfiwm_forcing.nc         $nemo_zdfiwm 
+  fi 
+
+  if [[ $nemo_nn_aei_ijk_t == -20 ]]; then
+    is_defined $nemo_eddy_induced_velocity_2D || bail "The variable nemo_eddy_induced_velocity_2D must be defined in the configuration file."
+    acc_cp eddy_induced_velocity_2D.nc $nemo_eddy_induced_velocity_2D
+  fi
+ 
+  if [[ $nemo_nn_ahm_ijk_t == -30 ]]; then
+    is_defined $nemo_eddy_viscosity_3D || bail "The variable nemo_eddy_viscosity_3D must be defined in the configuration file."
+    acc_cp eddy_viscosity_3D.nc      $nemo_eddy_viscosity_3D 
+  fi
+
+  if [[ $nemo_nn_ahm_ijk_t == -20 ]]; then
+    is_defined $nemo_eddy_viscosity_2D || bail "The variable nemo_eddy_viscosity_2D must be defined in the configuration file."
+    acc_cp eddy_viscosity_2D.nc      $nemo_eddy_viscosity_2D 
+  fi
+
+  if [[ $nemo_ln_tradmp == "on" ]]; then
+    is_defined $nemo_resto || bail "The variable nemo_resto must be defined in the configuration file."
+    acc_cp resto.nc                  $nemo_resto 
+  fi 
+
+  if [[ $nemo_nn_sssr != 0 ]]; then
+    is_defined $nemo_sss_data || bail "The variable nemo_sss_data must be defined in the configuration file."
+    acc_cp sss_data.nc               $nemo_sss_data
+  fi 
+
+  if [[ $nemo_ln_trabbc == "on" ]]; then
+    is_defined $nemo_geothermal_heating || bail "The variable nemo_geothermal_heating must be defined in the configuration file."
+    acc_cp geothermal_heating.nc     $nemo_geothermal_heating
+  fi 
+ 
+  if [  $nemo_traqrs != "bio" ] && [ $nemo_nn_chldta == 1 ]; then
+    is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in the configuration file."
+    acc_cp chlorophyll.nc            $nemo_chlorophyll
+  fi 
+
+  if [[ $nemo_ln_use_calving == "on" ]] || [[ nemo_nn_test_icebergs -eq -1 ]]; then
+    is_defined $nemo_calving || bail "The variable nemo_calving must be defined in the configuration file."
+    acc_cp calving.nc                $nemo_calving 
+  fi 
+
+  if [[ $nemo_bfr_boost != 0 ]]; then
+    is_defined $nemo_bfr_coef || bail "The variable nemo_bfr_coef must be defined in the configuration file."
+    acc_cp bfr_coef.nc               $nemo_bfr_coef
+  fi 
+
+  if [[ $nemo_ln_diaptr == "on" ]]; then
+    is_defined $nemo_subbasins || bail "The variable nemo_subbasins must be defined in the configuration file."
+    acc_cp subbasins.nc              $nemo_subbasins  
+  fi 
+  
+  if [[ $nemo_nn_fwb == 2 ]];then
+    is_defined $nemo_empave_old || bail "The variable nemo_empave_old must be defined in the configuration file."
+    acc_cp EMPave_old.dat            $nemo_empave_old 
+  fi
+
+  # CanBGC IC and forcing files additional section defined in canesm.cfg.
+  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]] ; then
+
+      is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
+      acc_cp presatm.nc           $nemo_presatm
+      
+      is_defined $nemo_bathy_orca || bail "The variable nemo_bathy_orca must be defined in canesm.cfg"
+      acc_cp bathy.orca.nc        $nemo_bathy_orca
+
+      is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in canesm.cfg"
+      acc_cp chlorophyll.nc       $nemo_chlorophyll  na 
+
+      is_defined $nemo_dust_orca || bail "The variable nemo_dust_orca must be defined in canesm.cfg"
+      acc_cp dust.orca.nc         $nemo_dust_orca
+      
+      is_defined $nemo_river_orca || bail "The variable nemo_river_orca must be defined in canesm.cfg"
+      acc_cp river.orca.nc        $nemo_river_orca
+      
+      is_defined $nemo_par_orca || bail "The variable nemo_par_orca must be defined in canesm.cfg"      
+      acc_cp par.orca.nc          $nemo_par_orca
+      
+      is_defined $nemo_solubility_orca || bail "The variable nemo_solubility_orca must be defined in canesm.cfg"      
+      acc_cp solubility.orca.nc   $nemo_solubility_orca
+      
+      is_defined $nemo_hydrofe_orca || bail "The variable nemo_hydrofe_orca must be defined in canesm.cfg"      
+      acc_cp hydrofe.orca.nc      $nemo_hydrofe_orca
+
+      is_defined $nemo_ndeposition_orca || bail "The variable nemo_ndeposition_orca must be defined in canesm.cfg"      
+      acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+      
+      is_defined $nemo_data_dic_nomask || bail "The variable nemo_data_dic_nomask must be defined in canesm.cfg"      
+      acc_cp data_DIC_nomask.nc        $nemo_data_dic_nomask
+      
+      is_defined $nemo_data_alkalini_nomask || bail "The variable nemo_data_alkalini_nomask must be defined in canesm.cfg"      
+      acc_cp data_Alkalini_nomask.nc   $nemo_data_alkalini_nomask
+      
+      is_defined $nemo_data_o2_nomask || bail "The variable nemo_data_o2_nomask must be defined in canesm.cfg"      
+      acc_cp data_O2_nomask.nc         $nemo_data_o2_nomask
+      
+      is_defined $nemo_data_po4_nomask || bail "The variable nemo_data_po4_nomask must be defined in canesm.cfg"      
+      acc_cp data_PO4_nomask.nc        $nemo_data_po4_nomask
+      
+      is_defined $nemo_data_si_nomask || bail "The variable nemo_data_si_nomask must be defined in canesm.cfg"      
+      acc_cp data_Si_nomask.nc        $nemo_data_si_nomask
+      
+      is_defined $nemo_data_doc_nomask || bail "The variable nemo_data_doc_nomask must be defined in canesm.cfg"      
+      acc_cp data_DOC_nomask.nc        $nemo_data_doc_nomask
+      
+      is_defined $nemo_data_fer_nomask || bail "The variable nemo_data_fer_nomask must be defined in canesm.cfg"      
+      acc_cp data_Fer_nomask.nc        $nemo_data_fer_nomask
+      # trcsrc_canbgc.F90 use this file too.
+      is_defined $nemo_fermask_orca    || bail "The variable nemo_fermask_orca must be defined in canesm.cfg"      
+      acc_cp femask.nc                 $nemo_fermask_orca
+      
+      is_defined $nemo_data_no3_nomask || bail "The variable nemo_data_no3_nomask must be defined in canesm.cfg"      
+      acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
+  fi
+
+  # Access files required to run NEMO
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               file_def_nemo-ice.xml \
+               file_def_nemo-oce.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+  # add xios filoes if nemo_config is set to a CMOC, a CanOE or a PISCES config 
+  if [[ $CanNEMO_CONFIG == *"CANOE" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-canoe.xml  file_def_nemo-canoe.xml )
+  elif [[ $CanNEMO_CONFIG == *"CMOC" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-cmoc.xml    file_def_nemo-cmoc.xml )
+  elif [[ $CanNEMO_CONFIG == *"PISCES" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  fi
+
+else
+    echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
+    # GT and SICN specified in SAS
+    # get the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+    yearc=`expr ${current_year} - 1 | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+    yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc
+    yearc=`expr ${current_year} + 1 | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+
+    # If the file for yr-1 or yr+1 does not exist, NEMO will run but will not make time interpolation for 
+    # the first part or the last part of the current_year.
+        
+  # Access files required to run NEMO
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               file_def_nemo-sas.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+
+fi  # config != AMIP
+
+
+  for file in "${xios_files[@]}"; do
+    echo $file
+    find_nemo_config_EXP00 $file
+    # Update NEMO priority level of output variables in each file: output_level 
+    # Not all have the output_level, but this is a secure way to have the same
+    # output_level everywhere (should be in "context_nemo.mxl")
+    sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
+    if [[ $file == "iodef.xml" ]];then
+       [[  $nemo_use_xios_server -eq 1 ]] && sed -i '/using_server\b/c\           <variable id="using_server"              type="bool">true</variable>' $file
+       [[  $nemo_use_xios_server -eq 0 ]] && sed -i '/using_server\b/c\           <variable id="using_server"              type="bool">false</variable>' $file
+    fi
+  done
+
+  # disabled the ptr file if nemo_ln_diaptr="off"
+  if [[ $nemo_ln_diaptr == "off" ]]; then
+    sed -i '/diaptr/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-oce.xml
+  fi 
   # =====================
   # Set Inherited params
   # =====================
-  # Translate switches into 0/1 booleans
-  ToF nemo_from_rest
-  ToF nemo_carbon
-  ToF nemo_trans_co2
-  ToF nemo_trc
-  ToF nemo_cfc
 
-  # ==============================
-  # High level consistency checks
-  # ==============================
-  # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
-  #   _already_ started from rest
-  if [[ "$chunk_start_date" != "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
-    nemo_from_rest=0
-  fi
-
-  # confirm a valid ice settings
-  case $nn_ice in
-    0) ;; # no ice boundary condition
-    1) ;; # observed ice cover
-    2) ;; # LIM2 ice-model
-    3) ;; # LIM3 ice-model
-    *) bail "Invalid value for nn_ice = $nn_ice" ;;
-  esac
-
+  # location of the source code
+  nemo_repo=${nemo_repo:=$CCRNSRC/CanESM/CanNEMO}
   # Identify the location of the NEMO git repository and the commit within
   #   that repository that is associated with the current run
   if is_defined $nemo_ver; then
@@ -176,17 +410,16 @@ echo "#################### Start NEMO pre-processing #################"
   echo "nemo_prelude: run_start_date=$run_start_date"
   echo "nemo_prelude: run_stop_date=$run_stop_date"
 
-  nemo_cmoc=0
-  nemo_canoe=0
-  case $CanNEMO_CONFIG in
-    *_CANOE*) nemo_canoe=1 ;; # use CANOE carbon in NEMO
-     *_CMOC*) nemo_cmoc=1  ;; # use CMOC carbon in NEMO
-  esac
-
   # Touch xnemo_access_log so that it will exist even if it never gets apppended to
   rm -f xnemo_access_log
   touch xnemo_access_log
 
+  # confirm a valid ice settings
+  nn_ice=${nemo_nn_ice:=2}
+  case $nn_ice in
+    2) ;; # SI3 ice-model
+    *) bail "Invalid value for nn_ice = $nn_ice" ;;
+  esac
 
   # Ignore missing ice restart files when with_ice = off
   if (( nn_ice >= 2 )); then
@@ -195,7 +428,17 @@ echo "#################### Start NEMO pre-processing #################"
     with_ice=0
   fi
 
-  if (( nemo_from_rest == 1 )); then
+  # ==============================
+  # Initial condition vs restart
+  # ==============================
+  nemo_from_rest=${nemo_from_rest:=off}
+  # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
+  #   _already_ started from rest
+  if [[ $chunk_start_date != $run_start_date ]] && [[ "$nemo_from_rest" == "on" ]]; then
+    nemo_from_rest='off'
+  fi
+
+  if [[ "$nemo_from_rest" == "on" ]]; then
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#    Start from rest    #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -204,10 +447,20 @@ echo "#################### Start NEMO pre-processing #################"
     echo "###   Starting from rest.   ###"
     echo "###############################"
 
+    # bail if use asked to use a specific restart and start from rest
+    is_defined $nemo_restart && 
+        bail "nemo_prelude: nemo_restart=$nemo_restart and nemo_from_rest='on' are mutually exclusive"
+  
     # starting from rest, NOT a restart
     ln_rstart=.false.
-    nn_istate=1
-    [ $nemo_trc -eq 1 ] && ln_rsttr=.false.
+    [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
+
+    # access the istate files
+    if [[ $config != "AMIP" ]]; then # AMIP use the SAS modele how done not need intial state files
+      is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
+      acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
+      acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
+    fi
 
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -216,8 +469,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from restart
     ln_rstart=.true.
-    nn_istate=0
-    [ $nemo_trc -eq 1 ] && ln_rsttr=.true.
+    [ "$nemo_trc" = "on" ] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -263,19 +515,8 @@ echo "#################### Start NEMO pre-processing #################"
     cn_icerst_out="restart_ice"     # ice output
     cn_trcrst_in="restart_trc_in"   # pisces input
     cn_trcrst_out="restart_trc"     # pisces output
-
-    # Default values from the DECK+ test; Feel free to revise only the constants as needed 
-    fwb_year=1979; a_fwb_b=7.4302162498195736E-07; a_fwb=7.4302162498195736E-07
-    if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-      if [ -s "rs_EMPave.dat" ] ; then
-        cp rs_EMPave.dat EMPave_old.dat
-      else
-        fwb_year=$(printf "%32s" "$fwb_year")
-        a_fwb_b=$(printf "%24s" "$a_fwb_b")
-        a_fwb=$(printf "%24s" "$a_fwb")
-        echo "$fwb_year$a_fwb_b$a_fwb"  > EMPave_old.dat
-      fi
-    fi
+    cn_icbrst_in="restart_icb_in"   # icb input
+    cn_icbrst_out="restart_icb"     # icb output
 
     # Ocean restart files
     found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -284,7 +525,7 @@ echo "#################### Start NEMO pre-processing #################"
     rm -f input_ocn_restart_file_names
     touch input_ocn_restart_file_names
     for rsfile in $found_rs; do
-      [ $rsfile = 'cpl_restart.nc' ] && continue
+      [[ $rsfile =~ cpl_.*restart.nc ]] && continue
       sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
       [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
       mv $rsfile ${cn_ocerst_in}$sfx
@@ -301,7 +542,7 @@ echo "#################### Start NEMO pre-processing #################"
       with_ice=off
     else
       for rsfile in $found_rs; do
-        [ $rsfile = 'cpl_restart.nc' ] && continue
+        [[ $rsfile =~ cpl_.*restart.nc ]] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_icerst_in}$sfx
@@ -309,347 +550,67 @@ echo "#################### Start NEMO pre-processing #################"
       done
     fi
 
-    # (IF ON) Pisces restart files
-    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-      found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-      [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
-      [ -z "$found_rs" ] && bail "No Pisces restart files were found in $rs_file"
-      rm -f input_trc_restart_file_names
-      touch input_trc_restart_file_names
+    # trc restart files
+    rm -f input_trc_restart_file_names
+    touch input_trc_restart_file_names
+    found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
+    if [ -z "$found_rs" ]; then
+      [ "$nemo_trc" = "on" ] && bail "No trc restart files were found in $nemo_rs"
+    else
       for rsfile in $found_rs; do
-        [ $rsfile = 'cpl_restart.nc' ] && continue
+        [[ $rsfile =~ cpl_.*restart.nc ]] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_trcrst_in}$sfx
         echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
       done
     fi
+
+    # icb restart files
+    rm -f input_icb_restart_file_names
+    touch input_icb_restart_file_names
+    found_rs=`(ls -1 *_${cn_icbrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icbrst_out}.nc || : ) 2>/dev/null`
+    if [ -z "$found_rs" ]; then
+      [[ "$nemo_ln_icebergs" == "on" && $nemo_nn_test_icebergs -lt 0 ]] && bail "No icb restart files were found in $nemo_rs"
+    else
+      for rsfile in $found_rs; do
+        [ $rsfile = 'cpl_restart.nc' ] && continue
+        sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
+        mv $rsfile ${cn_icbrst_in}$sfx
+        echo "${cn_icbrst_in}$sfx" >> input_icb_restart_file_names
+      done
+    fi
   fi
 
-  # ===================
-  # Access input files
-  # ===================
-  # - many are only pulled in they don't already exist
-  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
-
-  # run namelists
-  for f in $nemo_namelists; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
-  done
-
   # make namelist mods foir the restart switch 
-    mod_nl namelist ln_rstart nn_istate
-    [ $nemo_trc -eq 1 ] && mod_nl namelist_top ln_rsttr
+    mod_nl namelist_cfg ln_rstart 
+    [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
+
+  # in case of CanTODS (which has open boundaries), turn off tide ramp
+  # on restart (it may not have been on, but this ensures it is off!)
+  if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]] && [[ "$ln_rstart" == ".true." ]]; then
+    rn_tide_ramp_dt=0
+    mod_nl namelist_cfg rn_tide_ramp_dt
+  fi
+
+
+  # force nn_istate=1 when  $output_level -ge 1  and $with_nemo_diag -eq 1 because 
+  # ocean_diag needs the init.nc of the current year (1st Jan).
+  # init.nc keep only if nemo_nn_istate
+  if [ $output_level -ge 1 ] && [ $with_nemo_diag -eq 1 ] && [ $chunk_start_month == $run_start_month ];then 
+    nn_istate=1
+    mod_nl namelist_cfg nn_istate
+  fi
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
-
-  # i/o definition file (bring it in and update output_level)
-  is_zero_size iodef.xml && find_nemo_config_EXP00 iodef.xml $nemo_iodef
-  sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" iodef.xml
-
-  is_zero_size xmlio_server.def && find_nemo_config_EXP00 xmlio_server.def $nemo_xmlio_server_def
-
-  if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-    nemo_weights_bilinear1=${nemo_weights_bilinear1:=uws_orca1_oisst_weights_bilin.nc}
-    nemo_weights_bicubic1=${nemo_weights_bicubic1:=uws_orca1_oisst_weights_bicubic.nc}
-    nemo_dist_coast=uws_orca1_dist_coast.nc
-    is_zero_size weights_bil1.nc && acc_cp weights_bil1.nc     $nemo_weights_bilinear1
-    is_zero_size weights_bic1.nc && acc_cp weights_bic1.nc     $nemo_weights_bicubic1
-    is_zero_size dist.coast.nc   && acc_cp dist.coast.nc       $nemo_dist_coast
-
-    nemo_sst=uws_oisst_daily
-  fi
-
-  if [[ "$runmode" == "NEMO-AGCM-dcpp-assim" ]] || [[ "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ]] ; then
-    nemo_data_1m_potential_temperature=uws_oras5_thetao
-    nemo_data_1m_salinity=uws_oras5_so
-    nemo_hicif_damping=uws_hicif_damping
-    nemo_frld_damping=uws_frld_damping
-
-    before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
-    after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
-
-    acc_cp sst_y${current_year}.nc                                  ${nemo_sst}_y${current_year}.nc
-
-    acc_cp hicif_damping_y${current_year}.nc                        ${nemo_hicif_damping}_1m_y${current_year}.nc
-    acc_cp frld_damping_y${current_year}.nc                         ${nemo_frld_damping}_1m_y${current_year}.nc
-    acc_cp data_1m_potential_temperature_y${current_year}.nc        ${nemo_data_1m_potential_temperature}_1m_y${current_year}.nc
-    acc_cp data_1m_salinity_y${current_year}.nc                     ${nemo_data_1m_salinity}_1m_y${current_year}.nc
-
-    acc_cp hicif_damping_y${before_current_year}.nc                 ${nemo_hicif_damping}_dec_y${before_current_year}.nc
-    acc_cp frld_damping_y${before_current_year}.nc                  ${nemo_frld_damping}_dec_y${before_current_year}.nc
-    acc_cp data_1m_potential_temperature_y${before_current_year}.nc ${nemo_data_1m_potential_temperature}_dec_y${before_current_year}.nc
-    acc_cp data_1m_salinity_y${before_current_year}.nc              ${nemo_data_1m_salinity}_dec_y${before_current_year}.nc
-
-    acc_cp hicif_damping_y${after_current_year}.nc                  ${nemo_hicif_damping}_jan_y${after_current_year}.nc
-    acc_cp frld_damping_y${after_current_year}.nc                   ${nemo_frld_damping}_jan_y${after_current_year}.nc
-    acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_current_year}.nc
-    acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_current_year}.nc
-
-  elif [[ "$runmode" == NEMO-AGCM-dcpp-assim*-spin* ]] ; then
-
-    nemo_data_1m_potential_temperature=uws_oras5_thetao_spin
-    nemo_data_1m_salinity=uws_oras5_so_spin
-    nemo_hicif_damping=uws_hicif_damping_spin
-    nemo_frld_damping=uws_frld_damping_spin
-
-    spin_year=${current_year}
-    while [ $spin_year -gt 1967 ] ; do
-      spin_year=`expr $spin_year - 10`
-    done
-
-    before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
-    after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
-    before_spin_year=`expr ${spin_year} - 1 | awk  '{printf "%04d",$1}'`
-    after_spin_year=`expr ${spin_year} + 1 | awk  '{printf "%04d",$1}'`
-
-    acc_cp sst_y${current_year}.nc                                  ${nemo_sst}_y${spin_year}.nc
-
-    acc_cp hicif_damping_y${current_year}.nc                        ${nemo_hicif_damping}_1m_y${spin_year}.nc
-    acc_cp frld_damping_y${current_year}.nc                         ${nemo_frld_damping}_1m_y${spin_year}.nc
-    acc_cp data_1m_potential_temperature_y${current_year}.nc        ${nemo_data_1m_potential_temperature}_1m_y${spin_year}.nc
-    acc_cp data_1m_salinity_y${current_year}.nc                     ${nemo_data_1m_salinity}_1m_y${spin_year}.nc
-
-    acc_cp hicif_damping_y${before_current_year}.nc                 ${nemo_hicif_damping}_dec_y${before_spin_year}.nc
-    acc_cp frld_damping_y${before_current_year}.nc                  ${nemo_frld_damping}_dec_y${before_spin_year}.nc
-    acc_cp data_1m_potential_temperature_y${before_current_year}.nc ${nemo_data_1m_potential_temperature}_dec_y${before_spin_year}.nc
-    acc_cp data_1m_salinity_y${before_current_year}.nc              ${nemo_data_1m_salinity}_dec_y${before_spin_year}.nc
-
-    acc_cp hicif_damping_y${after_current_year}.nc                  ${nemo_hicif_damping}_jan_y${after_spin_year}.nc
-    acc_cp frld_damping_y${after_current_year}.nc                   ${nemo_frld_damping}_jan_y${after_spin_year}.nc
-    acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_spin_year}.nc
-    acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_spin_year}.nc
-
-  fi
-
-  is_zero_size ahmcoef                && acc_cp ahmcoef                $nemo_ahmcoef
-  is_zero_size coordinates.nc         && acc_cp coordinates.nc         $nemo_coordinates
-  is_zero_size bathy_meter.nc         && acc_cp bathy_meter.nc         $nemo_bathy_meter
-  is_zero_size mask_itf.nc            && acc_cp mask_itf.nc            $nemo_mask_itf
-  is_zero_size M2rowdrg.nc            && acc_cp M2rowdrg.nc            $nemo_M2rowdrg
-  is_zero_size K1rowdrg.nc            && acc_cp K1rowdrg.nc            $nemo_K1rowdrg
-  is_zero_size Eddyengf.nc            && acc_cp Eddyengf.nc            $nemo_Eddyengf
-#  is_zero_size geothermal_heating.nc  && acc_cp geothermal_heating.nc  $nemo_geothermal_heating
-  is_zero_size chlorophyll.nc         && acc_cp chlorophyll.nc         $nemo_chlorophyll
-  is_zero_size subbasins.nc           && acc_cp subbasins.nc           $nemo_subbasins
-
-  if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-    nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
-    nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
-  else
-    nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=omip6_orca1_data_ptmp_nomask.nc}
-    nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=omip6_orca1_data_salt_nomask.nc}
-  fi
-
-  is_zero_size data_1m_potential_temperature_nomask.nc &&
-      acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
-  is_zero_size data_1m_salinity_nomask.nc &&
-      acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
-
-  # Modify all FAFMIP related quantities
-  if [[ $CanNEMO_CONFIG == *"_FAFMIP"* ]]; then
-
-    # Set specified or default names for fafmip forcing files
-    nemo_fafmip_qtot=${nemo_fafmip_qtot:=cmip6_fafmip_hfds_orca1.nc}
-    nemo_fafmip_tauu=${nemo_fafmip_tauu:=cmip6_fafmip_tauu_orca1.nc}
-    nemo_fafmip_tauv=${nemo_fafmip_tauv:=cmip6_fafmip_tauv_orca1.nc}
-    nemo_fafmip_wfo=${nemo_fafmip_wfo:=cmip6_fafmip_wfo_orca1.nc}
-    # Access all the forcing files
-    is_zero_size fafmip_qtot.nc && acc_cp fafmip_qtot.nc $nemo_fafmip_qtot
-    is_zero_size fafmip_tauu.nc && acc_cp fafmip_tauu.nc $nemo_fafmip_tauu
-    is_zero_size fafmip_tauv.nc && acc_cp fafmip_tauv.nc $nemo_fafmip_tauv
-    is_zero_size fafmip_wfo.nc  && acc_cp fafmip_wfo.nc $nemo_fafmip_wfo
-  fi
-  is_zero_size o2.nc && acc_cp o2.nc $nemo_o2
-
-  if [[ $config == "OMIP" ]]; then
-      if [[ "$runmode" == "OMIP1" || "$runmode" == "OMIP1-spinup" || "$runmode" == "OMIP1-spunup" ]]; then
-        # Forcing files to be accessed
-        # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added.
-        nemo_t=omip6_orca1_corev2_t_10
-        nemo_u=omip6_orca1_corev2_u_10
-        nemo_v=omip6_orca1_corev2_v_10
-        nemo_q=omip6_orca1_corev2_q_10
-        nemo_qsw=omip6_orca1_corev2_ncar_rad
-        nemo_qlw=omip6_orca1_corev2_ncar_rad
-        nemo_precip=omip6_orca1_corev2_ncar_precip
-        nemo_snow=omip6_orca1_corev2_ncar_precip
-        nemo_runoff=omip6_orca1_corev2_runoff
-        nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
-        nemo_sss_data=omip6_orca1_data_sss_nomask.nc
-        # WEIGHTS file for this resolution (leave empty when not used)
-        nemo_weights_bicubic2=
-        nemo_weights_bilinear2=
-
-        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
-        fy=`expr ${yearca} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
-        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
-        fyl=`expr ${fy} - '(' '(' ${yearca} - 1 ')' / ${yd} ')' \* ${yd}`
-        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
-
-        # link to the interranual forcing
-        acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
-        acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
-        acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
-        acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
-        acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
-        acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
-        acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
-        acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-        acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
-        acc_cp sst_data.nc            $nemo_sst_data
-        acc_cp sss_data.nc            $nemo_sss_data
-      elif [[ "$runmode" == "OCN-CanESM5-piControl" ]]; then
-        # Forcing files to be accessed
-        # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added.
-        nemo_t=urdy_tas_pi
-        nemo_u=urdy_uas_pi
-        nemo_v=urdy_vas_pi
-        nemo_q=urdy_huss_pi
-        nemo_qsw=urdy_rsds_pi
-        nemo_qlw=urdy_rlds_pi
-        nemo_precip=urdy_pr_pi
-        nemo_snow=urdy_prsn_pi
-        nemo_runoff=friver_1m_canesm5-orca1_pi_r1i1p2f1_gn
-        nemo_sss_data=sos_1m_canesm5-orca1_pi_r1i1p2f1_gn
-        # WEIGHTS file for this resolution
-        nemo_weights_bicubic2=weights_t63_bicubic_orca1.nc
-        nemo_weights_bilinear2=weights_t63_bilinear_orca1.nc
-
-        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
-        fy=`expr ${yearca} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
-        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
-        fyl=`expr ${fy} - '(' '(' ${yearca} - 1 ')' / ${yd} ')' \* ${yd}`
-        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
-
-        # link to the interranual forcing
-        acc_cp tas_pi_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
-        acc_cp uas_pi_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
-        acc_cp vas_pi_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
-        acc_cp huss_pi_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
-        acc_cp rsds_pi_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
-        acc_cp rlds_pi_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
-        acc_cp pr_pi_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
-        acc_cp prsn_pi_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-        acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
-        acc_cp sss_data_y${yearc}.nc            ${nemo_sss_data}_y${forcing_year}.nc
-      elif  [[ "$runmode" == "CORE-NY" ]]; then
-        nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
-        nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
-        nemo_v=uncs_corev2-ny_v_10.15JUNE2009.nc
-        nemo_q=uncs_corev2-ny_q_10.15JUNE2009.nc
-        nemo_qsw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
-        nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
-        nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
-        nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
-        nemo_runoff_core_monthly=uncs_corev2-ny_runoff.15june2009.nc
-        nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
-        nemo_sss_data=omip6_orca1_data_sss_nomask.nc
-        # WEIGHTS file for this resolution 
-        nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
-        nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
-
-        # link to the CORE forcing files 
-        acc_cp tair10m.nc          ${nemo_t}
-        acc_cp uwnd10m.nc          ${nemo_u}
-        acc_cp vwnd10m.nc          ${nemo_v}
-        acc_cp humi10m.nc          ${nemo_q}
-        acc_cp qsw.nc              ${nemo_qsw}
-        acc_cp qlw.nc              ${nemo_qlw}
-        acc_cp precip.nc           ${nemo_precip}
-        acc_cp snow.nc             ${nemo_snow}
-        acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-        acc_cp sst_data.nc            $nemo_sst_data
-        acc_cp sss_data.nc            $nemo_sss_data
-
-      fi
-      is_defined $nemo_weights_bicubic2 && acc_cp weights_bic2.nc $nemo_weights_bicubic2
-      is_defined $nemo_weights_bilinear2 && acc_cp weights_bil2.nc $nemo_weights_bilinear2
-
-  else
-        nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
-        acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-  fi
-
-  if (( nemo_carbon == 1 )); then
-    # Access PISCES files
-    # note: defaults should be moved somewhere else
-    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
-    nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
-    nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
-    nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
-    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
-
-    is_zero_size presatm.nc          && acc_cp presatm.nc           $nemo_presatm
-    is_zero_size dust.orca.nc        && acc_cp dust.orca.nc         $nemo_dust_orca
-    is_zero_size river.orca.nc       && acc_cp river.orca.nc        $nemo_river_orca
-    is_zero_size ndeposition.orca.nc && acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
-    is_zero_size bathy.orca.nc       && acc_cp bathy.orca.nc        $nemo_bathy_orca
-
-    if (( nemo_cmoc == 1 )); then
-      nemo_fermask_orca=${nemo_fermask_orca:=nemo_3.4_orca1_femask.orca.nc}
-      is_zero_size fermask.orca.nc && acc_cp fermask.orca.nc $nemo_fermask_orca
-    fi
-
-    if [[ "$runmode" == "OMIP1" || "$runmode" == "OMIP1-spinup" || "$runmode" == "OMIP1-spunup" ]]; then
-        nemo_data_si_nomask=${nemo_data_si_nomask:=omip6_orca1_data_si_nomask.nc}
-    else
-        nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
-    fi
-
-    nemo_data_dic_nomask=omip6_orca1_data_ct_preind_nomask.nc
-    nemo_data_alkalini_nomask=omip6_orca1_data_at_nomask.nc
-    nemo_data_o2_nomask=omip6_orca1_data_o2_nomask.nc
-    nemo_data_po4_nomask=omip6_orca1_data_po4_nomask.nc
-    nemo_data_no3_nomask=omip6_orca1_data_no3_nomask.nc
-    nemo_data_doc_nomask=urjc_orca1_data_doc_nomask.nc
-    nemo_data_fer_nomask=urjc_orca1_data_fer_nomask.nc
-    nemo_data_atcco2=omip6_co2atm_annual.nc
-    nemo_data_atc14c=omip6_Delta14co2.nc
-
-    # Abiotic BGC
-    nemo_data_at_abio_nomask=omip6_orca1_data_at_abio_nomask.nc
-    nemo_data_c14t_abio_nomask=omip6_orca1_data_c14t_abio_nomask.nc
-    nemo_data_ct_abio_nomask=omip6_orca1_data_ct_abio_nomask.nc
-    nemo_data_o2_abio_nomask=omip6_orca1_data_o2abio_nomask.nc
-
-    #cfc atmospheric history
-    nemo_cfc_atmhist=ras003_nemo_cfc_atmhist.nc
-
-    #c14 atmospheric history
-    nemo_data_atc14c=omip6_delta14co2.nc
-
-    is_zero_size data_dic_nomask.nc      && acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
-    is_zero_size data_alkalini_nomask.nc && acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
-    is_zero_size data_o2_nomask.nc       && acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
-    is_zero_size data_po4_nomask.nc      && acc_cp data_po4_nomask.nc        $nemo_data_po4_nomask
-    is_zero_size data_si_nomask.nc       && acc_cp data_si_nomask.nc         $nemo_data_si_nomask
-    is_zero_size data_doc_nomask.nc      && acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
-    is_zero_size data_fer_nomask.nc      && acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
-    is_zero_size data_no3_nomask.nc      && acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
-
-    # Abiotic biogeochemistry
-    is_zero_size data_at_abio_nomask.nc   &&  acc_cp data_at_abio_nomask.nc    $nemo_data_at_abio_nomask
-    is_zero_size data_c14t_abio_nomask.nc &&  acc_cp data_c14t_abio_nomask.nc  $nemo_data_c14t_abio_nomask
-    is_zero_size data_ct_abio_nomask.nc   &&  acc_cp data_ct_abio_nomask.nc    $nemo_data_ct_abio_nomask
-    is_zero_size data_o2abio_nomask.nc    &&  acc_cp data_o2abio_nomask.nc     $nemo_data_o2_abio_nomask
-
-    if [[ "$nemo_ln_c14int" == ".true." ]]; then
-      is_zero_size omip6_Delta14co2.nc &&  acc_cp omip6_Delta14co2.nc       $nemo_data_atc14c
-    fi
-
-    if (( nemo_cfc == 1 )); then
-      is_zero_size nemo_cfc_atmhist.nc      &&  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist
-    fi
-
-    # Modify the pisces namelist to read CO2 from file, if specified in makefile
-    if [[ "$nemo_ln_co2int" == ".true." ]]; then
-      is_zero_size co2atm.nc &&  acc_cp omip6_co2atm.nc       $nemo_data_atcco2
-    fi
-  fi
-  rm -f mesh_mask*.nc
+  # xios executable
+  if [[ $nemo_use_xios_server -eq 1 ]]; then  
+    is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
+    ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
+  fi                                 
 
 echo "#################### Stop NEMO pre-processing #################"

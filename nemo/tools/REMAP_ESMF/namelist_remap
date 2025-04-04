@@ -1,0 +1,52 @@
+&comments
+    methods             : choice for the interpolation methods (conservative,conservative_2nd,bilinear,patch,nearest_stop,nearest_dtos)
+    norm_type           : Normalisation methods for the conservative mathodes  (fracarea,dstarea)
+    push_runoff_to_sea  : Option to push any non-zeros values find on land to the nearest ocean point where iti s added to the local value. 
+                          Built to keep the runoff conservation globally when the scr and dst land mask don't match. dstgrd_mask must be .false.
+                          to allow the rempaaing to occurs on land (if not, the values are lost if not link between src and dst are find).
+/
+&nl_remap
+    methods = 'conservative'
+    norm_type = 'fracarea'
+    push_runoff_to_sea = .false.
+/
+&comments
+    srcgrd_file         : file that contains the grid information on the source side
+    srcgrd_name         : Name of the source grid (for meta-data)
+    srcgrd_type         : Type of source grid (yg,nemo). Only nemo was properlly tested 
+    srcgrd_mask         : Using the source land mask or not (in both case, the mask is added to the ESMF_GRD but all the cell are set to ont if srcgrd_mask is .false.)
+/
+&nl_src_grid
+    srcgrd_file = 'src_mesh_grd.nc'
+    srcgrd_name = 'src'
+    srcgrd_type = 'nemo'
+    srcgrd_mask = .true.
+/
+&comments
+    dstgrd_file         : file that contains the grid information on the destination side
+    dstgrd_name         : Name of the destination grid (for meta-data)
+    dstgrd_type         : Type of destination grid (yg,nemo). Only nemo was properlly tested 
+    dstgrd_mask         : Using the destination land mask or not (in both case, the mask is added to the ESMF_GRD but all the cell are set to ont if dstgrd_mask is .false.)
+/
+&nl_dst_grid
+    dstgrd_file = 'dst_mesh_grd.nc'
+    dstgrd_name = 'dst'
+    dstgrd_type = 'nemo'
+    dstgrd_mask = .true.
+/
+&comments
+    srcdata_file        : File of the source data 
+    srcdata_field       : Name of the source variable to do the remapping
+/
+&nl_src_fields
+    srcdata_file = 'friver_src.nc'
+    srcdata_field = 'friver'
+/
+&comments
+    dstdata_file        : File of the destination data (this file will be created)
+    dstdata_field       : Name of the destination variable to do the remapping
+/
+&nl_dst_fields
+    dstdata_file = 'friver_dst.nc'
+    dstdata_field = 'friver'
+/

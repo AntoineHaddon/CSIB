@@ -1,17 +1,19 @@
-*.[oa]
-*.mod
 *~
 .#*
 \#*#
 tmp/
 *.swp*
+*.sw?
 *.bak
 deploy.git/
+core.git.*
+#.gitignore
+nemo/mk/tools.txt
+nemo/mk/cpp_tools.fcm
 
 # ignore everything in the build directories except Makefiles and environment files
 diag/build/*
 rtd/build/*
-nemo/TOOLS/REBUILD_NEMO/src/build/*
 !diag/build/Makefile
 !diag/build/compile.*
 !rtd/build/Makefile

@@ -5,6 +5,14 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
+! D. Yang  Jun 26 2023      Revise to use vol, tvol & svol from model
+! D. Yang  Mar 17 2023      Furthe adjust computations for vol, tvol & svol 
+!                           (exclude ssh portion)
+! D. Yang  Jul 2022         Use varying vertical scale factors (e3?) to replace
+!                           the reference ones (e3?_0).
+!
+! D. Yang  Jun 2021         Adapt to NEMO4.0.3.
+!
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
@@ -40,7 +48,7 @@ PROGRAM nemo_ocean_diag
 ! May 22/13 - O. Saenko   Original code.
 ! 
 !
-! PURPOSE - Run-time diagnostics for NEMO (ORCA1)
+! PURPOSE - Run-time diagnostics for NEMO
 !
 ! USAGE
 ! -----
@@ -58,6 +66,7 @@ PROGRAM nemo_ocean_diag
 !    - grid_u : monthly frequency (_1m_)
 !    - grid_v : monthly frequency (_1m_)
 !    - grid_w : monthly frequency (_1m_)
+!    - scalar : monthly frequency (_1m_)
 !
 ! OUTPUT FILES
 ! ------------
@@ -71,15 +80,18 @@ PROGRAM nemo_ocean_diag
 ! 2. xlf90_r -o nemo_physical_rtd.exe ccc_nemo_rtd_utils.F90 ccc_nemo_physical_rtd.F90 uvic_netcdf.f `nf-config --fflags --flibs`
 ! ======================================================================
       USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, moc, noleap_days
+      USE netcdf
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
-      INTEGER :: iou0, iou1, iou2, iou3, iou4, iou5, iou11
+      INTEGER :: iou1, iou2, iou3, iou4, iou5, iou6, iou7, iou11
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
+      INTEGER :: varid, status, nf_inq_varid, nf_get_att
       REAL    :: recn, cp, tz, sz, w_meanx, w_meany, area1, area2
       REAL    :: area, arc, arcn, arcs
+      REAL(kind=4) :: fill_value
 ! ======================================================================
 !     Input data 
 ! ======================================================================
@@ -95,9 +107,9 @@ PROGRAM nemo_ocean_diag
 !     and mixed layer depth (MLD) 
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflux, wflux, tau_x, tau_y
       REAL, DIMENSION(:, :), ALLOCATABLE  :: mld10, ssh
-      REAL, DIMENSION(:, :), ALLOCATABLE  :: snow_ai_cea, snow_ao_cea
-      REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_rain_cea, hflx_snow_cea, hflx_ice_cea, hflx_rnf_cea
-      REAL, DIMENSION(:, :), ALLOCATABLE  :: isnwmlt_cea, snowmel_cea
+      REAL, DIMENSION(:, :), ALLOCATABLE  :: snow_ai_cea, snow_ao_cea,sitimefrac
+      REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_rain_cea, hflx_snow_ao_cea, hflx_ice_cea, hflx_rnf_cea, hflx_evap_cea
+      REAL, DIMENSION(:, :), ALLOCATABLE  :: isnwmlt_cea, snowmel_cea, hflx_snow_ai_cea
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_qsr_tot, hflx_qns_tot, hflx_qsr_ice, hflx_qns_ice
 ! ======================================================================
 !     Pre-computed data  
@@ -120,15 +132,16 @@ PROGRAM nemo_ocean_diag
 ! ======================================================================
       REAL, DIMENSION(:, :), ALLOCATABLE :: arr2d1, arr2d2, tarea, zarea_ssh
       REAL                      :: dum, dvol, volssh, volt
-      REAL                      :: area_tot, vol0, zztmp, vol
+      REAL                      :: area_tot, zztmp
 ! ======================================================================
 !     Output data 
 ! ======================================================================
-! (1) Global-mean profiles of T(z) and S(z) (C, g/kg)
+! (1) Global volume (m3)
+      REAL, DIMENSION(:), ALLOCATABLE :: vol     ! global total volume (nonlinear free surface)
       REAL, DIMENSION(:,:), ALLOCATABLE :: theta_z, salt_z
 !     Global-mean T and S  (C, g/kg)) 
-      REAL, DIMENSION(:), ALLOCATABLE     :: tvol, svol 
-! (2) Global surface fields 
+      REAL, DIMENSION(:), ALLOCATABLE :: tvol, svol 
+! (3) Global surface fields 
       REAL, DIMENSION(:), ALLOCATABLE :: hglo    ! heat flux (W/m2) 
       REAL, DIMENSION(:), ALLOCATABLE :: wglo    ! water flux (1.e+7 kg/m2/s) 
       REAL, DIMENSION(:), ALLOCATABLE :: sshglo  ! sea level (cm) 
@@ -136,43 +149,45 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow  ! Heat flux snow over open ocean (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow2  ! Heat flux snow over open ocean - computed (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow_ice  ! Heat flux snow over ice (w/m2)
+      REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow_ice2  ! Heat flux snow over ice (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_rain  ! Heat flux rain (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_rnf  ! Heat flux runoff (w/m2)
+      REAL, DIMENSION(:), ALLOCATABLE :: hflx_evap  ! Heat flux evaporation (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: snow_ai, snow_ao  ! Snow over sea-ice and open ocean
       REAL, DIMENSION(:), ALLOCATABLE :: isnwmlt, snowmel  ! Snow melt
       REAL, DIMENSION(:), ALLOCATABLE  :: hflx_qsr_tot_ave, hflx_qns_tot_ave ! coupler fluxes
       REAL, DIMENSION(:), ALLOCATABLE  :: hflx_qsr_ice_ave, hflx_qns_ice_ave ! coupler fluxes
 
-! (3) Energetics
+! (4) Energetics
       REAL, DIMENSION(:), ALLOCATABLE :: wind_work_glb ! net wind energy input to the ocean (TW)
       REAL, DIMENSION(:), ALLOCATABLE :: wind_work_so  ! wind energy input south of 40S     (TW)
-! (4) Tropical Pacific dynamics/therodynamics 
+! (5) Tropical Pacific dynamics/therodynamics 
       REAL, DIMENSION(:), ALLOCATABLE :: trp_up  ! Upwelling across 60m (Sv), 150E - 75W,  2S - 2N
       REAL, DIMENSION(:), ALLOCATABLE :: t_nino3 ! Nino3   SST,  150W - 90W,  5S - 5N 
       REAL, DIMENSION(:), ALLOCATABLE :: t_nino34! Nino3.4 SST,  170W - 120W, 5S - 5N 
       REAL, DIMENSION(:), ALLOCATABLE :: t_nino4 ! Nino4   SST,  160E - 150W, 5S - 5N 
       REAL, DIMENSION(:), ALLOCATABLE :: euc_max ! Max speed of EUC    (m/s)
-! (5) Transports through key passages 
+! (6) Transports through key passages 
       REAL, DIMENSION(:), ALLOCATABLE :: dp_tran  ! Drake Passage (Sv)
       REAL, DIMENSION(:), ALLOCATABLE :: pi_tran  ! Indonesian Passage (Sv)
       REAL, DIMENSION(:), ALLOCATABLE :: be_tran  ! Net transport across 20N in Atlantic
       REAL, DIMENSION(:), ALLOCATABLE :: be_tran2 ! Net transport across 20N in Pacific
                     ! (can be used as proxies to Bering Strait tran.)                  
-! (6) Mixed layer depth ( for values > 200m) 
+! (7) Mixed layer depth ( for values > 200m) 
       REAL, DIMENSION(:), ALLOCATABLE :: win_mld      ! mean February MLD (m)     
       REAL, DIMENSION(:), ALLOCATABLE :: sum_mld      ! mean August MLD (m)
       REAL, DIMENSION(:), ALLOCATABLE :: win_mld_max  ! max. February MLD (m)  
       REAL, DIMENSION(:), ALLOCATABLE :: sum_mld_max  ! max. August MLD (m)      
       REAL, DIMENSION(:), ALLOCATABLE :: win_area     ! area of February MLD (1.e+14 m2)
       REAL, DIMENSION(:), ALLOCATABLE :: sum_area     ! area of February MLD (1.e+14 m2)
-! (7) Meridional overturning circulation (MOC)   
+! (8) Meridional overturning circulation (MOC)   
 !     Maximum upper ocean MOC at 20N and 20S (Sv)
       REAL, DIMENSION(:), ALLOCATABLE :: over_max_20N, over_max_20S
 !     Minimum lower ocean MOC at 20N and 20S (Sv) 
       REAL, DIMENSION(:), ALLOCATABLE :: over_min_20N, over_min_20S
 !     Upper Southern Ocean MOC, net and eddy-induced (Sv, south of 40S) 
       REAL, DIMENSION(:), ALLOCATABLE :: over_max_SO_net, over_min_SO_eddy  
-! (8) Heat transport  (PW)   
+! (9) Heat transport  (PW)   
 !     across 20N, global ocean and Atlantic 
       REAL, DIMENSION(:), ALLOCATABLE :: h_tran_20N, h_tran_20NA
 !     across 20S, global ocean and Atlantic
@@ -184,7 +199,7 @@ PROGRAM nemo_ocean_diag
       LOGICAL :: exists, exists1, notopen
       REAL    :: tyear, tdays_elapsed
       CHARACTER :: fname01*100,fname02*100, fname03*100
-      CHARACTER :: fname04*100, fname05*100
+      CHARACTER :: fname04*100, fname05*100, fname06*100, fname07*100
       CHARACTER(len=32) :: year_arg_in, mon_arg_in
       integer, dimension(8) :: ierr
 ! Constants
@@ -212,10 +227,11 @@ PROGRAM nemo_ocean_diag
          &      gmv(imt,jmt,km), gmw(imt,jmt,km), STAT=ierr(4) )
       ALLOCATE( hflux(imt,jmt), wflux(imt,jmt), tau_x(imt,jmt),        &
          &      tau_y(imt,jmt), mld10(imt,jmt), ssh(imt,jmt),          &
-         &      mld10_win(imt,jmt), mld10_sum(imt,jmt),                   &
+         &      mld10_win(imt,jmt), mld10_sum(imt,jmt),                &
          &      wind_x(imt,jmt), wind_y(imt,jmt), STAT=ierr(5) )
       ALLOCATE(snow_ai_cea(imt,jmt), snow_ao_cea(imt,jmt), hflx_rain_cea(imt,jmt), &
-         &     hflx_snow_cea(imt,jmt), hflx_ice_cea(imt,jmt),                      &
+         &     hflx_snow_ao_cea(imt,jmt), hflx_ice_cea(imt,jmt),sitimefrac(imt,jmt), &
+         &     hflx_snow_ai_cea(imt,jmt), hflx_evap_cea(imt,jmt),              &
          &     hflx_rnf_cea(imt,jmt), isnwmlt_cea(imt,jmt), snowmel_cea(imt,jmt),  & 
          &     hflx_qsr_tot(imt,jmt), hflx_qns_tot(imt,jmt), hflx_qsr_ice(imt,jmt), hflx_qns_ice(imt,jmt), &
          &     STAT=ierr(5) )
@@ -230,11 +246,12 @@ PROGRAM nemo_ocean_diag
          &      over_min_20N(lm), over_min_20S(lm), over_max_SO_net(lm),          &
          &      over_min_SO_eddy(lm), h_tran_20N(lm), h_tran_20NA(lm),            &
          &      h_tran_20S(lm), h_tran_20SA(lm), hflx_ice(lm), hflx_snow(lm),     &
-         &      hflx_snow_ice(lm), hflx_rain(lm), hflx_rnf(lm), snow_ao(lm),      & 
-         &      snow_ai(lm), hflx_snow2(lm), isnwmlt(lm), snowmel(lm),            &
+         &      hflx_snow_ice(lm),hflx_snow_ice2(lm), hflx_rain(lm), hflx_rnf(lm),hflx_evap(lm),      & 
+         &      snow_ao(lm),snow_ai(lm), hflx_snow2(lm), isnwmlt(lm), snowmel(lm), &
          &      hflx_qsr_tot_ave(lm), hflx_qns_tot_ave(lm),                       &
          &      hflx_qsr_ice_ave(lm), hflx_qns_ice_ave(lm),                       &
-         &STAT=ierr(8))
+         &      vol(lm),                                                          &
+         &      STAT=ierr(8))
 
          IF (MAXVAL(ierr) /=0) THEN
            STOP 'Memory allocation error in Physical RTD'
@@ -242,11 +259,11 @@ PROGRAM nemo_ocean_diag
 
          year =0
          ntrec=0
-         iou0 =0
          iou1 =0
          iou2 =0
          iou3 =0
          iou4 =0
+         iou5 =0
          recn =12.
          nrecon = int(recn + 0.001)
          Cp   = 4.2e+6  ! J/m3/K
@@ -254,7 +271,7 @@ PROGRAM nemo_ocean_diag
 ! ======================================================================
 !  Determine resolution and set parameters
 ! ======================================================================
-!     ORCA2
+!     ORCA2 (182 X 149)
       if ( imt == 182 ) then
         print *, "Using ORCA2 configuration"
         j_20N   =  92; j_20S   = 56; j_eq    = 74
@@ -265,31 +282,64 @@ PROGRAM nemo_ocean_diag
         i_AN_E  =  92; i_AN_W  = 135
         i_AS_E  = 121; i_AS_W  = 149
         i_PN_E  =  16; i_PN_W  = 91
-!     ORCA1
-      else if ( imt == 362 ) then
-        print *, "Using ORCA1 configuration"
-        j_20N   = 182; j_20S   = 112; j_eq    = 147
-        k60     =   8; k500    =  20; k2000   =  29
-        i_DP    = 221; j_DP_S  =  41; j_DP_N  =  66
+!     ORCA1 (with ln_use_jattr = .true., 362 X 292)
+      else if ( imt == 362.and.jmt == 292 ) then
+        print *, "Using ORCA1 configuration (cut)"
+        j_20N   = 222-40; j_20S   = 152-40; j_eq    = 187-40
+        k60     =  20; k500    =  39; k2000   =  54
+        i_DP    = 221; j_DP_S  =  81-40; j_DP_N  = 106-40
         i_IN_E1 =   1; i_IN_W1 =  49
         i_IN_E2 = 322; i_IN_W2 = imt-2
         i_AN_E  = 191; i_AN_W  = 274
         i_AS_E  = 247; i_AS_W  = 302
         i_PN_E  =  34; i_PN_W  = 185
-!     ORCA0.25
+!     eORCA1 (standard, 362 X 332)
+      else if ( imt == 362.and.jmt == 332 ) then
+        print *, "Using eORCA1 configuration"
+        j_20N   = 222; j_20S   = 152; j_eq    = 187
+        k60     =  20; k500    =  39; k2000   =  54
+        i_DP    = 221; j_DP_S  =  81; j_DP_N  = 106
+        i_IN_E1 =   1; i_IN_W1 =  49
+        i_IN_E2 = 322; i_IN_W2 = imt-2
+        i_AN_E  = 191; i_AN_W  = 274
+        i_AS_E  = 247; i_AS_W  = 302
+        i_PN_E  =  34; i_PN_W  = 185
+!     eORCA1 (standard, 360 X 331)
+      else if ( imt == 360.and.jmt == 331 ) then
+        print *, "Using eORCA1 configuration (NEMO4.2)"
+        j_20N   = 222; j_20S   = 152; j_eq    = 187
+        k60     =  20; k500    =  39; k2000   =  54
+        i_DP    = 220; j_DP_S  =  81; j_DP_N  = 106
+        i_IN_E1 =   1; i_IN_W1 =  48
+        i_IN_E2 = 321; i_IN_W2 = imt-1
+        i_AN_E  = 190; i_AN_W  = 273
+        i_AS_E  = 246; i_AS_W  = 301
+        i_PN_E  =  33; i_PN_W  = 184
+!     eORCA025 (1442 X 1207)
       else if ( imt == 1442 ) then
-        print *, "Using ORCA0.25 configuration"
-        j_20N   =  581; j_20S  =  419; j_eq    = 499
-        k60     =    8; k500    =  20; k2000   =  29
-        i_DP    =  880; j_DP_S  = 132; j_DP_N  = 238
+        print *, "Using eORCA025 configuration"
+        j_20N   =  767; j_20S  =  603; j_eq    = 685
+        k60     =   20; k500    =  39; k2000   =  54
+        i_DP    =  880; j_DP_S  = 318; j_DP_N  = 424
         i_IN_E1 =    1; i_IN_W1 = 194
         i_IN_E2 = 1284; i_IN_W2 = imt-2
         i_AN_E  =  798; i_AN_W  = 1090
         i_AS_E  =  985; i_AS_W  = 1205
         i_PN_E  =  127; i_PN_W  =  735
+!     eORCA025 (1440 X 1206)
+      else if ( imt == 1440 ) then
+        print *, "Using eORCA025 configuration"
+        j_20N   =  767; j_20S  =  603; j_eq    = 685
+        k60     =   20; k500    =  39; k2000   =  54
+        i_DP    =  879; j_DP_S  = 318; j_DP_N  = 424
+        i_IN_E1 =    1; i_IN_W1 = 193
+        i_IN_E2 = 1283; i_IN_W2 = imt-1
+        i_AN_E  =  797; i_AN_W  = 1089
+        i_AS_E  =  984; i_AS_W  = 1204
+        i_PN_E  =  126; i_PN_W  =  734
       else
-        print *, "Dont recognize the configuration."
-        print *, "Only ORCA2, ORCA1 and ORCA0.25 compatible"
+        print *, "Dont recognize the configuration.",imt,"x",jmt 
+        print *, "Only ORCA2, ORCA1 and eORCA025 compatible"
         stop
       endif
 
@@ -302,37 +352,38 @@ PROGRAM nemo_ocean_diag
         fname03='grid_v'
         fname04='grid_w'
         fname05='orca_mesh_mask'
+        fname06='icemod'
+        fname07='scalar'
 
 !---------------------------------------------------
 !    Open the defined NetCDF files   
 !---------------------------------------------------
 ! open files with ocean physical variables
-      call openfile (fname01,iou0)
-      call openfile (fname02,iou1)
-      call openfile (fname03,iou2)
-      call openfile (fname04,iou3)
+      call openfile (fname01,iou1)
+      call openfile (fname02,iou2)
+      call openfile (fname03,iou3)
+      call openfile (fname04,iou4)
+      call openfile (fname06,iou6)
+      call openfile (fname07,iou7)
 ! open file with mask/grid info
-      call openfile (fname05,iou4)
+      call openfile (fname05,iou5)
 
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
-      call getvara ('nav_lon', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
-      call getvara ('nav_lat', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
-      call getvara ('deptht', iou0, km, (/1/), (/km/), deptht, 1., 0.)
-      call getvara ('depthw', iou3, km, (/1/), (/km/), depthw, 1., 0.)
-      call getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
-      call getvara ('e2t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
-      call getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
-      call getvara ('e1v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
-      call getvara ('e2v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
-      call getvara ('e3v', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
-      call getvara ('e1u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
-      call getvara ('e2u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
-      call getvara ('e3u', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
-      call getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
-      call getvara ('umask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
-      call getvara ('vmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
+      call getvara ('nav_lon', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
+      call getvara ('nav_lat', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
+      call getvara ('deptht', iou1, km, (/1/), (/km/), deptht, 1., 0.)
+      call getvara ('depthw', iou4, km, (/1/), (/km/), depthw, 1., 0.)
+      call getvara ('e1t', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
+      call getvara ('e2t', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
+      call getvara ('e1v', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
+      call getvara ('e2v', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
+      call getvara ('e1u', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
+      call getvara ('e2u', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
+      call getvara ('tmask', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
+      call getvara ('umask', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
+      call getvara ('vmask', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
 
 !---------------------------------------------------
 !    Construct masks for some sub-regions   
@@ -341,9 +392,9 @@ PROGRAM nemo_ocean_diag
           do j = 1, jmt
 ! Mask for tropical Pacific upwelling
               trop_up_mask(i,j) = 0. 
-              if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then 
-                  if (lat2d(10,j).gt.-2..and.lat2d(10,j).lt.2.) then 
-                      if (t_mask(i,j,8).eq.1.) then ! ~ 60m
+              if (lon2d(i,j).ge.150..or.lon2d(i,j).le.-75.) then 
+                  if (lat2d(i,j).gt.-2..and.lat2d(i,j).lt.2.) then 
+                      if (t_mask(i,j,k60).eq.1.) then ! ~ 60m
                           trop_up_mask(i,j) = 1. 
                       endif
                   endif           
@@ -354,17 +405,17 @@ PROGRAM nemo_ocean_diag
              nino34_mask(i,j)= 0. 
              nino4_mask(i,j) = 0.
              if (t_mask(i,j,1).eq.1.) then ! sst 
-               if (lat2d(10,j).ge.-5..and.lat2d(10,j).le.5.) then 
+               if (lat2d(i,j).ge.-5..and.lat2d(i,j).le.5.) then 
 ! Nino3
-                 if (lon2d(i,10).ge.-150..and.lon2d(i,10).le.-90.) then
+                 if (lon2d(i,j).ge.-150..and.lon2d(i,j).le.-90.) then
                    nino3_mask(i,j) =  1. 
                  endif
 ! Nino3.4
-                 if (lon2d(i,10).ge.-170..and.lon2d(i,10).le.-120.) then
+                 if (lon2d(i,j).ge.-170..and.lon2d(i,j).le.-120.) then
                    nino34_mask(i,j) = 1. 
                  endif
 ! Nino4
-                 if (lon2d(i,10).ge.160..or.lon2d(i,10).le.-150.) then 
+                 if (lon2d(i,j).ge.160..or.lon2d(i,j).le.-150.) then 
                    nino4_mask(i,j) = 1. 
                  endif
                endif           
@@ -374,8 +425,6 @@ PROGRAM nemo_ocean_diag
       enddo
 
 ! ********** Init / probably uneeded  ************
-      tvol(:)          = 0.0_dp
-      svol(:)          = 0.0_dp
       theta_z(:,:)     = 0.0_dp
       salt_z(:,:)      = 0.0_dp
       euc_max(:)       = 0.0_dp 
@@ -389,82 +438,100 @@ PROGRAM nemo_ocean_diag
       sum_mld_max(:)   = 0.0_dp
       win_area(:)      = 0.0_dp
       sum_area(:)      = 0.0_dp
-      over_max_20N(:)  = 0.0_dp 
-      over_max_20S(:)  = 0.0_dp
-      over_min_20N     = 0.0_dp 
-      over_min_20S     = 0.0_dp
-      over_max_SO_net  = 0.0_dp 
-      over_min_SO_eddy = 0.0_dp
-      h_tran_20N       = 0.0_dp
-      h_tran_20S       = 0.0_dp
-      h_tran_20NA      = 0.0_dp
-      h_tran_20SA      = 0.0_dp
-      wind_work_so     = 0.0_dp
+      over_max_20N(:)     = 0.0_dp 
+      over_max_20S(:)     = 0.0_dp
+      over_min_20N(:)     = 0.0_dp 
+      over_min_20S(:)     = 0.0_dp
+      over_max_SO_net(:)  = 0.0_dp 
+      over_min_SO_eddy(:) = 0.0_dp
+      h_tran_20N(:)       = 0.0_dp
+      h_tran_20S(:)       = 0.0_dp
+      h_tran_20NA(:)      = 0.0_dp
+      h_tran_20SA(:)      = 0.0_dp
+      wind_work_so(:)      = 0.0_dp
 
     ! ---------------------------- total area    
       tarea(:, :)   = e1t(:, :)*e2t(:, :)*t_mask(:, :, 1)
-      tarea(:, jmt) = 0. ! not to count the wrap row added to the northmost.
-      tarea(1, :)   = 0. ! not to count the 2 wrap columns for the cyclic boundary
-      tarea(imt, :) = 0. ! sshglo is not identical when using area(imt-1:imt,:)=0.
-      area_tot = 0.
       area_tot = SUM(tarea(:, :))
-    ! ---------------------------- Global volume (not counting ssh)
-      vol0 = 0.
-      do k = 1, km
-         vol0 = vol0 + SUM( tarea(:, :)*t_mask(:, :, k)*e3t(:, :, k) )
-      enddo
 
     ! Main loop over all months
       do l = 1, lm 
          !---------------------------------------------------
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
+         ! vertical scale factors - nonlinear free surface case 
+          CALL getvara ('thkcello', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
+          CALL getvara ('e3u', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
+          CALL getvara ('e3v', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
          ! temperature
-          CALL getvara ('votemper', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
+          CALL getvara ('thetao', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
          ! salinity
-          CALL getvara ('vosaline', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
+          CALL getvara ('so', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
          ! net heat flux
-          CALL getvara ('sohefldo', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
+          CALL getvara ('hfds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
          ! net water flux
-          CALL getvara ('sowaflup', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
+          CALL getvara ('wfo', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
          ! u-velocity 
-          CALL getvara ('vozocrtx', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), u, 1., 0.)
+          CALL getvara ('uo', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), u, 1., 0.)
          ! v-velocity 
-          CALL getvara ('vomecrty', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
+          CALL getvara ('vo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
          ! w-velocity 
-          CALL getvara ('vovecrtz', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
-         ! EI u-velocity 
-          CALL getvara ('vozoeivu', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
-         ! EI v-velocity 
-          CALL getvara ('vomeeivv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
-         ! EI w-velocity 
-          CALL getvara ('voveeivw', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
+          CALL getvara ('wo', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
+          gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
+          ! EI u-velocity (only if present in the file)
+          status = nf_inq_varid(iou2, "uoce_eiv", varid)
+          IF (status.eq.nf90_noerr) THEN 
+              CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
+          ELSE; print*,'WARNING: Eddy induced velovity n ot found (normal if ln_ldfeiv = .FALSE.)'
+          ENDIF
+          ! EI v-velocity (only if present in the file)
+          status = nf_inq_varid(iou3, "voce_eiv", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
+          ! EI w-velocity (only if present in the file)
+          status = nf_inq_varid(iou4, "woce_eiv", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! Wind Stress along i-axis
-          CALL getvara ('sozotaux', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
+          CALL getvara ('tauuo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
-          CALL getvara ('sometauy', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
+          CALL getvara ('tauvo', iou3, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
          ! Sea surface height
-          CALL getvara ('sossheig', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
+          !CALL getvara ('zos', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
          ! Mixed Layer Depth 0.01 ref.10m
-          CALL getvara ('somxl010', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
+          CALL getvara ('mlotst', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
 
-          CALL getvara ('snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
-          CALL getvara ('snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
-          CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
-          CALL getvara ('hflx_snow_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_cea, 1., 0.)
-          CALL getvara ('hflx_ice_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
-          CALL getvara ('hflx_rnf_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
-          CALL getvara ('isnwmlt_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), isnwmlt_cea, 1., 0.)
-          CALL getvara ('snowmel_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
+          CALL getvara ('sndmasssnf', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
+          CALL getvara ('prsn', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
+          CALL getvara ('hfrainds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
+          CALL getvara ('hflx_snow_ao_cea', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
+          CALL getvara ('hflx_snow_ai_cea', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
+          CALL getvara ('hfxsensib', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
+          CALL getvara ('hfrunoffds2d', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
+          CALL getvara ('hfevapds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_evap_cea, 1., 0.)
+          CALL getvara ('sitimefrac', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
+          CALL getvara ('sndmassmelt', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
+          isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
-          CALL getvara ('hflx_qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
-          CALL getvara ('hflx_qns_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-          CALL getvara ('hflx_qsr_ice', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
-          CALL getvara ('hflx_qns_ice', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
+          hflx_qsr_tot =0. ; hflx_qns_tot =0. ; hflx_qsr_ice =0. ; hflx_qns_ice =0. 
+          status = nf_inq_varid(iou1, "O_QnsMix", varid)
+          IF (status.eq.nf90_noerr) THEN 
+              CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+          ELSE; print*,'WARNING: Coupler fluxes not found (normal if forcing from blk)'
+          ENDIF
+          status = nf_inq_varid(iou1, "O_QsrMix", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QsrMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
+          status = nf_inq_varid(iou6, "O_QsrIce", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QsrIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
+          status = nf_inq_varid(iou6, "O_QnsIce", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QnsIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
+
+          CALL getvara ('volo', iou7, 1, (/l/), (/1/), vol(l), 1., 0.)
+          CALL getvara ('thetaoga', iou7, 1, (/l/), (/1/), tvol(l), 1., 0.)
+          CALL getvara ('sogay', iou7, 1, (/l/), (/1/), svol(l), 1., 0.)
+          CALL getvara ('zosga', iou7, 1, (/l/), (/1/), sshglo(l), 1., 0.)
 
          ! Wind enery input
-          wind_x =  tau_x(:,:)*u(:,:,1)
-          wind_y =  tau_y(:,:)*v(:,:,1)
+          wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
+          wind_y =  tau_y(:,:)*v(:,:,1)* v_mask(:, :, 1)
          ! MLD
          ! Seasonal separation doesnt make sense with monthly RTDs, but define both (as the same),
          ! in order to maintain backwards compatibility in the plotting routine.
@@ -475,31 +542,28 @@ PROGRAM nemo_ocean_diag
     ! start DY, 11/OCT/2013
     !---------------------------------------------------
     ! (1) Global annual mean T and S and SSH
-    !---------------------------------------------------
-          volssh   = 0.
     ! ---------------------------- volume due to ssh   
-          zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
-          volssh = SUM( zarea_ssh(:, :) )
+    !      volssh   = 0.
+    !      zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
+    !      volssh = SUM( zarea_ssh(:, :) )
     ! ---------------------------- Global mean ssh (cm)
-          sshglo(l) = (volssh/area_tot)*1.0e2
+    !      sshglo(l) = (volssh/area_tot)*1.0e2
     ! ---------------------------- Total volume
-          vol = vol0 + volssh
+          ! Total global volume - nonlinear free surface case
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
-          tvol(l) = SUM(zarea_ssh(:, :)*theta(:, :, 1))
-          svol(l) = SUM(zarea_ssh(:, :)* salt(:, :, 1))
-          do k = 1, km
-              do j = 1, jmt
-                  do i = 1, imt
-                      zztmp = tarea(i,j)*e3t(i,j,k)
-                      tvol(l) = tvol(l) + zztmp*theta(i, j, k)
-                      svol(l) = svol(l) + zztmp*salt(i, j, k)
-                  enddo
-              enddo
-          enddo
-          if (vol.ne.0.) then
-            tvol(l) = tvol(l) / vol ! C 
-            svol(l) = svol(l) / vol ! psu 
-          endif
+    !     do k = 1, km
+    !         do j = 1, jmt
+    !             do i = 1, imt
+    !                 zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
+    !                 tvol(l) = tvol(l) + zztmp*theta(i, j, k)
+    !                 svol(l) = svol(l) + zztmp*salt(i, j, k)
+    !             enddo
+    !         enddo
+    !     enddo
+    !     if (vol(l).ne.0.) then
+    !       tvol(l) = tvol(l) / vol(l) ! C 
+    !       svol(l) = svol(l) / vol(l) ! psu 
+    !     endif
     ! end DY, 11/OCT/2013
 
     !---------------------------------------------------
@@ -524,7 +588,7 @@ PROGRAM nemo_ocean_diag
             &              , jmt, wglo(l), dum)
     !DY      call area_ave_flx (e1t,e2t,g_mask,ssh_ann,sshglo,dum)
           wglo(l)   = wglo(l)*1.e+7   !  1.e-7 kg/m2/s
-    !DY      sshglo = sshglo*1.e+2 ! cm         
+          sshglo(l) = sshglo(l)*1.e+2 ! cm         
 
     !---------------------------------------------------
     ! (3) Energetics
@@ -573,12 +637,14 @@ PROGRAM nemo_ocean_diag
           call area_ave(e1t, e2t, e3t, nino4_mask, arr2d1, imt, jmt    &
             &           , km, t_nino4(l), dvol, 1) 
 
-          do i = 1, imt-2
-               if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
+          do i = 1, imt
+               if (lon2d(i,j_eq).ge.150..or.lon2d(i,j_eq).le.-75.) then
                    do k = 1, k500 
+                     if (u_mask(i,j_eq,k).gt.0.5) then
                        if (u(i, j_eq, k).gt. euc_max(l)) then
                            euc_max(l) = u(i, j_eq, k)
                        endif
+                     endif  
                    enddo 
                endif
           enddo            
@@ -676,9 +742,9 @@ PROGRAM nemo_ocean_diag
           v(:, :, :) = v(:, :, :) + gmv(:, :, :) 
           w(:, :, :) = w(:, :, :) + gmw(:, :, :) 
 
-          call moc(e1v, e3v, v(:, :, :), imt, jmt, km               & 
+          call moc(e1v, e3v, v_mask, v(:, :, :), imt, jmt, km               & 
             &     , over_psi(:, :))
-          call moc(e1v, e3v, gmv(:,:,:), imt, jmt, km                &
+          call moc(e1v, e3v, v_mask, gmv(:,:,:), imt, jmt, km                &
             &     , over_psi_eddy(:, :))
     ! NADW
           do k = k500, km ! below ~ 500 m 
@@ -688,7 +754,7 @@ PROGRAM nemo_ocean_diag
     !
               if (over_psi(j_20S, k).gt.over_max_20S(l)) then   
                   over_max_20S(l) = over_psi(j_20S, k) 
-             endif
+              endif
           enddo    
     ! AABW 
           do k = k2000, km ! below ~ 2000 m 
@@ -703,14 +769,15 @@ PROGRAM nemo_ocean_diag
     ! Upper Southern Ocean MOC
           do k = 1, km 
               do j =1, jmt   
-                  if (lat2d(10,j).le.-40.) then ! south of 40S 
+                  if (lat2d(i,j).le.-40.) then ! south of 40S 
+                    if (v_mask(i,j,k).gt.0.5) then      
                       if (over_psi(j, k).gt.over_max_SO_net(l)) then      
                           over_max_SO_net(l) = over_psi(j, k) 
                       endif
-    !
                       if (over_psi_eddy(j, k).lt.over_min_SO_eddy(l)) then    
                           over_min_SO_eddy(l) = over_psi_eddy(j, k) 
                       endif
+                    endif                      
                   endif
               enddo 
           enddo    
@@ -718,7 +785,7 @@ PROGRAM nemo_ocean_diag
     ! (8) Heat transport (PW) 
     !---------------------------------------------------
           do k = 1, km
-              do i = 1, imt-2
+              do i = 1, imt
     ! Global ocean at 20N 
                   arcn = e1v(i, j_20N)*e3v(i, j_20N, k)*v_mask(i, j_20N, k)
                   arcn = arcn*theta(i, j_20N, k)*t_mask(i, j_20N, k)
@@ -748,16 +815,20 @@ PROGRAM nemo_ocean_diag
     
     ! Heat flux from snow over open ocean
           g_mask(:,:) = t_mask(:,:,1)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_cea(:, :), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ao_cea(:, :), imt      &
             &                  , jmt, hflx_snow(l), dum)
+          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ai_cea(:, :), imt      &
+            &                  , jmt, hflx_snow_ice(l), dum)
+          call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :)*lfus*-1.0, imt      &
+            &                  , jmt, hflx_snow_ice2(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow2(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :)*lfus*-1.0, imt      &
-            &                  , jmt, hflx_snow_ice(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:, :), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, -1.0*hflx_ice_cea(:,:), imt      &
             &                  , jmt, hflx_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
             &                  , jmt, hflx_rnf(l), dum)
+          call area_ave_flx(e1t, e2t, g_mask, hflx_evap_cea(:, :), imt      &
+            &                  , jmt, hflx_evap(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_rain_cea(:, :), imt      &
             &                  , jmt, hflx_rain(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, isnwmlt_cea(:, :)*lfus, imt      &
@@ -779,6 +850,13 @@ PROGRAM nemo_ocean_diag
           call area_ave_flx(e1t, e2t, g_mask, hflx_qns_ice(:, :), imt      &
             &                  , jmt, hflx_qns_ice_ave(l), dum)
 
+    !---------------------------------------------------
+    ! (10) definition in server.R
+    !---------------------------------------------------
+    
+          ! hglo is treated in server.R as if it does not include melt(PCPN) but include hrunoff. 
+          ! So melt(PCPN) is removed and hflx_rnf is added 
+          hglo(l)=hglo(l)-hflx_snow(i)-hflx_snow(l)+hflx_rnf(l)
 !---------------------------------------------------
 !   Main outputs 
 !--------------------------------------------------
@@ -786,13 +864,15 @@ PROGRAM nemo_ocean_diag
       print*,'-------------------------------------'
       print*,'    Heat fluxes (W/m2)               '
       print*,'-------------------------------------'      
-      print*,'Heat      ', hglo(l)      
+      print*,'Heat      ', hglo(l)
       print*,'Snow OO   ', hflx_snow(l)
       print*,'Snow OO 1 ', hflx_snow2(l)
       print*,'Rain      ', hflx_rain(l)
+      print*,'Evapo     ', hflx_evap(l)
       print*,'Runoff    ', hflx_rnf(l)
       print*,'Snow OOcal', hflx_snow2(l)
-      print*,'Snow ice  ', hflx_snow_ice(l)
+      print*,'Snow ice  ', hflx_snow_ice2(l)
+      print*,'Snow ice 1 ',hflx_snow_ice2(l)
       print*,'Below ice ', hflx_ice(l)
       print*,'BEGO-inv  ', hglo(l) - hflx_snow2(l) - hflx_ice(l)
       print*,'isnwmlt   ', isnwmlt(l)
@@ -928,11 +1008,11 @@ PROGRAM nemo_ocean_diag
 
           call defvar ('ocean_area', iou, 0, 0, 0., 0., ' ', 'F'     &
      &       , 'Total ocean surface area', ' ', 'm2')
-          call defvar ('ocean_volume', iou, 0, 0, 0., 0., ' ', 'F'     &
-     &       , 'Total ocean volume', ' ', 'm3')
-
           call defvar ('depth', iou, 1, (/id_z/), 0., 0., 'Y', 'F'     &
      &       , 'depth of the t grid', 'depth', 'm')
+
+          call defvar ('ocean_volume', iou, 1, (/id_time/), 0., 1.e20, ' ', 'F' &
+              , 'Ocean volume', 'ocean_volume', 'm3')    
 
 !         Temp
           call defvar ('T', iou, 1, (/id_time/), -1.e4                         &
@@ -1135,8 +1215,6 @@ PROGRAM nemo_ocean_diag
 
           call putvara ('ocean_area', iou, 1, (/1/), (/1/)                     &
      &      , area_tot, 1., 0.)
-          call putvara ('ocean_volume', iou, 1, (/1/), (/1/)                   &
-     &      , vol0, 1., 0.)
 
       else
 !      if the file does exist then open it for writing at the next record
@@ -1152,10 +1230,13 @@ PROGRAM nemo_ocean_diag
 !       Convert the date into days since 01-01-0001        
         CALL noleap_days(iyear, imon+l-1, 1, days_elapsed)
         tdays_elapsed = float(days_elapsed)
-!        print*, days_elapsed
+!       print*,days_elapsed     
 !       time
         ntrec2 = ntrec + l - 1
         call putvars ('time', iou, ntrec2, tdays_elapsed, 1., 0.)
+
+        !Global volume (nonlinear free surface case, i.e., e3t is time-varying)
+        call putvars ('ocean_volume', iou, ntrec2, vol(l), 1., 0.)
 
 !       Temp
         call putvars ('T', iou, ntrec2, tvol(l), 1., 0.)
@@ -1198,7 +1279,7 @@ PROGRAM nemo_ocean_diag
 !       MEAN HEAT FLUX SURFACE (W/M^2)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)
         call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)
-        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l), 1., 0.)
+        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l)*-1.0, 1., 0.)
         call putvars ('hflx_snow_ice', iou, ntrec2, hflx_snow_ice(l), 1., 0.)
 
         call putvars ('hflx_qsr_tot', iou, ntrec2, hflx_qsr_tot_ave(l), 1., 0.)

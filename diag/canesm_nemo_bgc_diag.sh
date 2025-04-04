@@ -9,7 +9,7 @@
 # lib/jobdefs/canesm_nemo_bgc_diag_jobdef
 #########################################################
 
-set -x
+set -e
 
 # NEMO priority level
   output_level=${output_level}
@@ -44,40 +44,28 @@ set -x
   fi
 
 # Access file containing grid information
-  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
+  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $1}')  # get first element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
-# sfxlst is a suffix list for some nemo historical files.
-  sfxlst="1m_grid_t 1m_diad_t 1m_ptrc_t"
+# Access fiels for BGCM diag 
+  sfx='1m_grid_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+  sfx='1m_diad_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+  sfx='1m_btrc_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
 
-# Access the history files
-  for sfx in $sfxlst ; do
-    yr=$fyear
-    mp=0
-    for mm in $nemo_rtd_mons ; do
-      if [ $mm -lt $mp ] ; then
-	# increment year by 1 if the current month is smaller than the previous month
-	yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
-      fi
-      diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist na
-      mp=$mm
-    done
-# Merge sub-yearly files
-    if [ $nmon -gt 1 ] ; then
-      cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      rm -f ${sfx}_??
-      mv ${sfx}_m$fmon ${sfx}_$fmon
-    fi
-  done
 
 ##########################
 # CMIP6 nemo diagnostics #
 ##########################
   ln -s 1m_grid_t_${fmon} grid_t  || ( echo "Link to grid_t failed" ; exit 1 )
   ln -s 1m_diad_t_${fmon} diad_t  || ( echo "Link to diad_t failed" ; exit 1 )
-  ln -s 1m_ptrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 )
+  ln -s 1m_btrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 ) # OR Jan 09 '23 changed from ptrc_t 
 
   if [[ $CanNEMO_CONFIG == *'CMOC'* && ${output_level} -gt 0 ]]; then
 
@@ -105,7 +93,7 @@ set -x
     cp ${EXEC_STORAGE_DIR}/nemo_diag_cmoc.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
-    access si.nc uncs_orca1_data_si_nomask.nc
+    access si.nc $nemo_data_si_nomask 
     # Get globally averaged surface salinity from previous year
     if [ $process_abio -gt 0 ]; then
       # Access the nemo restart files
@@ -147,8 +135,8 @@ set -x
       cmoc_annual_ptrc+=" nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
       cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
 
-      cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
-      cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+      cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_btrc_t  # OR Jan 09 '23 changed from ptrc_t
+      cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_btrc_t # OR Jan 09 '23 changed from ptrc_t
       for f in ${cmoc_annual_ptrc}; do
         release tmp.nc
         access  tmp.nc ${cmoc_src_file}_$f.nc na
@@ -189,7 +177,7 @@ set -x
     cp ${EXEC_STORAGE_DIR}/nemo_diag_canoe.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
-    access si.nc uncs_orca1_data_si_nomask.nc
+    access si.nc $nemo_data_si_nomask
     # Run the offline diagnostics
     ./nemo_diag_canoe.exe
 
@@ -206,8 +194,8 @@ set -x
       canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
       canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
 
-      canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
-      canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+      canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_btrc_t  # OR Jan 09 '23 changed from ptrc_t
+      canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_btrc_t # OR Jan 09 '23 changed from ptrc_t
       for f in ${canoe_annual_ptrc}; do
         release tmp.nc
         access  tmp.nc ${canoe_src_file}_$f.nc na
