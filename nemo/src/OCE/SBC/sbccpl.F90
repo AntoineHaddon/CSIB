@@ -1215,7 +1215,7 @@ CONTAINS
       !
       IF( kt == nit000 ) THEN
       !   cannot be done in the init phase when we use agrif as cpl_freq requires that oasis_enddef is done
-         ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) + cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
+         ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) !+ cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
          IF( ln_dm2dc .AND. ncpl_qsr_freq /= 86400 )   &
             &   CALL ctl_stop( 'sbc_cpl_rcv: diurnal cycle reconstruction (ln_dm2dc) needs daily couping for solar radiation' )
 
@@ -2131,7 +2131,6 @@ CONTAINS
       ! outputs
       IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea' , - frcv(jpr_cal)%z3(:,:,1) * rLfus ) ! latent heat from calving
       IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea' , - frcv(jpr_icb)%z3(:,:,1) * rLfus ) ! latent heat from icebergs melting
-
       IF (        iom_use('hflx_whc_cea') )    &                                                     ! heat flux from the heat content flux from P-E (cell average)
          &   CALL iom_put('hflx_whc_cea' , ( -  zevap_oce(:,:)               * zcptn   (:,:)   &     ! evap
                            &             + ( ztprecip(:,:) - zsprecip(:,:) ) * zcptrain(:,:)   &     ! liquid precip
@@ -2640,7 +2639,7 @@ CONTAINS
       !                                                      !  CO2 flux from BGC        !
       !                                                      ! ------------------------- !
       IF( ssnd(jps_co2)%laction )   THEN
-         ztmp1(:,:) = oce_co2(:,:) * 1000.  ! conversion in molC/m2/s
+         ztmp1(:,:) = oce_co2(:,:) * 1000. * tmask(:,:,1) ! conversion in molC/m2/s
          CALL cpl_snd( jps_co2, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ) , info )
       ENDIF
       !

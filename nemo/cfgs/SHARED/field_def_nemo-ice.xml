@@ -34,7 +34,7 @@
       <field id="icemass"      long_name="Sea-ice mass per gridcell area"                          standard_name="sea_ice_amount"                            unit="kg/m2"/>
       <field id="snwmass"      long_name="Snow mass per area"                                      standard_name="liquid_water_content_of_surface_snow"      unit="kg/m2"/>
       <field id="iceconc"      long_name="Sea-ice area fraction"                                   standard_name="sea_ice_area_fraction"                     unit=""     />
-      <field id="sncover"     long_name="Sea-ice cover by snow area fraction"                     standard_name="snow_cover"                                unit=""      />
+      <field id="sncover"     long_name="Sea-ice cover by snow area fraction"                      standard_name="snow_cover"                                unit=""      />
       <field id="icevolu"      long_name="Sea-ice volume per area"                                 standard_name="sea_ice_thickness"                         unit="m"    />
       <field id="icethic"      long_name="Sea-ice thickness"                                       standard_name="sea_ice_thickness"                         unit="m"    />
       <field id="snwthic"      long_name="Snow thickness"                                          standard_name="snow_thickness"                            unit="m"    />
@@ -175,6 +175,7 @@
       <field id="hfxres"       long_name="heat fluxes from undiagnosed processes"                       unit="W/m2" />
       <field id="hfxsub"       long_name="heat fluxes from ice-atm. mass exchange during sublimation"   unit="W/m2" />
       <field id="hfxspr"       long_name="heat fluxes from ice-atm. mass exchange during snow precip"   unit="W/m2" />
+      <field id="hfxevp"       long_name="heat fluxes from ice evaporation"   unit="W/m2" />
 
       <field id="hfxsensib"    long_name="Net sensible heat flux under sea ice (neg = ice cooling)"         standard_name="ice_ocean_heat_flux"                        unit="W/m2" />
       <field id="hfxcndtop"    long_name="Net conductive heat flux at the ice surface (neg = ice cooling)"  standard_name="conductive_heat_flux_at_sea_ice_surface"    unit="W/m2" />
@@ -326,6 +327,8 @@
       <field id="iceage_cat"   long_name="Ice age per category"                              unit="days"    detect_missing_value="true" />
       <field id="icebrv_cat"   long_name="Brine volume per category"                         unit="%"       detect_missing_value="true" />
       <field id="icealb_cat"   long_name="Sea-ice or snow albedo"                            unit=""        detect_missing_value="true" />
+      <field id="icehc_cat"    long_name="ice heat content per category"                     unit="J/m2" />
+      <field id="snwhc_cat"    long_name="snow heat content per category"                    unit="J/m2" />
 
       <!-- Add-ons for SIMIP -->
       <field id="iceconc_cat_cmip"     long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit=""   > iceconc_cat      * icemask_cat  </field>

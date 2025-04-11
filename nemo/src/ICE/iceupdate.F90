@@ -294,6 +294,7 @@ CONTAINS
       CALL iom_put ('hfxres'     , hfx_res     )   !
       CALL iom_put ('hfxsub'     , hfx_sub     )   !
       CALL iom_put ('hfxspr'     , hfx_spr     )   ! Heat flux from snow precip heat content
+      CALL iom_put ('hfxevp'     , SUM( qevap_ice(:,:,:) * a_i_b(:,:,:) , dim=3 )     )   ! Heat flux from ice evaporation
 
       ! other heat fluxes
       IF( iom_use('hfxsensib'  ) )   CALL iom_put( 'hfxsensib'  ,      qsb_ice_bot * at_i_b         )   ! Sensible oceanic heat flux
