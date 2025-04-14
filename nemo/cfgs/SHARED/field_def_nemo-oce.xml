@@ -450,6 +450,7 @@ that are available in the tidal-forcing implementation (see
       <!-- * variable relative to atmospheric pressure forcing : available with ln_apr_dyn -->
       <field id="apr"          long_name="Atmospheric pressure"  standard_name="atmospheric_pressure"   unit="Pa"        />
       <field id="ssh_ib"       long_name="Inverse barometer sea surface height"  standard_name="sea_surface_height_correction_due_to_air_pressure_at_low_frequency"   unit="m"        />
+      <field id="apr"       long_name="Sea surface height"  standard_name="atmospheric_pressure"   unit="Pa"        />
 
       <!-- *_oce variables available with ln_blk_clio or ln_blk_core -->
       <field id="rho_air"      long_name="Air density at 10m above sea surface"         standard_name="rho_air_10m"                                        unit="kg/m3" />
@@ -527,6 +528,16 @@ that are available in the tidal-forcing implementation (see
       <field id="sntoice_cea"   long_name="Snow-Ice Formation Rate (cell average)"                   standard_name="tendency_of_sea_ice_amount_due_to_snow_conversion"                             unit="kg/m2/s"  />
       <field id="ticemel_cea"   long_name="Rate of Melt at Upper Surface of Sea Ice (cell average)"  standard_name="tendency_of_sea_ice_amount_due_to_surface_melting"                             unit="kg/m2/s"  />
 
+      <field id="hflx_whc_rain_oce" long_name="heat flux due to water heat content of the rain over the ocean"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="hflx_whc_snow_oce" long_name="heat flux due to water heat content of the snow over the ocean"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="hflx_whc_evp_oce" long_name="heat flux due to water heat content of evaporation over the ocean"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="hflx_whc_rain_ice" long_name="heat flux due to water heat content of the rain over the ice"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="hflx_whc_snow_ice" long_name="heat flux due to water heat content of the snow over the ice"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="hflx_whc_evp_ice" long_name="heat flux due to water heat content of evaporation over the ice"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="hflx_whc_rnf" long_name="heat flux due to water heat content of the runoff"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="zcptrain" long_name="heat content of the rain"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="zcptsnw" long_name="heat content of the snow"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
+      <field id="zcptn" long_name="heat content of the water (for evp)"  standard_name="heat_flux_due_to_water_heat_content_exchange"        unit="W/m2"     />
       <!-- fluxes from relaxation and freshwater budget -->
       <field id="sflx_ssr_cea"  long_name="salt flux due to restoring"    standard_name="salt_flux_due_to_restoring"    unit="g/m2/s"   />
       <field id="hflx_ssr_cea"  long_name="heat flux due to restoring"    standard_name="heat_flux_due_to_restoring"    unit="W/m2"     />

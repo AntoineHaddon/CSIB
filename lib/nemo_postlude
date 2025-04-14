@@ -168,7 +168,8 @@
     end_step=$(get_namelist_var nn_itend namelist_cfg | awk '{printf "%8.8d",$1}')
 
     # Look for ocean restart files matching the pattern below
-    eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+    ofnpatt="${cn_exp}_${end_step}_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc ${cn_exp}_${end_step}_${cn_ocerst_out}.nc"
+
     found_rs=$(ls -1 $ofnpatt || : 2>/dev/null)
     if [ -z "$found_rs" ]; then
       # No ocean restart files exist
@@ -179,7 +180,7 @@
 
     if [ "$nemo_trc" = "on" ] || [ "$nemo_carbon" = "on" ]; then
           # Look for pisces restart files matching the pattern below
-          eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          pfnpatt="${cn_exp}_${end_step}_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc ${cn_exp}_${end_step}_${cn_trcrst_out}.nc"
           found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
           if [ -z "$found_rs" ]; then
             # No pisces restart files exist
@@ -191,7 +192,7 @@
 
     if [ $with_ice -eq 1 ]; then
          # Look for ice restart files
-         eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+         ifnpatt="${cn_exp}_${end_step}_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc ${cn_exp}_${end_step}_${cn_icerst_out}.nc"
          found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
          if [ -z "$found_rs" ]; then
             # No ice restart files exist
@@ -323,5 +324,6 @@
 
     # SAVE
     rs_out=${model_rs}tiled_nemors
+    [ $nnode_o -eq 1 ] && rs_out=${model_rs}nemors # rename without the "tiled" if only one proc.
     save NEXT_RESTART_ARC $rs_out
     release NEXT_RESTART_ARC

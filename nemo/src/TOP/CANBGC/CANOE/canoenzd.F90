@@ -98,11 +98,11 @@ CONTAINS
                ztn = ts(ji,jj,jk,jp_tem, Kmm)
                Tf = tgfuncz20(ji,jj,jk)
 
-               lpc = MAX(tr(ji,jj,jk,jrdia,Kmm),0.)
-               lpn = MAX(tr(ji,jj,jk,jrdn,Kmm),0.)
-               lpf = MAX(tr(ji,jj,jk,jrdfe,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrdch,Kmm),0.)
-               szc = MAX(tr(ji,jj,jk,jrzoo,Kmm),0.)
+               lpc = MAX(tr(ji,jj,jk,jrdia,Kbb),0.)
+               lpn = MAX(tr(ji,jj,jk,jrdn,Kbb),0.)
+               lpf = MAX(tr(ji,jj,jk,jrdfe,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrdch,Kbb),0.)
+               szc = MAX(tr(ji,jj,jk,jrzoo,Kbb),0.)
                itfc=1./(lpc+szc+rtrn)
 
                c2n=lpc/(lpn+rtrn)
@@ -113,7 +113,7 @@ CONTAINS
                fe2n=lpf/(lpn+rtrn)
 
 ! assume grazing hyperbola is determined by total food concentration and the two food types are consumed in proportion to their concentrations (in C units)
-               grazt=gmax2*(1.-EXP(-apl*(lpc+szc)))*tr(ji,jj,jk,jrmes,Kmm)*xstepb
+               grazt=gmax2*(1.-EXP(-apl*(lpc+szc)))*tr(ji,jj,jk,jrmes,Kbb)*xstepb
                grazz=grazt*szc*itfc
                grazp=grazt*lpc*itfc
 ! reduce phytoplankton fraction to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
@@ -138,7 +138,7 @@ CONTAINS
                nxs2 = csw1*nxs2
                fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr2*Tf*tr(ji,jj,jk,jrmes,Kmm)*xstepb-cxs,0.)
+               R = MAX(zsr2*Tf*tr(ji,jj,jk,jrmes,Kbb)*xstepb-cxs,0.)
 
                !   Update the arrays TRA which contain the biological sources and sinks
                tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + (R + cxs)*1.E-6
@@ -211,10 +211,10 @@ CONTAINS
                ztn = ts(ji,jj,jk,jp_tem, Kmm)
                Tf = tgfuncz0(ji,jj,jk) 
 
-               spc = MAX(tr(ji,jj,jk,jrphy,Kmm),0.)
-               spn = MAX(tr(ji,jj,jk,jrnn,Kmm),0.)
-               spf = MAX(tr(ji,jj,jk,jrnfe,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrnch,Kmm),0.)
+               spc = MAX(tr(ji,jj,jk,jrphy,Kbb),0.)
+               spn = MAX(tr(ji,jj,jk,jrnn,Kbb),0.)
+               spf = MAX(tr(ji,jj,jk,jrnfe,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrnch,Kbb),0.)
 
                c2n=spc/(spn+rtrn)
                n2c=spn/(spc+rtrn)
@@ -224,7 +224,7 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
 
 ! Micrograzer functional response is determined by phytoplankton C
-               grazp=gmax1*(1.-EXP(-aps*spc))*tr(ji,jj,jk,jrzoo,Kmm)*xstepb
+               grazp=gmax1*(1.-EXP(-aps*spc))*tr(ji,jj,jk,jrzoo,Kbb)*xstepb
 ! reduce phytoplankton consumption to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
                grazp=grazp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
 ! calculate "excess" relative to grazer RR
@@ -247,7 +247,7 @@ CONTAINS
                nxs2 = csw1*nxs2
                fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr1*Tf*tr(ji,jj,jk,jrzoo,Kmm)*xstepb-cxs,0.)
+               R = MAX(zsr1*Tf*tr(ji,jj,jk,jrzoo,Kbb)*xstepb-cxs,0.)
 
                ! Grazing by microzooplankton
                !grazing1(ji,jj,jk) = grazp
@@ -324,11 +324,11 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
 
-               spc = MAX(tr(ji,jj,jk,jrphy,Kmm),0.)
-               spn = MAX(tr(ji,jj,jk,jrnn,Kmm),0.)
-               spf = MAX(tr(ji,jj,jk,jrnfe,Kmm),0.)
-               szc = MAX(tr(ji,jj,jk,jrzoo,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrnch,Kmm),0.)
+               spc = MAX(tr(ji,jj,jk,jrphy,Kbb),0.)
+               spn = MAX(tr(ji,jj,jk,jrnn,Kbb),0.)
+               spf = MAX(tr(ji,jj,jk,jrnfe,Kbb),0.)
+               szc = MAX(tr(ji,jj,jk,jrzoo,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrnch,Kbb),0.)
 
                c2n=spc/(spn+rtrn)
                n2c=spn/(spc+rtrn)
@@ -440,11 +440,11 @@ CONTAINS
 
                !     Phytoplankton mortality. 
                !     ------------------------
-               spc = MAX(tr(ji,jj,jk,jrdia,Kmm),0.)
-               spn = MAX(tr(ji,jj,jk,jrdn,Kmm),0.)
-               spf = MAX(tr(ji,jj,jk,jrdfe,Kmm),0.)
-               szc = MAX(tr(ji,jj,jk,jrmes,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrdch,Kmm),0.)
+               spc = MAX(tr(ji,jj,jk,jrdia,Kbb),0.)
+               spn = MAX(tr(ji,jj,jk,jrdn,Kbb),0.)
+               spf = MAX(tr(ji,jj,jk,jrdfe,Kbb),0.)
+               szc = MAX(tr(ji,jj,jk,jrmes,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrdch,Kbb),0.)
 
                c2n=spc/(spn+rtrn)
                n2c=spn/(spc+rtrn)
@@ -549,10 +549,10 @@ CONTAINS
                !    below 2 umol/L. Inhibited at strong light 
                !    ----------------------------------------------------------
                ! nitrification rate depends on O2 concentration
-               znitro2dep = MAX(0., 0.4*(6.-tr(ji,jj,jk,jqoxy,Kmm))/(oxymin + tr(ji,jj,jk,jqoxy,Kmm)))
+               znitro2dep = MAX(0., 0.4*(6.-tr(ji,jj,jk,jqoxy,Kbb))/(oxymin + tr(ji,jj,jk,jqoxy,Kbb)))
                znitro2dep = MIN(1., znitro2dep )
-               zonitr = nitrif * zstep * tr(ji,jj,jk,jrnh4,Kmm) / (1.+ par_3bands(ji,jj,jk)) * (1.- znitro2dep) 
-               !denitnh4(ji,jj,jk) = nitrif * zstep * tr(ji,jj,jk,jpnh4,Kmm) * nitrfac(ji,jj,jk) 
+               zonitr = nitrif * zstep * tr(ji,jj,jk,jrnh4,Kbb) / (1.+ par_3bands(ji,jj,jk)) * (1.- znitro2dep) 
+               !denitnh4(ji,jj,jk) = nitrif * zstep * tr(ji,jj,jk,jpnh4,Kbb) * nitrfac(ji,jj,jk) 
                !   Update of the tracers trends
                !   ----------------------------
                tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) - zonitr
@@ -582,14 +582,14 @@ CONTAINS
             DO ji = 1, jpi
 
                Tf = tgfuncr0(ji,jj,jk)
-               zorem  = xremik * xstepb * Tf * tr(ji,jj,jk,jrpoc,Kmm)
+               zorem  = xremik * xstepb * Tf * tr(ji,jj,jk,jrpoc,Kbb)
                zofer  = zorem * rr_fe2c
-               zorem2 = xremik * xstepb * Tf * tr(ji,jj,jk,jrgoc,Kmm)
+               zorem2 = xremik * xstepb * Tf * tr(ji,jj,jk,jrgoc,Kbb)
                zofer2 = zorem2 * rr_fe2c
 
 ! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<6 uM
 ! NO3 fraction is then divided between NO3 and NH4 according to the parameter nh4frx (for anammox 50% of N comes from NO3 and 50% from NH4)
-               zonitr=1.-MIN(tr(ji,jj,jk,jqoxy,Kmm),o2thresh)/o2thresh
+               zonitr=1.-MIN(tr(ji,jj,jk,jqoxy,Kbb),o2thresh)/o2thresh
                tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) + (zorem + zorem2)*rr_n2c - (zorem + zorem2)*nyld*zonitr*0.5*nh4frx
                tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) - (zorem + zorem2)*nyld*zonitr*(1.-0.5*nh4frx)
                tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - (zorem + zorem2)*(1.-zonitr)
@@ -602,7 +602,7 @@ CONTAINS
                denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
 
 ! CaCO3 dissolution
-               zorem2 = kdca * xstepb * tr(ji,jj,jk,jrcal,Kmm)
+               zorem2 = kdca * xstepb * tr(ji,jj,jk,jrcal,Kbb)
                tr(ji,jj,jk,jrcal, Krhs) = tr(ji,jj,jk,jrcal, Krhs) - zorem2 
                tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + zorem2 * 1.e-6
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + zorem2 * 2.e-6
@@ -628,9 +628,9 @@ CONTAINS
            DO ji = 1, jpi
                zstep = xstepb
 ! irreversible scavenging as in Christian et al 2002
-               zcoag = MIN((tr(ji,jj,jk,jrpoc,Kmm)+tr(ji,jj,jk,jrgoc,Kmm))*pocfctr,1.)
-               fexs = MAX(tr(ji,jj,jk,jrfer,Kmm)-ligand,0.)
-               zscave = xlam1 * xstepb * (tr(ji,jj,jk,jrfer,Kmm)-fexs) * zcoag
+               zcoag = MIN((tr(ji,jj,jk,jrpoc,Kbb)+tr(ji,jj,jk,jrgoc,Kbb))*pocfctr,1.)
+               fexs = MAX(tr(ji,jj,jk,jrfer,Kbb)-ligand,0.)
+               zscave = xlam1 * xstepb * (tr(ji,jj,jk,jrfer,Kbb)-fexs) * zcoag
                zscavex = xlam2 * xstepb * fexs
                tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) - (zscave+zscavex)
             END DO

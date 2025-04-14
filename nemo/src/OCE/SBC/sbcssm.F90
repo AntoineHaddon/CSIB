@@ -28,6 +28,8 @@ MODULE sbcssm
 
    PUBLIC   sbc_ssm        ! routine called by step.F90
    PUBLIC   sbc_ssm_init   ! routine called by sbcmod.F90
+   PUBLIC   sbc_ssm_ice_init   ! routine called by step.F90
+   PUBLIC   sbc_ssm_ice        ! routine called by sbcmod.F90
 
    LOGICAL, SAVE ::   l_ssm_mean = .FALSE.   ! keep track of whether means have been read from restart file
 
@@ -180,6 +182,18 @@ CONTAINS
       !
    END SUBROUTINE sbc_ssm
 
+   SUBROUTINE sbc_ssm_ice( kt, Kbb, Kmm )
+      !!----------------------------------------------------------------------
+      !!                  ***  ROUTINE sbc_ssm_ice  ***
+      !!
+      !! ** Purpose :  Prepares ice fields from a NEMO run
+      !!               for an off-line simulation using surface processes only
+      !!               DUMMY subroutine only used with SAS (should not 
+      !!
+      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
+
+   END SUBROUTINE sbc_ssm_ice
 
    SUBROUTINE sbc_ssm_init( Kbb, Kmm )
       !!----------------------------------------------------------------------
@@ -256,5 +270,14 @@ CONTAINS
       !
    END SUBROUTINE sbc_ssm_init
 
+   SUBROUTINE sbc_ssm_ice_init( Kbb, Kmm )
+      !!----------------------------------------------------------------------
+      !!                  ***  ROUTINE sbc_ssm_init  ***
+      !!
+      !! ** Purpose :   Initialisation of sea-ice surface mean ice data for SAS
+      !!                DUMMY subroutine only used with SAS
+      !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
+   END SUBROUTINE sbc_ssm_ice_init
    !!======================================================================
 END MODULE sbcssm

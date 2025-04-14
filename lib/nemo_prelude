@@ -32,12 +32,12 @@
       acc_cp $1 $2 nocp=no
     else
       # Otherwise look for a configuration specific file in the NEMO repository
-      # nemo_repo, nemo_ver and nemo_config must be defined in this case
-      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
-        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
+      # nemo_repo, nemo_ver and CanNEMO_CONFIG must be defined in this case
+      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$CanNEMO_CONFIG" ] &&
+        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, CanNEMO_CONFIG are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      cp ${nemo_repo}/nemo/cfgs/$nemo_config/EXPREF/$1 .
+      cp ${nemo_repo}/nemo/cfgs/$CanNEMO_CONFIG/EXPREF/$1 .
       [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
@@ -53,11 +53,10 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $run_start_month       || bail "nemo_prelude: run_start_month must be defined"
   is_defined $run_stop_year         || bail "nemo_prelude: run_stop_year must be defined"
   is_defined $run_stop_month        || bail "nemo_prelude: run_stop_month must be defined"
-  is_defined $nemo_config           || bail "nemo_prelude: nemo_config must be defined"
+  is_defined $CanNEMO_CONFIG           || bail "nemo_prelude: CanNEMO_CONFIG must be defined"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
-  is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
   is_defined $input_rs_date_string  || bail "nemo_prelude: input_rs_date_string must be defined"
 
@@ -132,7 +131,7 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp tide_${tidebound}_cantods025_grid_V.nc ${nemo_tide_vvel}.nc
       done
 
-  else # all the OMIP runmode (e.g. omip1 ) 
+  elif [[ $config == "OMIP" ]]; then  # all the other OMIP runmode (e.g. omip1 ) 
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
       for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
@@ -156,6 +155,8 @@ echo "#################### Start NEMO pre-processing #################"
       done
   fi
 
+if [[ $config != "AMIP" ]]; then 
+  # in AMIP configuration, nemo is in SAS mode, no need for ocean input files
   if [[ $nemo_ln_weight == "on" ]];then
     is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
         bail "The variables nemo_weights_bicubic2 and nemo_weights_bilinear2 must be defined in the configuration file"
@@ -321,7 +322,6 @@ echo "#################### Start NEMO pre-processing #################"
       fi
   fi
 
-
   # Access files required to run NEMO
   xios_files=( axis_def_nemo.xml \
                context_nemo.xml \
@@ -333,13 +333,46 @@ echo "#################### Start NEMO pre-processing #################"
                grid_def_nemo.xml \
                iodef.xml )
   # add xios filoes if nemo_config is set to a CMOC, a CanOE or a PISCES config 
-  if [[ $nemo_config == *"CANOE" ]] ; then
+  if [[ $CanNEMO_CONFIG == *"CANOE" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-canoe.xml  file_def_nemo-canoe.xml )
-  elif [[ $nemo_config == *"CMOC" ]] ; then
+  elif [[ $CanNEMO_CONFIG == *"CMOC" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-cmoc.xml    file_def_nemo-cmoc.xml )
-  elif [[ $nemo_config == *"PISCES" ]] ; then
+  elif [[ $CanNEMO_CONFIG == *"PISCES" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
   fi
+
+else
+    echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
+    # GT and SICN specified in SAS
+    # get the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+    yearc=`expr ${current_year} - 1 | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+    yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc
+    yearc=`expr ${current_year} + 1 | awk  '{printf "%04d",$1}'`
+    acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc  || true
+    acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc  || true
+    acc_cp icemass_data_y${yearc}.nc           ${sas_simass_data}_y${yearc}.nc  || true
+
+    # If the file for yr-1 or yr+1 does not exist, NEMO will run but will not make time interpolation for 
+    # the first part or the last part of the current_year.
+        
+  # Access files required to run NEMO
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               file_def_nemo-sas.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+
+fi  # config != AMIP
+
 
   for file in "${xios_files[@]}"; do
     echo $file
@@ -371,10 +404,10 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_ver=`(cd $nemo_repo; git rev-parse $nemo_ver)` ||
         bail "Unable to validate runtime nemo_ver"
   fi
-  export nemo_ver nemo_repo nemo_config
+  export nemo_ver nemo_repo CanNEMO_CONFIG
   echo "### NEMO runtime: nemo_repo   = $nemo_repo"
   echo "### NEMO runtime: nemo_ver    = $nemo_ver"
-  echo "### NEMO runtime: nemo_config = $nemo_config"
+  echo "### NEMO runtime: CanNEMO_CONFIG = $CanNEMO_CONFIG"
 
   run_start_day=1
   run_start_date=$( printf "%04d-%02d-%02d" $run_start_year $run_start_month $run_start_day )
@@ -431,9 +464,11 @@ echo "#################### Start NEMO pre-processing #################"
     [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
 
     # access the istate files
-    is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
-    acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
-    acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
+    if [[ $config != "AMIP" ]]; then # AMIP use the SAS modele how done not need intial state files
+      is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
+      acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
+      acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
+    fi
 
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -498,7 +533,7 @@ echo "#################### Start NEMO pre-processing #################"
     rm -f input_ocn_restart_file_names
     touch input_ocn_restart_file_names
     for rsfile in $found_rs; do
-      [ $rsfile = 'cpl_restart.nc' ] && continue
+      [[ $rsfile =~ cpl_.*restart.nc ]] && continue
       sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
       [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
       mv $rsfile ${cn_ocerst_in}$sfx
@@ -515,7 +550,7 @@ echo "#################### Start NEMO pre-processing #################"
       with_ice=off
     else
       for rsfile in $found_rs; do
-        [ $rsfile = 'cpl_restart.nc' ] && continue
+        [[ $rsfile =~ cpl_.*restart.nc ]] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_icerst_in}$sfx
@@ -532,7 +567,7 @@ echo "#################### Start NEMO pre-processing #################"
       [ "$nemo_trc" = "on" ] && bail "No trc restart files were found in $nemo_rs"
     else
       for rsfile in $found_rs; do
-        [ $rsfile = 'cpl_restart.nc' ] && continue
+        [[ $rsfile =~ cpl_.*restart.nc ]] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_trcrst_in}$sfx
@@ -582,6 +617,7 @@ echo "#################### Start NEMO pre-processing #################"
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
   # xios executable
   if [[ $nemo_use_xios_server -eq 1 ]]; then  
+    is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
     ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
   fi                                 
 

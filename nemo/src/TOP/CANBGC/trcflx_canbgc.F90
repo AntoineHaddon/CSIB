@@ -184,6 +184,7 @@ CONTAINS
       ! 3. compute partial pressure differences and fluxes
       ! -------------------------------------------
 
+      zco2flx(:,:)=0. 
       DO jj = 1, jpj
          DO ji = 1, jpi
             ! Compute CO2 flux for the sea and air
