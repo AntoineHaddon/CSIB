@@ -501,7 +501,7 @@ fi  # config != AMIP
     [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
 
     # access the istate files
-    if [[ $config != "AMIP" ] && [ $dada_run != 1 ]]; then # AMIP use the SAS modele how done not need intial state files; DADA does generates IC files
+    if [[ $config != "AMIP" ]] && [[ $dada_run != 1 ]]; then # AMIP use the SAS modele how done not need intial state files; DADA does generates IC files
       is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
       acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
       acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
