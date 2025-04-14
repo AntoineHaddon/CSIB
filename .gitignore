@@ -24,5 +24,6 @@ rtd/build/*
 # ignore any xios files created during XIOS compilation
 nemo/xios-2.6/fcm.bld.lock
 nemo/xios-2.6/inc/*
+nemo/xios-2.6/lib/libxios.a
 
 nemo/ARCH/arch-imsi.fcm
