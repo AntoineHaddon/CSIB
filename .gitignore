@@ -21,4 +21,9 @@ rtd/build/*
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
 !nemo/TOOLS/REBUILD_NEMO/src/build/compile.*
 
+# ignore any xios files created during compilation
+# (they do get cleaned up after compiled)
+nemo/xios-2.6/fcm.bld.lock
+nemo/xios-2.6/inc/*
+
 nemo/ARCH/arch-imsi.fcm
