@@ -49,7 +49,7 @@
 !------------------------------------------------------------------------------
 &namsbc         !   Ice surface boundary conditions
 !------------------------------------------------------------------------------
-   nn_flxdist       =   -1             !  Redistribute heat flux over ice categories
+   nn_flxdist       =   2             !  Redistribute heat flux over ice categories
                                       !     =-1  Do nothing (needs N(cat) fluxes)
                                       !     = 0  Average N(cat) fluxes then apply the average over the N(cat) ice
                                       !     = 1  Average N(cat) fluxes then redistribute over the N(cat) ice using T-ice and albedo sensitivity
