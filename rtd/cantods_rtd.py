@@ -39,10 +39,11 @@ parser.add_argument('-o','--outdir',help='Output directory for diagnostic netCDF
 parser.add_argument('-R','--redo',help='If True (default is False), deletes original netCDF output files (if present) and creates fresh files. Default is to append.',default=False)
 parser.add_argument('-I','--ice',help='Calculate sea-ice parameters (volume and area). Not used if -A is True. 0: volume and area (default), 1: volume only, 2: area only, other: do not calculate',default=0)
 parser.add_argument('-Y','--phys',help='Calculate mean temperature and salnity (3D and surface), max MLD, and mean SSH. Not used if -A is True. 0: calculate all variables (default), 1: T only, 2: S only, 3: MLD only, 4: SSH only. Other: do not calculate',default=0)
+parser.add_argument('-T','--trans',help='Calculate volume transports through straits. Not used if -A is True. 0: calculate all transports, 1: Bering only, 2: Davis N only, 3: Davis S only, Other: do not calculate',default=0)
 parser.add_argument('-z','--depths',help='Depths (in m) for calculating variables (as applicable). Pass as list, e.g., 0,250,1000,all',default='0,250,1000,all')
 parser.add_argument('-x','--xlim',help='Set time limit for calculating diagnostics. All series are forced to 0-time.',default=[-np.inf,np.inf])
 parser.add_argument('-y','--year0',help='Start year for model run(s). Can either pass single value or use multiple times to match number of runids. If not passed, finds earliest date in files and assumes that to be the start.',default=None)
-parser.add_argument('-g','--regions',help='List of regions in which to calculate means.',default='labsea,arctic,pnw')
+parser.add_argument('-g','--regions',help='List of regions in which to calculate means.',default='labsea,arctic,canpac,canatl')
 parser.add_argument('-P','--plot',help='Logical flag to plot entire time series from netCDF file. Links plot to public_html.',default=False)
 parser.add_argument('-s','--source',help='Source directory for file if not the working directory.',default='.')
 parser.add_argument('-v','--version',help='File version. If not passed, looks for highest version.',default=None)
@@ -126,16 +127,6 @@ def cantodsFiles(runid,nemoVar,args):
     flist=sorted(list(np.array(flist)[fGood]))
 
     return flist,args
-
-#TODO: delete if working properly
-# def time2datetime(times):
-#   """
-#   Convert times from one format (e.g., np.datetime) to datetime.datetime
-#   using pandas
-#   """
-#   datetime = pd.to_datetime(times,unit='s').to_pydatetime()
-
-#   return datetime
 
 def relativeYear(dset,args):
     # convert from date in file to years since start date
@@ -226,15 +217,42 @@ def meshGrid(meshfiles,runid,olev,args):
 def regionMask(region,lon,lat):
     """
     Get a 2D mask defining a given region.
+    Regions include:
+        labsea - Labrador Sea
+        arctic - Arctic circle (>~ 66.5 N)
     """
-    if region=='labsea' or ('lab' in region.lower()):
+    # Bounds for some geometrically specified regions
+    if region.lower()=='labsea' or ('lab' in region.lower()):
+        # LABRADOR SEA
                 # Kulliq    Greenland NFLD    Kippon     Belle Isl. NE LEdge  Cape St Charles
         bounds=[[-64.5786, -43.91753, -52.45, -55.41667, -55.4293, -55.25,   -55.6215, -64.5786], #longitude
                 [ 60.,      60.,       47.75,  51.6667,   51.9,     52.0333,  52.21667, 60.]]     # latitude
+    elif region.lower()=='canpac' or ('pac' in region.lower()):
+        # NORTHEAST NORTH PACIFIC OCEAN
+                 # W State               S BC                  Yukon            Alaska              Panhandle        W of Stn P    S of Stn P
+        bounds=[[-121.58785773894593, -121.52563946173123, -136.44599841272867, -152.2812542378697, -155.4204018657861, -145.5, -137.28310446004681, -121.58785773894593], # longitude
+                [47.0,                49.45270791401021,   62.09039797199102,   62.31810681168754,  58.353439820448244, 50.0,   47.731407329459,     47.0]]                # latitude
+    elif region.lower()=='canatl' or ('atl' in region.lower()):
+        # NORTHWEST NORTH ATLANTIC OCEAN (Excluding Labrador Sea)
+                       # Maine   NA                                         Greenland NFLD    Kippon     Belle Isl. NE LEdge  Cape St Charles Quebec Maine
+        bounds=[[-69.2682391165346, -67.23317959216988, -43.91753, -43.91753, -52.45, -55.41667, -55.4293, -55.25,   -55.6215, -73.03521627003431, -69.2682391165346],          #longitude
+                [44.43925382969355, 40.50195865876387, 40.50195865876387, 60.,       47.75,  51.6667,   51.9,     52.0333,  52.21667, 48.38081145574862, 44.43925382969355]]    # latitude
+    elif region.lower()=='canarc':
+        # Canadian Arctic
+        bounds=[[-39.086275076348855, -39.086275076348855, -43.91753, -64.5786, -68.28738702218202, -76.36557811037876, -87.8757860794056, -159.8726925856259, -175.3028255881627, -175.3028255881627, -39.086275076348855],
+              [90, 83.51414598039267, 60, 60, 57.64614783645243, 62.009526045642836, 66.17634712197676, 65.56495014602127, 66.30904793978928, 90, 90]]
+    elif region.lower()=='hbay':
+        # Hudson Bay
+        bounds=[[-76.36557811037876, -74.90064255068444, -79.71400224682294, -98.1303349972659, -95.89805223963646, -87.8757860794056, -76.36557811037876],
+                [62.009526045642836, 56.84073792181265, 50.22396544413005, 59.025044220488915, 63.57204432318876, 66.17634712197676, 62.009526045642836]]
     else:
         bounds=None
     
-    if bounds is None:
+    if region.lower()=='arctic':
+        # ARCTIC CIRCLE
+        rmask=(lat>(66+34/60)).astype(int)
+    elif bounds is None:
+        # if not a defined region, don't mask
         return None
     else:
         bounds=np.array(bounds)
@@ -330,7 +348,7 @@ def calcIce(args):
         if args.ice in [0,iV]:
             series[sivar]={}
             for reg in args.regions:
-                if 'lab' in reg.lower() or 'arc' in reg.lower() or 'gos' in reg.lower():
+                if ('lab' in reg.lower()) or ('arc' in reg.lower()) or (reg.lower()=='arctic'):
                     # only proceeed for (potentially) ice-covered regions
                     if reg not in siregs: siregs.append(reg)
                     series[f'{sivar}_{reg}']={}
@@ -341,14 +359,14 @@ def calcIce(args):
     for iR,runid in enumerate(args.runid):
         # get mesh info
         if args.meshfile is not None:
-            if len(list(meshfile)) == len(args.runid):
+            if len(list(args.meshfile)) == len(args.runid):
                 meshSurf=meshGrid(args.meshfile[iR],runid,0,args)
             else:
                 meshSurf=meshGrid(None,runid,0,args)
         else:
             meshSurf=meshGrid(args.meshfile,runid,0,args)
 
-        print(f"\r  {f'Loaded mesh.':<50}",end='',flush=True)
+        print(f"\r  {f'Loaded mesh.':<75}",end='',flush=True)
 
         # look for sea-ice concentration as it will be needed for both area and volume
         # thickness is in the same file
@@ -365,7 +383,7 @@ def calcIce(args):
             
             # load from files
             for ifl in iflist:
-                print(f"\r  {f'Loading: {os.path.basename(ifl)}':<50}",end='',flush=True)
+                print(f"\r  {f'Loading: {os.path.basename(ifl)}':<75}",end='',flush=True)
                 with xr.open_dataset(ifl) as ds:
                     # get regional masks for domain
                     if len(list(rmasks.keys()))==0 and len(siregs) > 0:
@@ -441,7 +459,7 @@ def calcIce(args):
                             series[f'{var}_{reg}'][runid]['data']=np.array(series[f'{var}_{reg}'][runid]['data'])[iY]
 
             # save timeseries to file
-            print(f"\r  {' ':<50}",end='',flush=True) # clear line
+            print(f"\r  {' ':<75}",end='',flush=True) # clear line
             for iV,var in enumerate(['siarea','sivol']):
                 if args.ice in [0,iV]:
                     # only keep unique values
@@ -510,7 +528,7 @@ def calcPhys(args):
     for iR,runid in enumerate(args.runid):
         # get mesh info
         if args.meshfile is not None:
-            if len(list(meshfile)) == len(args.runid):
+            if len(list(args.meshfile)) == len(args.runid):
                 meshAll=meshGrid(args.meshfile[iR],runid,-1,args)
                 meshSurf=meshGrid(args.meshfile[iR],runid,0,args)
             else:
@@ -527,8 +545,11 @@ def calcPhys(args):
                 if '3D' in var:
                     levZ.append(-1)
                 else:
-                    levZ.append(np.argmin(np.abs(meshAll['depths']-int(var.split('_')[1].split('m')[0]))))
-        print(f"\r  {f'Loaded mesh.':<50}",end='',flush=True)
+                    try:
+                        levZ.append(np.argmin(np.abs(meshAll['depths']-int(var.split('_')[1].split('m')[0]))))
+                    except:
+                        pass
+        print(f"\r  {f'Loaded mesh.':<75}",end='',flush=True)
 
         # get list of files to load using glob
         tflist,args=cantodsFiles(runid,'thetao',args)
@@ -545,7 +566,7 @@ def calcPhys(args):
 
             # load from files
             for tfl in tflist:
-                print(f"\r  {f'Loading: {os.path.basename(tfl)}.':<50}",end='',flush=True)
+                print(f"\r  {f'Loading: {os.path.basename(tfl)}.':<75}",end='',flush=True)
                 with xr.open_dataset(tfl) as ds:
                     # get regional masks for domain
                     if len(list(rmasks.keys()))==0 and len(args.regions) > 0:
@@ -585,7 +606,7 @@ def calcPhys(args):
                     # calculate means at each time step
                     # Loop through time because not doing so leads to crash given large annual files...at least I assume that is why it crashed...
                     for tcount,tid in enumerate(tID):
-                        print(f"\r  {f'Loading: {os.path.basename(tfl)}. {tcount+1:02}/{len(years)}':<50}",end='',flush=True)
+                        print(f"\r  {f'Loading: {os.path.basename(tfl)}. {tcount+1:02}/{len(years)}':<75}",end='',flush=True)
                         for iV,var in enumerate(aVars):
                             try:
                                 reg=var.split('_')[2]
@@ -643,6 +664,155 @@ def calcPhys(args):
                     if args.plot and os.path.isfile(ncF):
                         plotTimeseries(ncF,var,runid)
 
+def calcTransports(args):
+    """
+    Calculate volume transports through Bering and Davis Straits
+    """
+    if args.trans==0:
+        tlist=[1,2,3,4]
+    else:
+        try:
+            tlist=list(args.trans)
+        except:
+            tlist=[args.trans]
+    tpvars=[None,'vol-Bering','vol-Davis','vol-CC','vol-CUC']
+
+    series={}
+    for iTrans in tlist:
+        series[tpvars[iTrans]]={}
+        
+    # get list of files to load using glob
+    for iR,runid in enumerate(args.runid):
+        tpflist,args=cantodsFiles(runid,'vo',args)
+        if len(tpflist)>0:
+            for iTrans in tlist:
+                series[tpvars[iTrans]][runid]={'years':np.array([]),'data':np.array([])}
+
+            # load from files
+            for tpfl in tpflist:
+                print(f"\r  {f'Loading: {os.path.basename(tpfl)}.':<75}",end='',flush=True)
+                with xr.open_dataset(tpfl.replace('1m_grid_v','mesh_mask')) as mm:
+                    with xr.open_dataset(tpfl) as ds:
+                        # convert time to years since run start date
+                        years=relativeYear(ds,args)
+                        tID=range(len(years))
+
+                        # restrict time based on x-limits (if set)
+                        xlim=np.full(len(years),True,dtype='bool')
+                        xlim[years<args.xlim[0]]=False
+                        xlim[np.floor(years)>args.xlim[1]]=False
+                        tID=np.array(tID)[xlim]
+                        years=years[xlim]
+
+                        # file dimensions
+                        tdim=ds.sizes['time_counter']
+                        zdim=ds.sizes['depthv']
+
+                        for iTrans in tlist:                            
+                            tpvar=tpvars[iTrans]
+                            print(f"\r  {f'Calculating: {tpvar}.':<75}",end='',flush=True)
+                            if iTrans==1:
+                                # Bering St
+                                lon0=-170.6         # westernmost point of strait
+                                lon1=-167.8         # easternmost point of strait
+                                lat=65.+45./60.     # latitude of strait
+                                dmin=0
+                                dmax=500
+                            elif iTrans==2:
+                                # Davis St
+                                lon0=-61.52   # westernmost point of strait
+                                lon1=-53.66   # easternmost point of strait
+                                lat=66.65     # latitude of strait
+                                dmin=0
+                                dmax=2700
+                            # elif iTrans==3:
+                            #     stName='Davis South'
+                            #     lon0=-64.67   # westernmost point of strait
+                            #     lon1=-43.74   # easternmost point of strait
+                            #     lat=60.       # latitude of strait
+                            #     dmin=0
+                            #     dmax=6000
+                            elif iTrans==3:
+                                # Cal. Current   # Newport Line
+                                lon0=-126
+                                lon1=-123
+                                lat=44.65
+                                dmin=0
+                                dmax=150
+                            elif iTrans==4:
+                                # Cal. Undercurrent   # Newport Line
+                                lon0=-126
+                                lon1=-123
+                                lat=44.65
+                                dmin=150
+                                dmax=2000
+
+                            # find longitudes that falls within the desired range (get a mask)
+                            dlon=ds.nav_lon.values
+                            if lon0 > lon1:
+                                iLon=np.logical_or(dlon>=lon0,dlon<=lon1)
+                            else:
+                                iLon=np.logical_and(dlon>=lon0,dlon<=lon1)
+                            # determine which horizontal cells fall within the desired range
+                            iX=np.where(np.sum(iLon,axis=0)>0)[0]
+                            # get desired depth indices
+                            kk=np.where(np.logical_and(dmin<=ds['depthv'],ds['depthv']<=dmax).values)[0]
+
+                            # create empty array for assigning transport
+                            ldata=np.zeros(len(years))
+                            for ii,ix in enumerate(iX):
+                                # find the nearest latitude in that column
+                                iy=np.argmin(np.abs(ds['nav_lat'].isel(x=ix).values-lat))
+                                proceed=False
+                                if lon0>lon1:
+                                    if (dlon[iy,ix]>=lon0) or (dlon[iy,ix]<=lon1):
+                                        proceed=True
+                                else:
+                                    if (dlon[iy,ix]>=lon0) and (dlon[iy,ix]<=lon1):
+                                        proceed=True
+                                if proceed and np.abs(ds['nav_lat'].isel(x=ix,y=iy).values-lat) < 0.2:
+                                    if mm['vmask'].isel(nav_lev=kk[0],time_counter=0,x=ix,y=iy).values==1:
+                                        print(f"\r  {f'Calculating: {tpvar} {ii+1}/{len(iX)} (y={int(np.nanmean(years))})':<75}",end='',flush=True)
+                                        dprod=ds['vo'].isel(x=ix,y=iy,depthv=kk)*ds['e3v'].isel(x=ix,y=iy,depthv=kk)*mm['e2u'].isel(x=ix,y=iy)*(mm['vmask'].isel(time_counter=0,x=ix,y=iy,nav_lev=kk).values)
+                                        ldata[:]+=dprod.sum(dim='depthv').values # volumetric flow in m3/s
+                            # convert to Sv and restrict in time
+                            ldata=ldata[xlim]*1e-6
+
+                            # append to time series
+                            series[tpvar][runid]['years']=np.append(series[tpvar][runid]['years'],years)
+                            series[tpvar][runid]['data']=np.append(series[tpvar][runid]['data'],ldata)
+
+            for iTrans in tlist:
+                tpvar=tpvars[iTrans]
+                print(f"\r  {f'Finalizing {tpvar}':<75}",end='',flush=True)
+                # sort in time
+                print(f"\r  {f'Sorting {tpvar} in time':<75}",end='',flush=True)
+                if len(series[tpvar][runid]) > 0:
+                    iY=np.argsort(np.array(series[tpvar][runid]['years']))
+                    series[tpvar][runid]['years']=np.array(series[tpvar][runid]['years'])[iY]
+                    series[tpvar][runid]['data']=np.array(series[tpvar][runid]['data'])[iY]
+
+                # save timeseries to file
+                print(f"\r  {f'Saving {tpvar}':<75}",end='',flush=True)
+                if len(series[tpvar][runid]['data']) > 0:
+                    # only keep unique values
+                    series[tpvar][runid]['years'],iU=np.unique(series[tpvar][runid]['years'],return_index=True)
+                    series[tpvar][runid]['data']=series[tpvar][runid]['data'][iU]
+                ncF=rtdNetCDF(runid,series[tpvar][runid],tpvar,args)
+
+                # delete existing plots if redo (even if not replotting)
+                if args.redo:
+                    pltFile=os.path.join(args.outdir,f"timeseries_{runid}_{tpvar}.png")
+                    if os.path.isfile(pltFile):
+                        subprocess.run(f'rm -f {pltFile}',shell=True)
+                        subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
+                # plot time series if desired
+                if args.plot and os.path.isfile(ncF):
+                    print(f"\r  {f'Plotting {tpvar}':<75}",end='',flush=True)
+                    plotTimeseries(ncF,tpvar,runid)
+    
+    print(f"\r  {f'Done calculating transports.':<75}",end='',flush=True)
+
 def plotTimeseries(ncFile,varName,runid):
     """
     Plot complete time series and link to public_html for viewing
@@ -676,9 +846,11 @@ if args.all!=True:
 if args.all:
     args.ice=0
     args.phys=0
+    args.trans=0
 else:
     args.ice=int(args.ice)
     args.phys=int(args.phys)
+    args.trans=int(args.trans)
 
 # ensure run name not in runpath
 for iN,rN in enumerate(args.runid):
@@ -716,6 +888,10 @@ if args.ice in range(3):
 # Temperature and Salinity Calculations
 if args.phys in range(5):
     calcPhys(args)
+
+# Calculate volume transports
+if args.trans in range(5):
+    calcTransports(args)
 
 # link jupyter notebook to public_html if not already
 for iR,runid in enumerate(args.runid):

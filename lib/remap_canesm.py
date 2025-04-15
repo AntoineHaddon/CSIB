@@ -874,7 +874,6 @@ def sos_remap(args):
 
     # identify file based on desired year
     for year in years:
-        fexpect+=1
         if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
             fy=year + int(args.iaf_year_offset)
             yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
@@ -917,7 +916,6 @@ def sos_remap(args):
 
     # remove intermediate files
     subprocess.run(f'rm -f *.tmp.nc',shell=True)
-    return fcount,fexpect
 
 def rvr_remap(args):
     """
