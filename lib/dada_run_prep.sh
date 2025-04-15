@@ -74,6 +74,23 @@ if [[ $ctds_dnscl > 1 ]] || [[ $runmode != *"CanTODS"* ]]; then
   fi
 fi
 
+# sea-surface salinity
+if [[ $nemo_nn_sssr != 0 ]] ; then
+  if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
+      # use current year for forcing
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o sss_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -M ${dada_forcing_freq} -t 4 > sos_status
+  else
+      # use cyclical forcing
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o sss_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -M ${dada_forcing_freq} -t 4 -A ${iaf_year_offset} -a ${iaf_loop_year} > sos_status
+  fi
+  if [ -z "$(ls ./sss_${dada_outfield}_y*)" ] ; then
+    echo "ERROR: SSS file not generated!"
+    exit 2007
+  fi
+  # use current year for forcing
+  # use cyclical forcing
+fi
+
 # river forcing
 # TODO: rivers will need to be remapped properly
 if [[ $nemo_ln_rnf == "on" ]] ; then
@@ -87,14 +104,16 @@ if [[ $nemo_ln_rnf == "on" ]] ; then
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} > rvr_status
     fi
   else
+    access nemo_river_remap.nc $nemo_river_remap
     # remap/rescale rivers
     if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v ${nemo_river_remap} -g ${dada_parent_grid} > rvr_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v nemo_river_remap.nc -g ${dada_parent_grid} > rvr_status
     else
       # use cyclical forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} -v ${nemo_river_remap} -g ${dada_parent_grid} > rvr_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} -v nemo_river_remap.nc -g ${dada_parent_grid} > rvr_status
     fi
+    rm -f nemo_river_remap.nc
   fi
   if [ -z "$(ls ./rvr_${dada_outfield}).nc" ] ; then
     echo "ERROR: River files not generated!"

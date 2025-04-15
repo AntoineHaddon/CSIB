@@ -35,7 +35,7 @@ parser.add_argument('-x','--parent_experiment',help='Experiment (e.g., piControl
 parser.add_argument('-g','--parent_grid',help='Parent meshfile. Only needed if remapping rivers.',default=None)
 parser.add_argument('-o','--outfile',help='Prefix for output file. If None, default name is created based on type of file being produced.',default=None)
 parser.add_argument('-m','--meshfile',help='Meshfile for remapping.',default='CREG_NEMO4_domain_meshfile_forRemapping.nc')
-parser.add_argument('-t','--type',help='Type of files to produce. Either:\n  -1 - nemo configuration info\n  0 - Initial conditions (default)\n  1 - Boundary conditions\n  2 - Atmospheric forcing (does not remap; only gets correct file time)',type=int,default=0)
+parser.add_argument('-t','--type',help='Type of files to produce. Either:\n  -1 - nemo configuration info\n  0 - Initial conditions (default)\n  1 - Boundary conditions\n  2 - Atmospheric forcing (does not remap; only gets correct file time)\n  3 - Rivers (currently simple scaling)\n  4 - Surface salinity',type=int,default=0)
 parser.add_argument('-X','--Xdeg',help='Slice to contain X degrees either side of the boundary. Should be larger than the parent grid resolution to guarantee border. Default = 1.25.',default=1.25,type=float)
 parser.add_argument('-B','--bdyFile',help='Map to a specific boundary coordinate file (if type=1), e.g., to the Med. Otherwise maps to presumed north/south boudary.',default=None)
 parser.add_argument('-F','--forcing',help='Type of forcing CanESM (default) or OMIP',default='CanESM')
@@ -843,6 +843,82 @@ def frc_slice(args):
                 fcount+=1
     return fcount,fexpect
 
+def sos_remap(args):
+    """
+    Remap surface salinity for sssr.
+    """
+    print(f'Finding and processing data from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    # get mesh file in correct format and find lat/lon bounds
+    checkMeshFile(args.meshfile)
+    with xr.open_dataset('grd.tmp.nc') as ds0:
+        # latitude range of grid
+        bN=np.nanmax(ds0['nav_lat'])
+        bS=np.nanmin(ds0['nav_lat'])
+
+    if args.outfile is None:
+        outFile=f'sss_data_yYYYY'
+    else:
+        outFile=args.outfile
+    vRep={'sos':'salinity'}
+
+    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    else:
+        years=np.array(args.years)
+
+    vV='sos'
+    varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
+    # find all files that match format
+    flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
+
+    # identify file based on desired year
+    for year in years:
+        fexpect+=1
+        if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+            fy=year + int(args.iaf_year_offset)
+            yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+            yr=fy-int((year-1)/yd)*yd
+            file=matchFileYear(yr,flist)[0]
+        else:
+            # find matching file
+            file=matchFileYear(year,flist)[0]
+            yr=year
+        print(f'{vV} - {year} ({yr})')
+        fdates=f'{yr}-{year}'
+        startYear=yr
+
+        if file is None:
+            print(f'No {vV} files found for {year} ({yr}).')
+        else:
+            # get desired time from file
+            # extract desired year from file
+            if len(file) > 1:
+                # concatenate multiple files
+                fstr=''
+                for fle in file:
+                    fstr+=f'{fle} '
+                subprocess.run(f'ncrcat -h {fstr} -O {outFile}_y{fdates}_{vV}.nc',shell=True)
+                subprocess.run(f'cdo --no_history selyear,{startYear}/{startYear} {outFile}_y{fdates}_{vV}.nc {outFile}_y{startYear}_{vV}.nc',shell=True)
+                subprocess.run(f'rm -f {outFile}_y{fdates}_{vV}.nc',shell=True)
+            else:
+                subprocess.run(f'cdo --no_history selyear,{startYear}/{startYear} {file[0]} {outFile}_y{startYear}_{vV}.nc',shell=True)
+            
+            # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
+            subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},90 {outFile}_y{startYear}_{vV}.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
+            
+            # fill any gaps in the sliced srcFile (two iterations)
+            subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc',shell=True)
+
+            # remap to child grid
+            subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year}')}.nc",shell=True)
+            print(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year}')}.nc")
+            subprocess.run(f'rm -f *y{yr}.{vV}.nc',shell=True)
+
+    # remove intermediate files
+    subprocess.run(f'rm -f *.tmp.nc',shell=True)
+    return fcount,fexpect
+
 def rvr_remap(args):
     """
     (Very) simple river remapping (simply scales one file to match another).
@@ -1239,6 +1315,10 @@ elif args.type==3:
     print('Remapping/scaling rivers.')
     rvr_remap(args)
     print(f'Done river rivermapping.')
+elif args.type==4:
+    print('Remapping sos.')
+    sos_remap(args)
+    print('Done remapping sos.')
 elif args.type==10:
     bdy_slc(args)
     print(f'Done extracting file as boundary input!')

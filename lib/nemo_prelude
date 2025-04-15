@@ -269,7 +269,7 @@ if [[ $config != "AMIP" ]]; then
     acc_cp resto.nc                  $nemo_resto 
   fi 
 
-  if [[ $nemo_nn_sssr != 0 ]]; then
+  if [[ $nemo_nn_sssr != 0 ]] && [[ ${dada_run} != 1 ]] ; then
     is_defined $nemo_sss_data || bail "The variable nemo_sss_data must be defined in the configuration file."
     acc_cp sss_data.nc               $nemo_sss_data
   fi 
