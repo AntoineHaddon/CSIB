@@ -4,7 +4,7 @@ set -e
 
 # get copy of the domain.cfg file
 is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
-acc_cp domain_cfg.nc $nemo_coordinates
+access domain_cfg.nc $nemo_coordinates
 
 # activate correct Python environment
 source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
@@ -26,7 +26,7 @@ if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; t
     fi
   else
     # eORCA grids slightly different, so interpolate to an existing IC file
-    acc_cp tmp_ic.nc $nemo_data_1m_temperature_rest
+    access tmp_ic.nc $nemo_data_1m_temperature_rest
     if [[ $nemo_from_rest == "on" ]] ; then
       # Start from rest
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y ${dada_ic_year} -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m tmp_ic.nc -t 0 -i $(( $dada_ic_month - 1 )) > ic_status

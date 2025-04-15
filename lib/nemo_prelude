@@ -17,7 +17,10 @@
     [ -z "$2" ] && bail "--> acc_cp $1 <-- requires a remote file name as the second arg"
     remote_file=$2
     shift 2
-    access $local_file $remote_file $*
+    access $local_file $remote_file $* ||
+      ln -sf $remote_file $local_file ||
+      bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+
       #cp $remote_file $local_file ||
       #bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
 
