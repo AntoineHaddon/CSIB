@@ -187,7 +187,10 @@ def meshGrid(meshfiles,runid,olev,args):
 
                 e1t = meshmask['e1t'].values.squeeze() # y,x
                 e2t = meshmask['e2t'].values.squeeze() # y,x
-                e3t = meshmask['e3t_0'].values.squeeze()[0,:,:,:] # z,y,x
+                try:
+                    e3t = meshmask['e3t_0'].values.squeeze()[0,:,:,:] # z,y,x
+                except:
+                    e3t = meshmask['e3t_0'].values.squeeze() # z,y,x
 
                 # land mask
                 tmask = np.squeeze(np.array(meshmask['tmask'].values[0,:,:,:].squeeze()[0:lev,:,:]))

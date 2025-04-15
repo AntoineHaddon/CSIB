@@ -860,14 +860,13 @@ def sos_remap(args):
         outFile=f'sss_data_yYYYY'
     else:
         outFile=args.outfile
-    vRep={'sos':'salinity'}
 
     if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
         years=range(min(args.years),max(args.years)+1)
     else:
         years=np.array(args.years)
 
-    vV='sos'
+    vV='so'
     varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
     # find all files that match format
     flist=np.array(sorted(glob.glob(os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))))
@@ -906,13 +905,15 @@ def sos_remap(args):
             # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
             subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},90 {outFile}_y{startYear}_{vV}.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
             
+            # only keep surface value
+            subprocess.run(f'ncks -h -d,lev,0,0 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc -O {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
+
             # fill any gaps in the sliced srcFile (two iterations)
             subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc',shell=True)
 
             # remap to child grid
-            subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year}')}.nc",shell=True)
-            print(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vRep[vV]).replace('yYYYY',f'y{year}')}.nc")
-            subprocess.run(f'rm -f *y{yr}.{vV}.nc',shell=True)
+            subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vV).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+            subprocess.run(f'rm -f *.{vV}.nc',shell=True)
 
     # remove intermediate files
     subprocess.run(f'rm -f *.tmp.nc',shell=True)
