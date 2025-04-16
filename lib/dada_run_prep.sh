@@ -87,8 +87,6 @@ if [[ $nemo_nn_sssr != 0 ]] ; then
     echo "ERROR: SSS file not generated!"
     exit 2007
   fi
-  # use current year for forcing
-  # use cyclical forcing
 fi
 
 # river forcing
@@ -104,16 +102,16 @@ if [[ $nemo_ln_rnf == "on" ]] ; then
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} > rvr_status
     fi
   else
-    access nemo_river_remap.nc $nemo_river_remap
+    access nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc $nemo_river_remap
     # remap/rescale rivers
     if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v nemo_river_remap.nc -g ${dada_parent_grid} > rvr_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc -g ${dada_parent_grid} > rvr_status
     else
       # use cyclical forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} -v nemo_river_remap.nc -g ${dada_parent_grid} > rvr_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -A ${iaf_year_offset} -a ${iaf_loop_year} -v nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc -g ${dada_parent_grid} > rvr_status
     fi
-    rm -f nemo_river_remap.nc
+    rm -f nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc
   fi
   if [ -z "$(ls ./rvr_${dada_outfield}).nc" ] ; then
     echo "ERROR: River files not generated!"

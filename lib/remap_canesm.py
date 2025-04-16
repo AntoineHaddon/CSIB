@@ -906,14 +906,16 @@ def sos_remap(args):
             subprocess.run(f'cdo --no_history sellonlatbox,-180,180,{bS-args.Xdeg},90 {outFile}_y{startYear}_{vV}.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
             
             # only keep surface value
-            subprocess.run(f'ncks -h -d,lev,0,0 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc -O {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
+            subprocess.run(f'ncks -h -d lev,0,0 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc -O {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc',shell=True)
 
             # fill any gaps in the sliced srcFile (two iterations)
             subprocess.run(f'cdo --no_history fillmiss2,2 {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc',shell=True)
 
             # remap to child grid
             subprocess.run(f"cdo --no_history remapdis,grd.tmp.nc {outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc {outFile.replace('VAR',vV).replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+            # remove temporary files
             subprocess.run(f'rm -f *.{vV}.nc',shell=True)
+            subprocess.run(f'rm -f *_{vV}.nc',shell=True)
 
     # remove intermediate files
     subprocess.run(f'rm -f *.tmp.nc',shell=True)
@@ -921,6 +923,7 @@ def sos_remap(args):
 def rvr_remap(args):
     """
     (Very) simple river remapping (simply scales one file to match another).
+    WARNING: THIS IS A VERY CRUDE APPROXIMATION!!!
     """
     # calculate total disharge in kg/s
     # calculate ratio of total discharge
@@ -993,30 +996,87 @@ def rvr_remap(args):
                         # get time-sliced files
                         subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.concat.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp0.nc",shell=True)
                         # get single year from target file (may not match yr)
-                        syr=os.path.basename(args.rvr).split('_')[-1].split('-')[0][0:4]
-                        subprocess.run(f"cdo --no_history selyear,{syr}/{syr} {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
+                        try:
+                            syr=os.path.basename(args.rvr).split('_')[-1].split('-')[0][0:4]
+                            subprocess.run(f"cdo --no_history selyear,{syr}/{syr} {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
+                        except:
+                            subprocess.run(f"ln -sf {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
                         area0=cellAreas(args.parent_grid)
                         area1=cellAreas(args.meshfile)
                         with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp0.nc") as rvr0:
                             with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc") as rvr1:
-                                sum0=np.nansum(rvr0.friver*area0)
-                                sum1=np.nansum(rvr1.friver*area1)
+                                rr0=rvr0.friver
+                                try:
+                                    rr1=rvr1.friver
+                                    fr1=True
+                                except:
+                                    try:
+                                        rr1=rvr1.runoff[:,0:-1,1:-1]
+                                    except:
+                                        rr1=rvr1.runoff[0:-1,1:-1]
+                                    fr1=False
+                                if len(rr0)==12 and len(rr1)==12:
+                                    # both files are monthly, can simply sum
+                                    sum0=np.nansum(rr0*area0)
+                                    sum1=np.nansum(rr1*area1)
+                                else:
+                                    # files are not the same time span, need to average
+                                    # in time before taking the sum to get total volume
+                                    if len(rr0)==12:
+                                        sum0=np.nansum(np.nanmean(rr0,axis=0)*area0)
+                                    else:
+                                        sum0=np.nansum(rr0*area0)
+                                    if len(rr1)==12:
+                                        sum1=np.nansum(np.nanmean(rr1,axis=0)*area1)
+                                    else:
+                                        sum1=np.nansum(rr1*area1)
                                 # get ratio
                                 ratio=sum0/sum1
-                                # check: does sum of rvr1*ratio == sum0??
-                                diffCheck=100*np.abs(np.nansum(ratio*rvr1.friver*area1)-sum0)/sum0
-                                if diffCheck > 0.1:
-                                    sys.exit(f'Total fresh water does not agree!\n{sum0}\n{np.nansum(ratio*rvr1.friver*area1)}\n{diffCheck}%')
-                                else:
-                                    print(f'Total freshwater within 0.1% ({diffCheck}%)')
                         # apply ratio to files
-                        subprocess.run(f"cdo expr,'friver={ratio}*friver' {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                        if fr1:
+                            subprocess.run(f"cdo expr,'friver={ratio}*friver' {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                        else:
+                            subprocess.run(f"cdo expr,'runoff={ratio}*runoff' {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                        # if 'friver' in rvr0.keys():
+                        #             rr0=rvr0.friver
+                        #         else:
+                        #             rr0=rvr0.runoff
+                        #         if len(np.shape(rr0))==3:
+                        #             sum0=np.nansum(np.nanmean(rr0,axis=0)*area0)
+                        #         else:
+                        #             sum0=np.nansum(rr0*area0)
+                        #         if 'friver' in rvr1.keys():
+                        #             rr1=rvr1.friver
+                        #             fr1=True
+                        #         else:
+                        #             rr1=rvr1.runoff
+                        #             fr1=False
+                        #         if len(np.shape(rr1))==3:
+                        #             sum1=np.nansum(np.nanmean(rr1,axis=0)*area1)
+                        #         else:
+                        #             sum0=np.nansum(rr1*area1)
+                        #         # get ratio
+                        #         ratio=sum0/sum1
+                        # # apply ratio to files
+                        # if fr1:
+                        #     subprocess.run(f"cdo expr,'friver={ratio}*friver' {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
+                        # else:
+                        #     subprocess.run(f"cdo expr,'runoff={ratio}*runoff' {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
                     subprocess.run(f"rm -f {outFile.replace('yYYYY',f'*')}.tmp*.nc",shell=True)
                 subprocess.run(f'rm -f {outFile}*concat*tmp.nc',shell=True)
                 
                 # add river mask to file
                 with xr.open_dataset(f"{outFile.replace('yYYYY',f'y{year:04}')}.nc") as rvr:
-                    rflag=np.squeeze(np.nansum(rvr.friver,axis=0))>0
+                    if fr1:
+                        if len(rvr.friver)==12:
+                            rflag=np.squeeze(np.nansum(rvr.friver,axis=0))>0    
+                        else:
+                            rflag=np.squeeze(rvr.friver)>0    
+                    else:
+                        if len(rvr.runoff)==12:
+                            rflag=np.squeeze(np.nansum(rvr.runoff,axis=0))>0
+                        else:
+                            rflag=np.squeeze(rvr.runoff)>0
                     rmask=np.full(np.shape(rflag),0.0)
                     rmask[rflag]=0.5
                 rset=xr.Dataset.from_dict({'riv_mask':{'dims':('y','x'),'data':rmask}})
