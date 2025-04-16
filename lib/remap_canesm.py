@@ -959,6 +959,7 @@ def rvr_remap(args):
             if file0 is None:
                 print(f'No river file found for {year} ({yr}).')
             else:
+                fr1=True    # flag if file contains frvier (instead of runoff)
                 # concatenate multiple files
                 if len(file0) > 1:
                     fstr=''
