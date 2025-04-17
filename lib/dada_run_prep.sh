@@ -91,7 +91,7 @@ fi
 
 # river forcing
 # TODO: rivers will need to be remapped properly
-if [[ $nemo_ln_rnf == "on" ]] ; then
+if [[ $nemo_ln_rnf == "on" ]] && [[ $runmode != *"CanTODS"* ]]; then
   if [[ -z "${nemo_river_remap}" ]] ; then
    # don't remap/rescale rivers
     if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then

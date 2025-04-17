@@ -213,8 +213,8 @@ if [[ $config != "AMIP" ]]; then
     if [[ ${dada_run} != 1 ]] || [[ ${runmode} == "CanTODS" ]]; then
       is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
       # first try with climatology, if file don't exist in the database, try the yearly vervion (with _yYYYY.nc).
-      if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
-        acc_cp runoff_1m_nomask.nc    $nemo_runoff_core_monthly na
+      if [[ ${runmode} == "CanTODS" ]] ; then
+        acc_cp runoff_1m_nomask.nc $nemo_runoff_core_monthly na
       else
         acc_cp runoffs.nc    $nemo_runoff_core_monthly na
       fi
