@@ -694,7 +694,17 @@ def calcTransports(args):
             # load from files
             for tpfl in tpflist:
                 print(f"\r  {f'Loading: {os.path.basename(tpfl)}.':<75}",end='',flush=True)
-                with xr.open_dataset(tpfl.replace('1m_grid_v','mesh_mask')) as mm:
+                mmFile=tpfl.replace('1m_grid_v','mesh_mask')
+                # Get mask file. TODO: make use of access
+                while not os.path.isfile(mmFile):
+                    mmInt=int(mmFile[-3::])-1
+                    if mmInt == 0:
+                      break
+                    else:
+                      mmFile=mmFile.replace(mmFile[-3::],f'{mmInt:03}')
+
+                with xr.open_dataset(mmFile) as mm:
+                #with xr.open_dataset(tpfl.replace('1m_grid_v','mesh_mask')) as mm:
                     with xr.open_dataset(tpfl) as ds:
                         # convert time to years since run start date
                         years=relativeYear(ds,args)
