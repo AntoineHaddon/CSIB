@@ -127,6 +127,7 @@
 !-----------------------------------------------------------------------
    !                    !  bulk algorithm :
    ln_NCAR    = .true.     ! "NCAR"      algorithm   (Large and Yeager 2008)
+   rn_zqt       = 10.     !  Air temperature & humidity reference height (m)
 
    cn_dir = './'  !  root directory for the bulk data location
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!

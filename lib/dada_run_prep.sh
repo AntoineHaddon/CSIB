@@ -76,12 +76,12 @@ fi
 
 # sea-surface salinity
 if [[ $nemo_nn_sssr != 0 ]] ; then
-  if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
+  if [[ -z "${dada_year_offset}" ]] && [[ -z "${dada_loop_year}" ]] ; then
       # use current year for forcing
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o sss_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -M ${dada_forcing_freq} -t 4 > sos_status
   else
       # use cyclical forcing
-      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o sss_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -M ${dada_forcing_freq} -t 4 -A ${iaf_year_offset} -a ${iaf_loop_year} > sos_status
+      python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o sss_${dada_outfield}_yYYYY -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -M ${dada_forcing_freq} -t 4 -A ${dada_year_offset} -a ${dada_loop_year} > sos_status
   fi
   if [ -z "$(ls ./sss_${dada_outfield}_y*)" ] ; then
     echo "ERROR: SSS file not generated!"
