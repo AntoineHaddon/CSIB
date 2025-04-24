@@ -171,7 +171,7 @@ CONTAINS
 ! precalculate some constant terms to minimize divisions
       mwr_n2c = mw_n/mw_c
       imw_n   =   1./mw_n
-      WRITE(numout,*) "start loops"
+
       ! Computation of the various production terms 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -222,7 +222,7 @@ CONTAINS
                       zprochln(ji,jj,jk) = rhochl*VCN/thetac*tr(ji,jj,jk,jrnch, Kbb)*xstepb                  ! Chl production rate
                       zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)     ! NO3 uptake
                       xlimnn(ji,jj,jk)   = 1.-qndep 
-                      xlimnfe0(ji,jj,jk) = 1.-qfedep
+                      xlimnfe0(ji,jj,jk) = 1.-qfedep 
 
 ! large phytoplankton
 
@@ -267,6 +267,7 @@ CONTAINS
             END DO
          END DO
       END DO
+
       !   Update the arrays TRA which contain the biological sources and sinks
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -301,7 +302,7 @@ CONTAINS
           END DO
         END DO
      END DO
-     WRITE(numout,*) "done loops"
+
      ! Total primary production per year
      tpp = tpp + glob_sum( 'canoe_prod' , ( zprorca(:,:,:) + zprorcad(:,:,:) ) * cvol(:,:,:) )
 
@@ -310,7 +311,7 @@ CONTAINS
        WRITE(numout,*) '-------------------- : ',tpp * 12. / 1.E12
        WRITE(numout,*) 
      ENDIF
-     WRITE(numout,*) "before iom_puts"
+
       !
      zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
      IF( jnt == qnrdttrc ) THEN
@@ -322,12 +323,12 @@ CONTAINS
        CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by nanophyto
        CALL iom_put( "LNN"     , xlimnn  (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
        CALL iom_put( "LDN"     , xlimdn  (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
-       !CALL iom_put( "LNFe"    , xlimnfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
-       !CALL iom_put( "LDFe"    , xlimdfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+       CALL iom_put( "LNFe"    , xlimnfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+       CALL iom_put( "LDFe"    , xlimdfe0 (:,:,:)          * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
        CALL iom_put( "PAR"     , par_3bands (:,:,:)        * tmask_bgc_closea(:,:,:) )  ! Irradiance
      ENDIF
      !
-     WRITE(numout,*) "Done iom_puts"
+
      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
         WRITE(charout, FMT="('prod')")
         CALL prt_ctl_info(charout, cdcomp = 'top')

@@ -24,6 +24,7 @@
     <field_definition src="./field_def_nemo-canoe.xml"/> <!--  NEMO ocean biology       -->
 <!-- Files definition -->
     <file_definition src="./file_def_nemo-oce.xml" output_level="0" />     <!--  NEMO ocean dynamics      -->
+    <file_definition src="./file_def_nemo-ice.xml" output_level="0" />     <!--  NEMO sea-ice model       -->
     <file_definition src="./file_def_nemo-canoe.xml" output_level="0" />   <!--  NEMO ocean biology       -->
 
 <!-- Axis definition -->

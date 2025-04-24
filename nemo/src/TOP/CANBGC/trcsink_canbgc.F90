@@ -491,7 +491,6 @@ CONTAINS
             !zocdep(ji,jj) = trn(ji,jj,ikt,jqpoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jqgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
          END DO
       END DO
-
       !
       zrfact2 = 1.e-3 * qfact2r
       ik1  = iksed + 1
