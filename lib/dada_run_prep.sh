@@ -104,9 +104,9 @@ if [[ $nemo_ln_rnf == "on" ]] && [[ $runmode != *"CanTODS"* ]]; then
   else
     access nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc $nemo_river_remap
     # remap/rescale rivers
+    access dpg.nc $dada_parent_grid || ln -s $dada_parent_grid dpg.nc # get parent grid for remapping
     if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
-      access dpg.nc $dada_parent_grid || ln -s $dada_parent_grid dpg.nc # get parent grid for remapping
       python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble} -m domain_cfg.nc -t 3 -v nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc -g dpg.nc > rvr_status
     else
       # use cyclical forcing
