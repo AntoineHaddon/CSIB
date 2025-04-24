@@ -118,8 +118,8 @@ echo "#################### Start NEMO pre-processing #################"
       if [[ $dada_run != 0 ]] ; then
         cp_dada
       fi
-      if [[ $dada_run == 0 ]] || [[ $ctds_dnscl == 1 ]]; then
-        # Get atmospheric forcing in case of OMIP-forced run, or not downscaling
+      if [[ $dada_run == 0 ]] ; then
+        # Get atmospheric forcing if not downscaling
         # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
         for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
           ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).

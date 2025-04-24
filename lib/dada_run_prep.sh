@@ -59,7 +59,7 @@ fi
 # atmospheric forcing if downscaling
 # if not downscaling (i.e., forced CanTODS run, or using OMIP forcing),
 # then forcing is obtained in nemo_prelude and weighting is used
-if [[ $ctds_dnscl > 1 ]] || [[ $runmode != *"CanTODS"* ]]; then
+if [[ $ctds_dnscl != 0 ]] || [[ $runmode != *"CanTODS"* ]]; then
   # CanESM atmospheric forcing
   if [[ -z "${iaf_year_offset}" ]] && [[ -z "${iaf_loop_year}" ]] ; then
       # use current year for forcing
