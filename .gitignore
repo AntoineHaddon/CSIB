@@ -13,18 +13,15 @@ nemo/mk/cpp_tools.fcm
 
 # ignore everything in the build directories except Makefiles and environment files
 diag/build/*
+!diag/build/README
 rtd/build/*
+!rtd/build/README
 !diag/build/Makefile
 !diag/build/compile.*
 !rtd/build/Makefile
 !rtd/build/compile.*
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
+!nemo/TOOLS/REBUILD_NEMO/src/build/README
 !nemo/TOOLS/REBUILD_NEMO/src/build/compile.*
-
-# ignore any xios files created during XIOS compilation
-#nemo/xios-2.6/fcm.bld.lock
-#nemo/xios-2.6/inc/*
-#!nemo/xios-2.6/*/*.hpp
-#nemo/xios-2.6/lib/libxios.a
 
 nemo/ARCH/arch-imsi.fcm
