@@ -1,0 +1,12 @@
+To use this Makefile to build the NEMO rebuild exec, two things are required:
+    1. make template file, which is used to define the compiler/settings. This is defined with the 
+       COMPILER_TEMPLATE=/path/to/make/template/file argument
+    2. a compilation environment
+
+Both of these are platform dependent, and in regards to the compilation environment, it is possible you 
+don't need one.
+
+To gain access to needed files, you can either rely on the production compilation systems to 
+pick them up for you, or you can find them in the following locations:
+    1. For a fully coupled run: /path/to/super/repo/CanESM/CONFIG/PLATFORM
+    2. For an ocean only run: /path/to/nemo/repo/CanNEMO/nemo/ARCH
