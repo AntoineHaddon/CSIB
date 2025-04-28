@@ -39,7 +39,7 @@
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_Dt      = 3600.     !  time step for the dynamics and tracer
+   rn_Dt      = 2700.     !  time step for the dynamics and tracer
    ln_meshmask = .false.   !  =T create a mesh file
 /
 !-----------------------------------------------------------------------
@@ -206,8 +206,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
-   ln_rnf_depth = .false.   !  read in depth information for runoff
-   ln_rnf_mouth = .true.    !  specific treatment at rivers mouths
+   ln_rnf_depth = .true.   !  read in depth information for runoff
+   ln_rnf_mouth = .false.    !  specific treatment at rivers mouths
 
    cn_dir = './'  !  root directory for the location of the runoff files
    !___________!_____________!___________________!___________!_____________!_________!___________!__________!__________!_______________!
