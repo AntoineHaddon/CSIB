@@ -34,6 +34,8 @@ MODULE trcopt_canbgc
    PUBLIC   trc_opt_alloc        !
    PUBLIC   trc_opt_init         !
 
+   LOGICAL  ::   ln_mxlpar = .False.  ! mix PAR over mixing layer
+
    REAL(wp) ::   parlux          ! Fraction of shortwave as PAR
    REAL(wp) ::   xparsw          ! parlux/3
    REAL(wp) ::   xsi0r           ! 1. /rn_si0
@@ -234,6 +236,32 @@ CONTAINS
          !
          etotb     (:,:,:) =  etotb(:,:,:) * tmask_bgc_closea(:,:,:)
       ENDIF
+      IF( ln_mxlpar ) THEN
+         zdepmoy(:,:)   = 0.e0
+         zetmp1 (:,:)   = 0.e0
+         DO jk = 1, nksr
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+                     zetmp1 (ji,jj) = zetmp1 (ji,jj) + etotb(ji,jj,jk) * e3t(ji,jj,jk,Kmm)
+                     zdepmoy(ji,jj) = zdepmoy(ji,jj) + e3t(ji,jj,jk,Kmm)
+                  ENDIF
+               END DO
+            END DO
+         END DO
+         DO jk = 1, nksr
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+                     z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
+                     etotb(ji,jj,jk) = zetmp1 (ji,jj) * z1_dep
+                  ENDIF
+               END DO
+            END DO
+         END DO
+      ENDIF
+
+
       ! 
       ! O Riche Aug 30th 2022
       ! 
@@ -473,7 +501,7 @@ CONTAINS
       TYPE(FLD_N)        ::   sn_par  ! informations about the fields to be read
       !
       NAMELIST/namtrc_opt/ sn_par, cn_dir, parlux,      &
-      &                    kw_cmoc, kchl_cmoc                         ! 1-band PAR parameters  
+      &                    kw_cmoc, kchl_cmoc, ln_mxlpar              ! 1-band PAR parameters  
       !!----------------------------------------------------------------------
       IF(lwp) THEN
          WRITE(numout,*)
@@ -494,6 +522,7 @@ CONTAINS
          WRITE(numout,*) '      Default value for the PAR fraction                    parlux    = ', parlux
          WRITE(numout,*) '      1-band PAR att. coefficient by seawater  (m^-1)       kw_cmoc   = ', kw_cmoc
          WRITE(numout,*) '      1-band PAR att. coeff. by chla (m^-1) (mgChl m^-3)^-1 kchl_cmoc = ', kchl_cmoc
+         WRITE(numout,*) '      If true, average mixed layer PAR                      ln_mxlpar = ', ln_mxlpar
          WRITE(numout,*)
       ENDIF
       !

@@ -118,6 +118,7 @@
 ! 1-band PAR
    kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
    kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
+   ln_mxlpar   = .false.        ! average PAR over mixed layer
 /
 !-----------------------------------------------------------------------
 &namtrc_dmp      !   passive tracer newtonian damping                   (ln_trcdmp=T)
