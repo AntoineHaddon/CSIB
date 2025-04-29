@@ -739,7 +739,7 @@ CONTAINS
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for phytoplankton mortality: '
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    smalll phytoplankton mortality rate         mpratps   =', mpratps
+         WRITE(numout,*) '    small phytoplankton mortality rate          mpratps   =', mpratps
          WRITE(numout,*) '    microzooplankton mortality rate             mpratzs   =', mpratzs
          WRITE(numout,*) '    large phytoplankton mortality rate          mpratpl   =', mpratpl
          WRITE(numout,*) '    mesozooplankton mortality rate              mpratzl   =', mpratzl
