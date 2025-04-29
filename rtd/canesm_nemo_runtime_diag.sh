@@ -118,8 +118,8 @@
   nemo_physical_rtd_exe=nemo_physical_rtd.exe   
   nemo_ice_rtd_exe=nemo_ice_rtd.exe            
   nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe 
-  [[ $CanNEMO_config == *"CMOC" ]] && nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe
-  [[ $CanNEMO_config == *"CANOE" ]] && nemo_carbon_rtd_exe=nemo_carbon-canoe_rtd.exe
+  [[ $CanNEMO_CONFIG == *"CMOC" ]] && nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe
+  [[ $CanNEMO_CONFIG == *"CANOE" ]] && nemo_carbon_rtd_exe=nemo_carbon-canoe_rtd.exe
 
   cp ${EXEC_STORAGE_DIR}/${nemo_physical_rtd_exe} .
 
