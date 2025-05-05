@@ -222,6 +222,10 @@ def regionMask(region,lon,lat):
     Get a 2D mask defining a given region.
     Regions include:
         labsea - Labrador Sea
+        canpac - Canadian Pacific Ocean
+        canatl - Canadian Atlantic Ocean
+        canarc - Canadian Arctic Ocean
+        hbay   - Hudson Bay
         arctic - Arctic circle (>~ 66.5 N)
     """
     # Bounds for some geometrically specified regions
@@ -269,7 +273,7 @@ def regionMask(region,lon,lat):
         rmask=np.full(np.shape(cntns),np.nan)
         rmask[cntns]=1.0
     
-        return rmask
+    return rmask
 
 def volMean(arr,lev,mesh,mask):
     """
