@@ -319,10 +319,7 @@ def bdy_slc(args):
     """
     print(f'Finding and processing boundaries from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
 
-    if len(args.years) == 2 and (max(args.years)-min(args.years)) > 1:
-        years=range(min(args.years),max(args.years)+1)
-    else:
-        years=np.array(args.years)
+    years=parseArgYears(args)
 
     # get output file name
     if args.outfile is None:
@@ -420,10 +417,7 @@ def bdy_remap(args):
     """
     print(f'Finding and processing boundaries from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
 
-    if len(args.years) == 2 and (max(args.years)-min(args.years)) > 1:
-        years=range(min(args.years),max(args.years)+1)
-    else:
-        years=np.array(args.years)
+    years=parseArgYears(args)
 
     # get output file name
     if args.outfile is None:
@@ -700,10 +694,7 @@ def frc_remap(args):
     vRep={'tas':'tair','uas':'u','vas':'v','huss':'humi','rsds':'qsr',
         'rlds':'qlw','pr':'prec','prsn':'snow','psl':'slp','ps':'slp'}
 
-    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
-        years=range(min(args.years),max(args.years)+1)
-    else:
-        years=np.array(args.years)
+    years=parseArgYears(args)
 
     if args.forcing=='OMIP':
         print(f'Finding OMIP forcing.')
@@ -786,10 +777,7 @@ def frc_slice(args):
     else:
         outFile=args.outfile
 
-    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
-        years=range(min(args.years),max(args.years)+1)
-    else:
-        years=np.array(args.years)
+    years=parseArgYears(args)
 
     if args.forcing=='OMIP':
         print(f'Finding OMIP forcing.')
@@ -861,10 +849,7 @@ def sos_remap(args):
     else:
         outFile=args.outfile
 
-    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
-        years=range(min(args.years),max(args.years)+1)
-    else:
-        years=np.array(args.years)
+    years=parseArgYears(args)
 
     vV='so'
     varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'Omon/{vV}/gn/v20190429/')
@@ -935,10 +920,7 @@ def rvr_remap(args):
     else:
         outFile=args.outfile
     
-    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
-        years=range(min(args.years),max(args.years)+1)
-    else:
-        years=np.array(args.years)
+    years=parseArgYears(args)
 
     print(f'Finding river inputs forcing from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
     # find all files that match format
@@ -959,7 +941,7 @@ def rvr_remap(args):
             if file0 is None:
                 print(f'No river file found for {year} ({yr}).')
             else:
-                fr1=True    # flag if file contains frvier (instead of runoff)
+                fr1=True    # flag if file contains friver (instead of runoff)
                 # concatenate multiple files
                 if len(file0) > 1:
                     fstr=''
@@ -967,14 +949,14 @@ def rvr_remap(args):
                         fstr+=f'{fle} '
                     subprocess.run(f'ncrcat -h {fstr} -O {outFile}.concat.tmp.nc',shell=True)
                 else:
-                    subprocess.run(f'ln -s {file0[0]} {outFile}.concat.tmp.nc',shell=True)
+                    subprocess.run(f'ln -sf {file0[0]} {outFile}.concat.tmp.nc',shell=True)
                 # if only one file given, simply slice for correct dates
                 if (args.rvr is None):
                     print(f'Slicing river file - {year} ({yr})')
                     subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.concat.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.nc",shell=True)
                 # otherwise, remap
                 else:
-                    print(f'Remapping {file0} - {year} ({yr})') 
+                    print(f'Remapping {file0[0]} - {year} ({yr})') 
                     # get river scaling and apply to new file
                     # sum up all values in file 0 and file 1
                     if 'flist1' not in locals():
@@ -997,10 +979,9 @@ def rvr_remap(args):
                         # get time-sliced files
                         subprocess.run(f"cdo --no_history selyear,{yr}/{yr} {outFile}.concat.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp0.nc",shell=True)
                         # get single year from target file (may not match yr)
-                        try:
-                            syr=os.path.basename(args.rvr).split('_')[-1].split('-')[0][0:4]
-                            subprocess.run(f"cdo --no_history selyear,{syr}/{syr} {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
-                        except:
+                        syr=os.path.basename(args.rvr).split('_')[-1].split('-')[0][0:4]
+                        subprocess.run(f"cdo --no_history selyear,{syr}/{syr} {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
+                        if not os.path.isfile(f"{outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc"):
                             subprocess.run(f"ln -sf {outFile}.concat1.tmp.nc {outFile.replace('yYYYY',f'y{year:04}')}.tmp1.nc",shell=True)
                         area0=cellAreas(args.parent_grid)
                         area1=cellAreas(args.meshfile)
@@ -1343,6 +1324,16 @@ def calc_nemo_chunk_dates(args):
         ff.write("NEMO_MODEL_LOOP='%s'\n" % (ll+1))
 
     return
+
+def parseArgYears(args):
+    # Determine if single year, multiple years, or range of years
+    if len(args.years)==2 and (max(args.years)-min(args.years)) > 1:
+        years=range(min(args.years),max(args.years)+1)
+    elif len(np.unique(args.years))==1:
+        years=[np.unique(args.years)[0]]
+    else:
+        years=np.array(args.years)
+    return years
 
 #---------------#
 # END FUNCTIONS #
