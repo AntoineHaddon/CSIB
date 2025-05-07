@@ -7,7 +7,7 @@ is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defi
 access domain_cfg.nc $nemo_coordinates
 
 # activate correct Python environment
-source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
+eval ${dada_env_setup_command}
 
 # determine loop parameters/iteration info
 python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -y $(($NEMO_CHUNK_START_YEAR - 1)) -y $(($NEMO_CHUNK_END_YEAR + 1)) -P ${dada_parent_path} -p ${dada_parent_name} -x ${dada_parent_experiment} -e ${dada_parent_ensemble}  -m domain_cfg.nc -t -1 -R ${run_start_year} -r ${run_start_month} -f ${months}

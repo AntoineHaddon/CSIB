@@ -480,7 +480,8 @@ def calcIce(args):
                         pltFile=os.path.join(args.outdir,f"timeseries_{runid}_{var}.png")
                         if os.path.isfile(pltFile):
                             subprocess.run(f'rm -f {pltFile}',shell=True)
-                            subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
+                            if os.path.isdir('/home/$(whoami)/public_html'):
+                                subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
                     # plot time series if desired
                     if args.plot and os.path.isfile(ncF):
                         plotTimeseries(ncF,var,runid)
@@ -499,7 +500,8 @@ def calcIce(args):
                                 pltFile=os.path.join(args.outdir,f"timeseries_{runid}_{var}_{reg}.png")
                                 if os.path.isfile(pltFile):
                                     subprocess.run(f'rm -f {pltFile}',shell=True)
-                                    subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
+                                    if os.path.isdir('/home/$(whoami)/public_html'):
+                                        subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
                             # plot time series if desired
                             if args.plot and os.path.isfile(ncF):
                                 plotTimeseries(ncF,f'{var}_{reg}',runid)                   
@@ -666,7 +668,8 @@ def calcPhys(args):
                         pltFile=os.path.join(args.outdir,f"timeseries_{runid}_{var}.png")
                         if os.path.isfile(pltFile):
                             subprocess.run(f'rm -f {pltFile}',shell=True)
-                            subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
+                            if os.path.isdir('/home/$(whoami)/public_html'):
+                                subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
                     # plot time series if desired
                     if args.plot and os.path.isfile(ncF):
                         plotTimeseries(ncF,var,runid)
@@ -822,7 +825,8 @@ def calcTransports(args):
                     pltFile=os.path.join(args.outdir,f"timeseries_{runid}_{tpvar}.png")
                     if os.path.isfile(pltFile):
                         subprocess.run(f'rm -f {pltFile}',shell=True)
-                        subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
+                        if os.path.isdir('/home/$(whoami)/public_html'):
+                            subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{os.path.basename(pltFile)}',shell=True)
                 # plot time series if desired
                 if args.plot and os.path.isfile(ncF):
                     print(f"\r  {f'Plotting {tpvar}':<75}",end='',flush=True)
@@ -844,7 +848,8 @@ def plotTimeseries(ncFile,varName,runid):
 
     pltFile=os.path.join(args.outdir,f"timeseries_{runid}_{varName}.png")
     plt.savefig(pltFile)
-    subprocess.run(f'ln -fs {pltFile} /home/$(whoami)/public_html/CanTODS_diagnostics',shell=True)
+    if os.path.isdir('/home/$(whoami)/public_html'):
+        subprocess.run(f'ln -fs {pltFile} /home/$(whoami)/public_html/CanTODS_diagnostics',shell=True)
     plt.close('all')
 
 #################
@@ -896,7 +901,8 @@ if args.year0 is not None:
 # create output directory and link in public_html
 args.outdir=os.path.abspath(args.outdir)    # ensure absolute path
 os.makedirs(args.outdir,exist_ok=True)
-subprocess.run(f'mkdir -p /home/$(whoami)/public_html/CanTODS_diagnostics/',shell=True)
+if os.path.isdir('/home/$(whoami)/public_html'):
+    subprocess.run(f'mkdir -p /home/$(whoami)/public_html/CanTODS_diagnostics/',shell=True)
 
 # Sea Ice Calculations
 if args.ice in range(3):
@@ -916,7 +922,8 @@ for iR,runid in enumerate(args.runid):
     if not os.path.isfile(f'{os.path.join(args.outdir,jptFile)}') or args.redo:
         if args.redo:
             subprocess.run(f'rm -f {os.path.join(args.outdir,jptFile)}',shell=True)
-            subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{jptFile}',shell=True)
+            if os.path.isdir('/home/$(whoami)/public_html'):
+                subprocess.run(f'rm -f /home/$(whoami)/public_html/CanTODS_diagnostics/{jptFile}',shell=True)
         # copy Jupyter notebook template
         subprocess.run(f"cp {os.path.join(args.source,'cantods_diagnostics.ipynb')} {os.path.join(args.outdir,jptFile)}",shell=True)
         # update run name
@@ -927,7 +934,7 @@ for iR,runid in enumerate(args.runid):
         # update initial year
         subprocess.run(f'sed -i "s/YEAR0/{args.year0}/g" {os.path.join(args.outdir,jptFile)}',shell=True)
 
-    if not os.path.isfile(f'/home/$(whoami)/public_html/CanTODS_diagnostics/{jptFile}'):
+    if os.path.isdir('/home/$(whoami)/public_html') and not os.path.isfile(f'/home/$(whoami)/public_html/CanTODS_diagnostics/{jptFile}'):
         # link to file
         subprocess.run(f'ln -sf {os.path.join(args.outdir,jptFile)} /home/$(whoami)/public_html/CanTODS_diagnostics/{jptFile}',shell=True)
 
