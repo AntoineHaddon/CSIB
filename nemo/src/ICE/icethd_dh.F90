@@ -235,7 +235,7 @@ CONTAINS
                zdum    = MAX( zdum , - zh_s(ji,jk) )                           ! bound melting <0
 
                hfx_snw_1d    (ji) = hfx_snw_1d    (ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice   ! heat used to melt snow(W.m-2, >0)
-               wfx_snw_sum_1d(ji) =  (ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice   ! snow melting only = water into the ocean
+               wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice   ! snow melting only = water into the ocean
 
                ! updates available heat + thickness
                dh_s_mlt(ji)    =              dh_s_mlt(ji)    + zdum
