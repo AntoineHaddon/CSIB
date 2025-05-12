@@ -6,18 +6,15 @@ MODULE checksums
    !!
    !!======================================================================
    !! History :  3.4  ! Initial implementation  2018-04  (A.Shao)
-   !!            4.2  ! Copied from 3.4 implementation 2025-05 (J. Izett)
+   !!            4.2  ! Copied (and shortened) from 3.4 implementation 
+   !!                                               2025-05 (J. Izett)
    !!----------------------------------------------------------------------
    !!   chksum   :  Calculates a checksum of a given 2d/3d array
    !!----------------------------------------------------------------------
    USE par_kind,       only : wp
    USE dom_oce,        only : tmask, umask, vmask, narea
    USE lib_mpp,        only : mpp_min, mpp_max, mpp_sum
-   ! Variable names have changed. "External" variables??
-   ! not all present. Can I just use uu,vv,ww,ts??
-   !USE oce,            only : un, vn, wn, tsn, ua, va, tsa, ub, vb, tsb
    USE oce,            only : uu, vv, ww, ts
-   ! jpi, jpj may need to be differetn variable?
    USE par_oce,        only : jpi, jpj, jpk, jp_tem, jp_sal
    USE in_out_manager, only : lwp
    IMPLICIT NONE
@@ -25,8 +22,6 @@ MODULE checksums
 
    PUBLIC    chksum
    PUBLIC    now_state_chksum
-   !PUBLIC    before_state_chksum, now_state_chksum, after_state_chksum
-   !PUBLIC    now_ts_chksum, after_ts_chksum
    INTERFACE chksum
       MODULE PROCEDURE chksum_2d, chksum_3d
    END INTERFACE
@@ -170,17 +165,6 @@ CONTAINS
 
    END SUBROUTINE chksum_3d
    !!!! Full state checksums
-   !> Convenience routine to do a chksum of current state of the model 'after' arrays of u,v,w,T,S
-!   SUBROUTINE before_state_chksum(msg)
-!      CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
-!
-!      CALL chksum( ub, mask = umask               , msg = "u before array "//TRIM(msg))
-!      CALL chksum( vb, mask = vmask               , msg = "v before array "//TRIM(msg))
-!      CALL chksum( tsb(:,:,:,jp_tem), mask = tmask, msg = "T before array "//TRIM(msg))
-!      CALL chksum( tsb(:,:,:,jp_sal), mask = tmask, msg = "S before array "//TRIM(msg))
-!
-!   END SUBROUTINE before_state_chksum
-
    !> Convenience routine to do a chksum of current state of the model 'now' arays of u,v,w,T,S
    SUBROUTINE now_state_chksum(msg, Nstep, alt_unit, state_bc)
       CHARACTER(LEN=*),  INTENT(IN   ) :: msg !< The point of the algorithm that the checksum is being done
@@ -204,36 +188,7 @@ CONTAINS
 
       IF( PRESENT( state_bc )) state_bc = bc_sum
    END SUBROUTINE now_state_chksum
-!
-!   !> Convenience routine to do a chksum of current state of the model 'after' arrays of u,v,w,T,S
-!   SUBROUTINE after_state_chksum(msg)
-!      CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
-!
-!      CALL chksum( ua,                mask = umask, msg = "u tendency array "//TRIM(msg))
-!      CALL chksum( va,                mask = vmask, msg = "v tendency array "//TRIM(msg))
-!      CALL chksum( tsa(:,:,:,jp_tem), mask = tmask, msg = "T tendency array "//TRIM(msg))
-!      CALL chksum( tsa(:,:,:,jp_sal), mask = tmask, msg = "S tendency array "//TRIM(msg))
-!
-!   END SUBROUTINE after_state_chksum
-!   !!!! T/S cchecksums
-!   !> Convenience routine to do a chksum of current state of the model 'now' arays of T,S
-!   SUBROUTINE now_ts_chksum(msg)
-!      CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
-!
-!      CALL chksum( tsn(:,:,:,jp_tem), mask = tmask, msg = "T now array "//TRIM(msg))
-!      CALL chksum( tsn(:,:,:,jp_sal), mask = tmask, msg = "S now array "//TRIM(msg))
-!
-!   END SUBROUTINE now_ts_chksum
-!
-!   !> Convenience routine to do a chksum of current state of the model 'after' arrays of T,S
-!   SUBROUTINE after_ts_chksum(msg)
-!      CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
-!
-!      CALL chksum( tsa(:,:,:,jp_tem), mask = tmask, msg = "T tendency array "//TRIM(msg) )
-!      CALL chksum( tsa(:,:,:,jp_sal), mask = tmask, msg = "S tendency array "//TRIM(msg) )
-!
-!   END SUBROUTINE after_ts_chksum
-!
+
    !> Calculates the bitcount of a real number by transferring its memory representation to an
    !! integer of the same byte-size and then using BTEST to check it bit by bit
    INTEGER FUNCTION bitcount( scalar )
