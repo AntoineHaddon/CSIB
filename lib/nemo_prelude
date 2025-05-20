@@ -256,14 +256,14 @@ if [[ $config != "AMIP" ]]; then
     acc_cp EMPave_old.dat            $nemo_empave_old 
   fi
 
-  # CanBGC IC and forcing files additional section defined in canesm.cfg. && [[ $runmode != "CanTODS" ]]
-  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]]; then
+  # CanBGC IC and forcing files additional section defined in canesm.cfg.
+  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]] ; then
 
-      #is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
-      #acc_cp presatm.nc           $nemo_presatm
+      is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
+      acc_cp presatm.nc           $nemo_presatm
       
-      #is_defined $nemo_bathy_orca || bail "The variable nemo_bathy_orca must be defined in canesm.cfg"
-      #acc_cp bathy.orca.nc        $nemo_bathy_orca
+      is_defined $nemo_bathy_orca || bail "The variable nemo_bathy_orca must be defined in canesm.cfg"
+      acc_cp bathy.orca.nc        $nemo_bathy_orca
 
       is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in canesm.cfg"
       acc_cp chlorophyll.nc       $nemo_chlorophyll 
