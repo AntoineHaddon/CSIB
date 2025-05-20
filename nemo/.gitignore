@@ -49,3 +49,6 @@ xios-2.6/flags/
 xios-2.6/obj/
 xios-2.6/ppsrc/
 
+*.mod
+mk/cpp_tools.fcm
+mk/tools.txt
