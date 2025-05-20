@@ -527,6 +527,7 @@ CONTAINS
       wsbio3(:,:,:) = ws_canoe
       wsbio4(:,:,:) = ws_canoe2
       wscal(:,:,:)  = ws_canoec
+      qomegac(:,:,:)  = 1.       ! initialize Omega_C as 1 (used once in canoe_sink before C chem is called)
       !
   END SUBROUTINE canoe_sink_init
    

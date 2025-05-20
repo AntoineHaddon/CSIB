@@ -56,8 +56,8 @@
        <field id="tmask"       long_name="tmask, from ocean physics"              unit="-"                   grid_ref="grid_T_3D" />
        <field id="closea"      long_name="BGCM closed sea masks"                  unit="-"                   grid_ref="grid_T_3D" />
                                                                                   
-       <field id="Irondep"     long_name="Aeolian iron flux"                      unit="nmol/m3/s?"          grid_ref="grid_T_3D" />
-       <field id="Ironsed"     long_name="Iron flux from sediments"               unit="nmol/m3/s?"          grid_ref="grid_T_3D" />
+       <field id="Irondep"     long_name="Aeolian iron flux"                      unit="mol/m3/s"            grid_ref="grid_T_3D" />
+       <field id="Ironsed"     long_name="Iron flux from sediments"               unit="mol/m3/s"            grid_ref="grid_T_3D" />
 
        <!-- 2D fields here -->
        <!-- Air-sea exchanges -->
