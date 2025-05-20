@@ -266,7 +266,7 @@ if [[ $config != "AMIP" ]]; then
       acc_cp bathy.orca.nc        $nemo_bathy_orca
 
       is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in canesm.cfg"
-      acc_cp chlorophyll.nc       $nemo_chlorophyll 
+      acc_cp chlorophyll.nc       $nemo_chlorophyll  na 
 
       is_defined $nemo_dust_orca || bail "The variable nemo_dust_orca must be defined in canesm.cfg"
       acc_cp dust.orca.nc         $nemo_dust_orca
