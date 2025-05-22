@@ -61,7 +61,7 @@
   
     # activate Python environment
     orig_env=$CONDA_PREFIX # current environment just in case different
-    eval ${dada_env_setup_command}
+    source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
 
     # year referenced to run_start_date
     rtdyear=$(expr $year + 0)           # strip leading zeros
