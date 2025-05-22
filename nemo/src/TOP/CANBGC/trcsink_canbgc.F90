@@ -31,6 +31,7 @@ MODULE trcsink_canbgc
    USE sms_cmoc
    USE sms_canoe
    USE trc_closea_canbgc ! tmask_bgc_closea
+   USE trcche_canbgc
 
    IMPLICIT NONE
    PRIVATE
@@ -289,12 +290,12 @@ CONTAINS
                                                      ! boundary of the mixed layer.                           
                zideup = 1.0_wp / zdeup    
                !
-               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) -                                   &
+               tr(ji,jj,jk,jqdic, Kbb) = tr(ji,jj,jk,jqdic, Kbb) -                                   &
                &                              zfpon(ji,jj) * zideup 
                ! tr(ji,jj,jk,jqdnt, Krhs) = tr(ji,jj,jk,jqdnt, Krhs) -                                   &
                ! &                              zfpon(ji,jj) * zideup 
                !
-               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) -                                   &
+               tr(ji,jj,jk,jqtal, Kbb) = tr(ji,jj,jk,jqtal, Kbb) -                                   &
                &                      2.0_wp * zfpon(ji,jj) * zideup 
                !
             ENDDO
@@ -309,9 +310,9 @@ CONTAINS
             DO ji = 1,jpi
                zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm) * tmask_bgc_closea(ji,jj,jk)
                !
-               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) +          zcaldiv 
+               tr(ji,jj,jk,jqdic, Kbb) = tr(ji,jj,jk,jqdic, Kbb) +          zcaldiv 
                ! tr(ji,jj,jk,jqdnt) = tr(ji,jj,jk,jqdnt, Krhs) +          zcaldiv 
-               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 2.0_wp * zcaldiv                      
+               tr(ji,jj,jk,jqtal, Kbb) = tr(ji,jj,jk,jqtal, Kbb) + 2.0_wp * zcaldiv                      
                !
             ENDDO
          ENDDO
@@ -323,12 +324,12 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
-            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
-            tr(ji,jj,1,jqdic, Krhs)   = tr(ji,jj,1,jqdic, Krhs)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
+            tr(ji,jj,ikt,jqdic, Kbb) = tr(ji,jj,ikt,jqdic, Kbb) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
+            tr(ji,jj,1,jqdic, Kbb)   = tr(ji,jj,1,jqdic, Kbb)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
             ! tr(ji,jj,ikt,jqdnt, Krhs) = tr(ji,jj,ikt,jqdnt, Krhs) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
             ! tr(ji,jj,1,jqdnt, Krhs)   = tr(ji,jj,1,jqdnt, Krhs)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
-            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) - 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj,ikt,Kmm)
-            tr(ji,jj,1,jqtal, Krhs)   = tr(ji,jj,1,jqtal, Krhs)   + 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj, 1,Kmm) 
+            tr(ji,jj,ikt,jqtal, Kbb) = tr(ji,jj,ikt,jqtal, Kbb) - 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj,ikt,Kmm)
+            tr(ji,jj,1,jqtal, Kbb)   = tr(ji,jj,1,jqtal, Kbb)   + 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj, 1,Kmm) 
          ENDDO
       ENDDO
       !
@@ -434,9 +435,9 @@ CONTAINS
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       INTEGER  ::   ji, jj, jk
-      REAL(wp) ::   zfact, zwsmax, zmax, zstep
-      REAL(wp) ::   zrfact2
-      INTEGER  ::   ik1
+      REAL(wp) ::   zfact, zwsmax, zmax, zstep, zcalbotflx, zfactcal
+      REAL(wp) ::   zrfact2, zwsbio3, zwsbio4
+      INTEGER  ::   ik1, ikt
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
@@ -445,6 +446,7 @@ CONTAINS
       !  Initialize to zero all the sinking arrays 
       !   -----------------------------------------
       !
+
       sinking (:,:,:) = 0.e0
       sinking2(:,:,:) = 0.e0
       sinkcal (:,:,:) = 0.e0
@@ -456,12 +458,46 @@ CONTAINS
       CALL trc_sink0( wsbio4, sinking2, Kbb, Kmm, jrgoc )
       CALL trc_sink0( wscal , sinkcal, Kbb, Kmm , jrcal )
       !
+      ! Bottom sedimentation of calcite. Dissolution IFF Omega_C<1
+      !
+      DO jj = 1, jpj
+         DO ji = 1,jpi
+            ikt = mbkt(ji,jj)
+            zcalbotflx = tr(ji,jj,ikt,jrcal,Kbb) * wscal(ji,jj,ikt) * xstepb
+            zfactcal = FLOAT(FLOOR(MIN( qomegac(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
+            tr(ji,jj,ikt,jrcal, Krhs) = tr(ji,jj,ikt,jrcal, Krhs) - zcalbotflx / e3t(ji,jj,ikt, Kmm)
+            ! add DIC/TA to bottom layer if dissolution and to surface layer if burial
+            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + zcalbotflx * (1.-zfactcal) * 1.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zcalbotflx * zfactcal * 1.E-6 / e3t(ji,jj,1, Kmm)
+            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + zcalbotflx * (1.-zfactcal) * 2.E-6 / e3t(ji,jj,ikt, Kmm)
+            tr(ji,jj,1,jqtal, Krhs) = tr(ji,jj,1,jqtal, Krhs) + zcalbotflx * zfactcal * 2.E-6 / e3t(ji,jj,1, Kmm)
+         ENDDO
+      ENDDO
+
+      ! Bottom remineralization of GOC/POC
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ikt  = mbkt(ji,jj)
+            zwsbio4 = wsbio4(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
+            zwsbio3 = wsbio3(ji,jj,ikt) * xstepb / e3t(ji,jj,ikt,Kmm)
+! all deposition of POC is returned to bottom layer as inorganic nutrients
+            tr(ji,jj,ikt,jqdic,Krhs) = tr(ji,jj,ikt,jqdic,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * 1.E-6
+            tr(ji,jj,ikt,jqoxy,Krhs) = tr(ji,jj,ikt,jqoxy,Krhs) - (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3)
+            tr(ji,jj,ikt,jrnh4,Krhs) = tr(ji,jj,ikt,jrnh4,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_n2c
+            tr(ji,jj,ikt,jrfer,Krhs) = tr(ji,jj,ikt,jrfer,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_fe2c
+            tr(ji,jj,ikt,jqtal,Krhs) = tr(ji,jj,ikt,jqtal,Krhs) + (tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4 + tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3) * rr_n2c * 1.E-6
+            tr(ji,jj,ikt,jrgoc,Krhs) = tr(ji,jj,ikt,jrgoc,Krhs) - tr(ji,jj,ikt,jrgoc,Kbb) * zwsbio4
+            tr(ji,jj,ikt,jrpoc,Krhs) = tr(ji,jj,ikt,jrpoc,Krhs) - tr(ji,jj,ikt,jrpoc,Kbb) * zwsbio3
+            !zocdep(ji,jj) = trn(ji,jj,ikt,jqpoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jqgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
+         END DO
+      END DO
+      !
       zrfact2 = 1.e-3 * qfact2r
       ik1  = iksed + 1
       IF( lk_iomput ) THEN
        IF( jnt == qnrdttrc ) THEN
-        CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
-        CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
+        CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100 m
+        CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite at 100 m
        ENDIF
       ENDIF
       !
@@ -491,6 +527,7 @@ CONTAINS
       wsbio3(:,:,:) = ws_canoe
       wsbio4(:,:,:) = ws_canoe2
       wscal(:,:,:)  = ws_canoec
+      qomegac(:,:,:)  = 1.       ! initialize Omega_C as 1 (used once in canoe_sink before C chem is called)
       !
   END SUBROUTINE canoe_sink_init
    

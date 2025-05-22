@@ -43,13 +43,14 @@ PROGRAM nemo_diag
 
    CHARACTER(len=100) :: fname01, fname02, fname03, fname04
    CHARACTER(len=100) :: fname05, fname06, fname07, fname08
-   CHARACTER(len=100) :: axis, standard_name, units, calendar, title
+   CHARACTER(len=100) :: axis, standard_name, units, calendar
    CHARACTER(len=100) :: long_name, time_origin, bounds
    CHARACTER(len=100) :: dimnm
    INTEGER   :: iou, iou1, iou2, iou3, iou4, iou5, iou6, iou7, iou8
    INTEGER   :: ntrec, id_time, id_tbnds, id_li,id_l, id_s, id_x, id_y, id_z
    INTEGER   :: ntbnds, ndim, ntdim
    INTEGER   :: i, l
+   INTEGER   :: tnsn_flag = 1     ! flag to indicate tn & sn files exist
    LOGICAL   :: exists
    !INTEGER   :: strlen
    INTEGER, DIMENSION(10)            :: ierr
@@ -76,7 +77,7 @@ PROGRAM nemo_diag
    Do i = 1, ntdim
       CALL getdimnm  (dimnm, iou, i, ndim)
       print*, 'DIM',i,':',dimnm, 'length:', ndim
-      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'axis_nbounds'.or. dimnm .eq. 'bnds') ntbnds = ndim
+      IF (dimnm .eq. 'axis_nbounds' .or. dimnm .eq. 'bnds') ntbnds = ndim
    END DO
 
    ly = lm / 12
@@ -133,19 +134,26 @@ PROGRAM nemo_diag
    CALL openfile (fname02,iou2)
    CALL openfile (fname03,iou3)
    CALL openfile (fname04,iou4)
-   CALL openfile (fname05,iou5)
-   CALL openfile (fname06,iou6)
-   CALL openfile (fname07,iou7)
-   CALL openfile (fname08,iou8)
+   INQUIRE (file="tnp.nc", exist=exists)
+   IF (exists) THEN
+     CALL openfile (fname05,iou5)
+     CALL openfile (fname06,iou6)
+     CALL openfile (fname07,iou7)
+     CALL openfile (fname08,iou8)
+   ELSE
+     tnsn_flag = 0       ! tnp.nc does not exist
+   ENDIF
+     
+    
 
    !!-------------------
    !! Get grid/mask data   
    !!-------------------
    CALL getvara ('e2u', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
    CALL getvara ('e1v', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
-   !CALL getvara ('e3u_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
-   !CALL getvara ('e3v_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
-   !CALL getvara ('e3t_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+   CALL getvara ('e3u', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3u , 1., 0.)
+   CALL getvara ('e3v', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3v , 1., 0.)
+   CALL getvara ('thkcello', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    CALL getvara ('umask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),umask , 1., 0.)
    CALL getvara ('vmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),vmask , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
@@ -160,7 +168,6 @@ PROGRAM nemo_diag
    CALL getatttext (iou2, 'time_counter', 'standard_name', standard_name)
    CALL getatttext (iou2, 'time_counter', 'units', units)
    CALL getatttext (iou2, 'time_counter', 'calendar', calendar)
-   !CALL getatttext (iou2, 'time_counter', 'title', title)
    CALL getatttext (iou2, 'time_counter', 'long_name', long_name)
    CALL getatttext (iou2, 'time_counter', 'time_origin', time_origin)
    CALL getatttext (iou2, 'time_counter', 'bounds', bounds)
@@ -190,14 +197,34 @@ PROGRAM nemo_diag
    CALL getvara ('deptht', iou4, km, (/1/), (/km/), deptht, 1., 0.)
    ! ssh
    CALL getvara ('zos', iou4, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ssh, 1., 0.)
-   ! tn from last time step of previous year
-   CALL getvara ('tn', iou5, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnp, 1., 0.)
-   ! sn from last time step of previous year
-   CALL getvara ('sn', iou6, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snp, 1., 0.)
-   ! tn from last time step of current year
-   CALL getvara ('tn', iou7, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnc, 1., 0.)
-   ! sn from last time step of current year
-   CALL getvara ('sn', iou8, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snc, 1., 0.)
+   ! WRITE(*,*) 'zos'
+   ! ssh(144,45,1,1)=-1.77589 m
+   ! WRITE(*,*) ssh(144,45,1)
+   IF (tnsn_flag .eq. 1) THEN
+     ! tn from last time step of previous year
+     CALL getvara ('tn', iou5, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnp, 1., 0.)
+     !WRITE(*,*) 'tnp'
+     ! tnp(144,45,1)=-0.0207554732464
+     !WRITE(*,*) tnp(144,45,1)
+     ! sn from last time step of previous year
+     CALL getvara ('sn', iou6, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snp, 1., 0.)
+     !WRITE(*,*) 'snp'
+     ! snp(144,45,1)=34.0309282726
+     !WRITE(*,*) snp(144,45,1)
+     ! tn from last time step of current year
+     CALL getvara ('tn', iou7, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnc, 1., 0.)
+     !WRITE(*,*) 'tnc'
+     ! tnc(144,45,1)=2.14057999538
+     !WRITE(*,*) tnc(144,45,1)
+     ! sn from last time step of current year
+     CALL getvara ('sn', iou8, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snc, 1., 0.)
+     !WRITE(*,*) 'snc'
+     ! snc(144,45,1)=34.1197096452
+     !WRITE(*,*) snc(144,45,1)
+   ELSE
+     tnp = 0.0; snp = 0.0; tnc = 0.0; snc = 0.0
+   ENDIF
+
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'
@@ -257,7 +284,6 @@ PROGRAM nemo_diag
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      !CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bounds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -268,14 +294,18 @@ PROGRAM nemo_diag
      &             , 'sections', 'sections', ' ')
       CALL defvar ('mfo', iou, 2, (/id_l, id_time/), 0., 0., ' ', 'F',  &
                    'Sea Water Transport', 'sea_water_transport_across_line', 'kg/s')
+      CALL putatttext (iou, 'mfo', 'coordinates', "time_counter line")
       CALL defvar ('line_ice', iou, 1, (/id_li/), 1, 5, ' ', 'I'     &
      &             , 'sections', 'sections', ' ')
       CALL defvar ('siareaacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
                    'Sea-Ice Area Flux Through Straits', 'sea_ice_area_transport_across_line', 'm2/s')
+      CALL putatttext (iou, 'siareaacrossline', 'coordinates', "time_counter line_ice")
       CALL defvar ('simassacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
                    'Sea-Ice Mass Transport Through Straits', 'sea_ice_transport_across_line', 'kg/s')
+      CALL putatttext (iou, 'simassacrossline', 'coordinates', "time_counter line_ice")
       CALL defvar ('snmassacrossline', iou, 2, (/id_li, id_time/), 0., 0., ' ', 'F',  &
                    'Snow Mass Transport Through Straits', 'snow_transport_across_line_due_to_sea_ice_dynamics', 'kg/s')
+      CALL putatttext (iou, 'snmassacrossline', 'coordinates', "time_counter line_ice")
       CALL enddef (iou)
       ! define the section axis
       !CALL putvara ('passage', iou, nline, (/1/), (/nline/)           &
@@ -319,7 +349,6 @@ PROGRAM nemo_diag
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      !CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bounds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -358,7 +387,7 @@ PROGRAM nemo_diag
    ! NETCDF output tstend.nc
    ! If the output file does not exist, abort
    INQUIRE (file="tstend.nc", exist=exists)
-   IF (.not. exists) THEN
+   IF (.not. exists.and.tnsn_flag .eq. 1) THEN
       print*,"output file tstend.nc not found...creating a new file..."
       CALL opennew ("tstend.nc", iou)
       ntrec = 1
@@ -373,7 +402,6 @@ PROGRAM nemo_diag
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
                    , long_name, standard_name, units)
       CALL putatttext (iou, 'time_counter', 'calendar', calendar)
-      !CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
       CALL defvar ('time_counter_bounds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
@@ -394,7 +422,6 @@ PROGRAM nemo_diag
       CALL putatttext (iou, 'deptht', 'positive', 'down')
       CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
       CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
-      CALL putatttext (iou, 'deptht', 'title', 'deptht')
       ! opottemptend
       CALL defvar ('opottemptend', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'opottemptend', 'tendency_of_sea_water_potential_temperature_expressed_as_heat_content', 'Wm-2')
@@ -416,7 +443,8 @@ PROGRAM nemo_diag
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
-      print*, 'tstend.nc already exists'
+      IF (tnsn_flag .eq. 1) print*, 'tstend.nc already exists'
+      IF (tnsn_flag .eq. 0) print*, 'tstend.nc not produced (not needed)'
    ENDIF
 
 END PROGRAM nemo_diag

@@ -46,7 +46,6 @@
      <field_group id="diad_T">
 
        <!-- 3D fields here -->         
-       <field id="pH"          long_name="pH"                                    unit="-"                   grid_ref="grid_T_3D" />
        <!-- <field id="CO3"         long_name="Carbonate"                             unit="mmol/m3"             grid_ref="grid_T_3D" /> -->
        <!-- <field id="CO3sat "     long_name="Carbonate saturation"                  unit="mmol/m3"             grid_ref="grid_T_3D" /> -->
        <!-- <field id="HCO3"        long_name="Bicarbonate"                           unit="mmol/m3"             grid_ref="grid_T_3D" /> -->
@@ -57,19 +56,20 @@
        <field id="tmask"       long_name="tmask, from ocean physics"              unit="-"                   grid_ref="grid_T_3D" />
        <field id="closea"      long_name="BGCM closed sea masks"                  unit="-"                   grid_ref="grid_T_3D" />
                                                                                   
-       <field id="Irondep"     long_name="Iron aeolian flux"                      unit="nmol/m3/s?"          grid_ref="grid_T_3D" />
-       <field id="Ironsed"     long_name="Iron flux from sediments"               unit="nmol/m3/s?"          grid_ref="grid_T_3D" />
+       <field id="Irondep"     long_name="Aeolian iron flux"                      unit="mol/m3/s"            grid_ref="grid_T_3D" />
+       <field id="Ironsed"     long_name="Iron flux from sediments"               unit="mol/m3/s"            grid_ref="grid_T_3D" />
 
        <!-- 2D fields here -->
        <!-- Air-sea exchanges -->
-       <field id="Cflx"        long_name="CO2 flux positive if ocean gain"        unit="mol/m2/s"            grid_ref="grid_T_2D" />
-       <field id="Oflx"        long_name="O2 flux positive if ocean gain"         unit="mol/m2/s"            grid_ref="grid_T_2D" />
+       <field id="Cflx"        long_name="CO2 flux (positive if ocean gains CO2)" unit="mol/m2/s"            grid_ref="grid_T_2D" />
+       <field id="Oflx"        long_name="O2 flux (positive if ocean gains O2)"   unit="mol/m2/s"            grid_ref="grid_T_2D" />
+       <field id="pH"          long_name="pH"                                     unit="-"                   grid_ref="grid_T_2D" />
        
        <field id="EPC100"      long_name="Export of organic carbon at 100 m"      unit="mol/m2/s"            grid_ref="grid_T_2D" />
        <field id="EPCALC100"   long_name="Export of calcite carbon at 100 m"      unit="mol/m2/s"            grid_ref="grid_T_2D" />
        
-       <field id="KgCO2"       long_name="CO2 Piston velocity"                    unit="m/s"                 grid_ref="grid_T_2D" />
-       <field id="KgO2"        long_name="O2 Piston velocity"                     unit="m/s"                 grid_ref="grid_T_2D" />
+       <field id="KgCO2"       long_name="CO2 piston velocity"                    unit="m/s"                 grid_ref="grid_T_2D" />
+       <field id="KgO2"        long_name="O2 piston velocity"                     unit="m/s"                 grid_ref="grid_T_2D" />
        
        <field id="DpCO2"       long_name="Delta pCO2, air - sea"                  unit="uatm"                grid_ref="grid_T_2D" />
        <field id="DpO2"        long_name="Delta pO2, air - sea"                   unit="atm"                 grid_ref="grid_T_2D" />
@@ -83,14 +83,14 @@
        <!-- Primary Production -->       
        <field id="PPPHY"       long_name="Primary production of nanophyto   "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
        <field id="PPPHY2"      long_name="Primary production of diatoms     "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
-       <field id="PPNEWN"      long_name="New Primary production of nano    "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
-       <field id="PPNEWD"      long_name="New Primary production of diat    "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
+       <field id="PPNEWN"      long_name="New primary production of nanophyto"    unit="molC/m3/s"           grid_ref="grid_T_3D" />
+       <field id="PPNEWD"      long_name="New primary production of diatoms "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
        <field id="PFeN"        long_name="Primary production of nano iron   "     unit="molFe/m3/s"          grid_ref="grid_T_3D" />
-       <field id="PFeD"        long_name="Primary production of nano iron   "     unit="molFe/m3/s"          grid_ref="grid_T_3D" />
-       <field id="LNN"         long_name="Nitrogen limitation factor"             unit="-"                   grid_ref="grid_T_3D" />
-       <field id="LDN"         long_name="Nitrogen limitation factor"             unit="-"                   grid_ref="grid_T_3D" />
-       <field id="LNFe"        long_name="Iron limitation factor"                 unit="-"                   grid_ref="grid_T_3D" />
-       <field id="LDFe"        long_name="Iron limitation factor"                 unit="-"                   grid_ref="grid_T_3D" />
+       <field id="PFeD"        long_name="Primary production of diatoms iron"     unit="molFe/m3/s"          grid_ref="grid_T_3D" />
+       <field id="LNN"         long_name="Nanophytoplankton N limitation factor"  unit="-"                   grid_ref="grid_T_3D" />
+       <field id="LDN"         long_name="Diatoms N limitation factor"            unit="-"                   grid_ref="grid_T_3D" />
+       <field id="LNFe"        long_name="Nanophytoplankton Fe limitation factor" unit="-"                   grid_ref="grid_T_3D" />
+       <field id="LDFe"        long_name="Diatoms Fe limitation factor"           unit="-"                   grid_ref="grid_T_3D" />
        <field id="Nfix"        long_name="Nitrogen fixation"                      unit="mol/m3/s"            grid_ref="grid_T_3D" />
        <field id="Denitr"      long_name="Denitrification"                        unit="mol/m3/s"            grid_ref="grid_T_3D" />
        <field id="Nitrif"      long_name="Nitrification"                          unit="mol/m3/s"            grid_ref="grid_T_3D" />

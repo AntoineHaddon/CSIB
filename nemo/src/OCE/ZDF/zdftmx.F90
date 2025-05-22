@@ -11,6 +11,7 @@ MODULE zdftmx
    !!            4.0.3!  2021-08  (D. Yang)   Vertical diffusivity resulting from internal tide breaking is now capped by 20 cm2/s
    !!            4.0.3!  2022-07  (D. Yang)   Add two flags (ln_s2004 & ln_sm2005) to make computations of zav_tide from Simmons et al (2004) and Saenko and Merryfield (2005) optionally available
    !!            4.0.3!  2022-08  (D. Yang)   Add lee wave mixing scheme controlled by ln_leewmx.
+   !!            4.2  !  2024-06  (G. Stanley) Fix multiplication by lee wave mixing factor (rn_lwm)
    !!----------------------------------------------------------------------
    !!----------------------------------------------------------------------
    !!   'key_zdftmx'                                  Tidal vertical mixing
@@ -422,7 +423,7 @@ CONTAINS
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
       IF( ln_leewmx ) THEN ! include mesoscale eddy energy flux (zeef) in en_tmx
-         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + rn_lwm * zeef(:,:) ) * ssmask(:,:)     
+         en_tmx(:,:) = - rn_me * ( rn_tfe * (min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:))) + rn_lwm * zeef(:,:) ) * ssmask(:,:)
       ELSE   
          en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * ssmask(:,:)
       ENDIF

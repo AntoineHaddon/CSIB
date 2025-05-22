@@ -73,7 +73,7 @@ CONTAINS
       OPEN (10, file='mfo_line_mask', status='unknown')
       if (jmt.eq.292) then
         i0=1
-      elseif (jmt.eq.332) then
+      elseif (jmt.eq.331) then
         i0=41
       else
         Print*, 'WARNING: mfo_line_mask made for ORCA1 and eORCA1 only for now. mfo is empty.'
@@ -87,6 +87,7 @@ CONTAINS
       !!-----------------------------------------
       !! Compute mass transports through sections
       !!-----------------------------------------
+      WRITE(*,*) 'mfo', lm
       DO l=1,lm
          DO j=1,jmt
             DO i=1,imt
@@ -145,10 +146,10 @@ CONTAINS
                ENDDO
             ENDDO
          ENDDO
+         WRITE(*,*) '-----',l
+         WRITE(*,'(15f10.2)')(mfo(i,l)*1.e-9, i=1,15)   !  Sv 
       ENDDO
       ! 
-      !WRITE(*,*) 'mfo'
-      !WRITE(*,'(15f10.2)')(mfo(i,1)*1.e-9, i=1,15)   !  Sv 
    END SUBROUTINE cmip6_mfo
 
    SUBROUTINE cmip6_mfo_ice
@@ -190,7 +191,7 @@ CONTAINS
       OPEN (10, file='mfo_line_mask', status='unknown')
       if (jmt.eq.292) then
         i0=1
-      elseif (jmt.eq.332) then
+      elseif (jmt.eq.331) then
         i0=41
       else
         Print*, 'WARNING: mfo_line_mask made for ORCA1 and eORCA1 only for now. mfo is empty.'
@@ -270,8 +271,10 @@ CONTAINS
                msftbarot(i,j,l) = 0.
                ztmp = 0. 
                DO k=1,km
-                  ztmp = ztmp+u(i,j,k,l)*e3u(i,j,k,l)*umask(i,j,k)
+                 if (umask(i,j,k).eq.0) cycle
+                 ztmp = ztmp+u(i,j,k,l)*e3u(i,j,k,l)*umask(i,j,k)
                ENDDO
+               if (ztmp.eq.0.) cycle
                uzint(i,j) = ztmp + ssh(i,j,l)*u(i,j,1,l)*umask(i,j,1)
             ENDDO
          ENDDO
@@ -284,10 +287,6 @@ CONTAINS
             ENDDO
          ENDDO 
       ENDDO
-      ! msftbarot(144,45,1) = -6.18654e+09 [ kg/s ]
-      ! msftbarot(144,45,4) = -3.07254e+09 [ kg/s ]
-      ! WRITE(*,*) 'msftbarot'
-      ! WRITE(*,*) msftbarot(144,45,1), msftbarot(144,45,4), msftbarot(225,135,1)
 
    END SUBROUTINE cmip6_msftbarot
 

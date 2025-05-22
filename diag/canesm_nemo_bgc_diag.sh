@@ -9,7 +9,7 @@
 # lib/jobdefs/canesm_nemo_bgc_diag_jobdef
 #########################################################
 
-set -x
+set -e
 
 # NEMO priority level
   output_level=${output_level}
@@ -34,12 +34,30 @@ set -x
   fi
 
 # Previous year
-  yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+  if [[ $lmon -eq 12 ]] && [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
+    # use the current year because output.init.nc is used in that case (below)
+    yearm1=`echo $year | awk '{printf "%04d", $1}'`
+    file_state="initial_trc"
+  else
+    yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+    file_state="restart_trc"
+  fi
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $1}')  # get first element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
+
+# Access fiels for BGCM diag 
+  sfx='1m_grid_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+  sfx='1m_diad_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+  sfx='1m_btrc_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
 
 
 ##########################
@@ -49,7 +67,7 @@ set -x
   ln -s 1m_diad_t_${fmon} diad_t  || ( echo "Link to diad_t failed" ; exit 1 )
   ln -s 1m_btrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 ) # OR Jan 09 '23 changed from ptrc_t 
 
-  if [[ $nemo_config == *'CMOC'* && ${output_level} -gt 0 ]]; then
+  if [[ $CanNEMO_CONFIG == *'CMOC'* && ${output_level} -gt 0 ]]; then
 
     process_abio=0       # this flag needs to be set both here and inside nemo_diag_cmoc.F90 (process_abio = .false./.true.)
 
@@ -81,19 +99,18 @@ set -x
       # Access the nemo restart files
       if [ $lmon -eq 12 ]; then
         # previous year
-        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
       else
-        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors" # previous year
       fi	      
       access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
     fi
     if [ -L rsp ] ; then
-       mkdir dir_rsp; cd dir_rsp
-       tar -xvf ../rsp
-       ncks -v sss_glob_avg *_restart_trc.nc ../sss_glob_avg.nc
-       cd ..
+       work_dir=$(pwd)
+       cd rsp
+       ncks -v sss_glob_avg *_$file_state.nc ${work_dir}/sss_glob_avg.nc
+       cd $work_dir
        release rsp
-       rm -f -r dir_rsp
     fi
     # Run the offline diagnostics
     ./nemo_diag_cmoc.exe
@@ -144,7 +161,7 @@ set -x
     fi
 
   # Similar but for CANOE configurations
-  elif [[ $nemo_config == *'CANOE'* && ${output_level} -gt 0 ]]; then
+  elif [[ $CanNEMO_CONFIG == *'CANOE'* && ${output_level} -gt 0 ]]; then
     # Expected outputs from CMOC or CanOE offline diagnostics
     canoe_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D"
     canoe_outvars_l2="CO3 CO3sata CO3satc"

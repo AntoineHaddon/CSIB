@@ -155,10 +155,10 @@ CONTAINS
       zprochld(:,:,:) = 0._wp
       zpronew (:,:,:) = 0._wp
       zpronewd(:,:,:) = 0._wp
-      xlimdn  (:,:,:) = 0._wp
-      xlimdfe0(:,:,:) = 0._wp
-      xlimnn  (:,:,:) = 0._wp
-      xlimnfe0(:,:,:) = 0._wp
+      xlimnfe0(:,:,:) = 1._wp
+      xlimdfe0(:,:,:) = 1._wp
+      xlimnn  (:,:,:) = 1._wp
+      xlimdn  (:,:,:) = 1._wp
       zprdia  (:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprdch  (:,:,:) = 0._wp
@@ -403,8 +403,9 @@ CONTAINS
       tpp = 0._wp
       !
       ! Allocate mem to limitation functions
-      ALLOCATE( xlimnfe0 (jpi,jpj,jpk), xlimdfe0 (jpi,jpj,jpk),       &
-         &      xlimnn (jpi,jpj,jpk),   xlimdn (jpi,jpj,jpk),    STAT=ierr )
+      ALLOCATE( xlimnfe0(jpi,jpj,jpk), xlimdfe0(jpi,jpj,jpk),       &
+         &      xlimnn(jpi,jpj,jpk), xlimdn(jpi,jpj,jpk), zn2fix(jpi,jpj,jpk),       &
+         &      STAT=ierr )
       !
       IF( ierr /= 0 ) CALL ctl_stop( 'STOP', 'canoe_prod_init : failed to allocate xlim* arrays' )
       !
@@ -427,12 +428,12 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
 
       REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zn2fixtot
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zn2fix, znitrpot, zwork
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: znitrpot, zwork
       REAL(wp)   :: zrtn, zlim, zfact 
       !
-      ALLOCATE( zn2fix(jpi, jpj, jpk), znitrpot(jpi, jpj, jpk), zwork(jpi, jpj, jpk) )
+      ALLOCATE( znitrpot(jpi, jpj, jpk), zwork(jpi, jpj, jpk) )
       ALLOCATE( zn2fixtot(jpi, jpj  ) )
-      ! Nitrogen fixation and denitrification
+      ! Nitrogen fixation
       ! ----------------------------------------------------------
 
       ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
@@ -472,18 +473,18 @@ CONTAINS
          END DO
       END DO
 
-      !
-      WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) 
+      ! area-weighted total in TgN/y (note that this is the total for current tile only)
+      WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)*e1t(:,:)*e2t(:,:))*365.*14.*1.e-15
 
       IF( lk_iomput ) THEN
          IF( jnt == qnrdttrc ) THEN
-            ! nitrogen fixation in molN m^-2 s^-1 
+            ! nitrogen fixation in molN m^-3 s^-1 
             zwork(:,:,:)  =  zn2fix(:,:,:) * 0.001/rday * tmask_bgc_closea(:,:,:)
             CALL iom_put( "Nfix"   , zwork )
        ENDIF
       ENDIF
       !
-      DEALLOCATE(zn2fix, znitrpot, zn2fixtot, zwork)
+      DEALLOCATE(znitrpot, zn2fixtot, zwork)
       !
    END SUBROUTINE trc_n2fx_canoe
 

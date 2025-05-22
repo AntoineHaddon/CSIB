@@ -415,16 +415,17 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_usp      = 'sas_grid_U'            ,       120.        , 'uos'     ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_vsp      = 'sas_grid_V'            ,       120.        , 'vos'     ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_tem      = 'sas_grid_T'            ,       120.        , 'sosstsst',   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_sal      = 'sas_grid_T'            ,       120.        , 'sosaline',   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_ssh      = 'sas_grid_T'            ,       120.        , 'sossheig',   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_e3t      = 'sas_grid_T'            ,       120.        , 'e3t_m'   ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
-   sn_frq      = 'sas_grid_T'            ,       120.        , 'frq_m'   ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_usp      = 'NOT USED'            ,       120.        , 'uos'     ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_vsp      = 'NOT USED'            ,       120.        , 'vos'     ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_tem      = 'NOT USED'            ,       120.        , 'sosstsst',   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_sal      = 'NOT USED'            ,       120.        , 'sosaline',   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_ssh      = 'NOT USED'            ,       120.        , 'sossheig',   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_e3t      = 'NOT USED'            ,       120.        , 'e3t_m'   ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_frq      = 'NOT USED'            ,       120.        , 'frq_m'   ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,    ''
    !!
    !! Following only needed with STATION_ASF compiled with "sea-ice" support: "key_si3" (ice fraction, ice surface temperature and sea-ice albedo:
    sn_ifr  = 'NOT USED'                  , 1.         , 'siconc'  ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
+   sn_ims  = 'NOT USED'                  , 1.         , 'icemass' ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
    sn_tic  = 'NOT USED'                  , 1.         , 'istl1'   ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
    sn_ial  = 'NOT USED'                  , 1.         , 'fal'     ,   .true.    , .false. , 'yearly'  ,    ''            ,    ''    ,    ''
 /
@@ -950,6 +951,7 @@
       !                             !                           or   = 1/12 Ud*Ld^3 (blp case)
       rn_Ud        = 0.01           !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
       rn_Ld        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      rn_aht_ratio = 0.25           !  surface to bottom ratio of lateral eddy coefficient (nn_aht_ijk_t = 10, 30)
 /
 !-----------------------------------------------------------------------
 &namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)       (default: OFF)
@@ -983,6 +985,7 @@
       !                        !  time invariant coefficients:  aei0 = 1/2  Ue*Le
       rn_Ue        = 0.02           !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
       rn_Le        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      rn_aei_ratio = 0.25           !  surface to bottom ratio of eddy induced velocity coefficient (nn_aei_ijk_t = 10, 30)
       rn_zRomax    = 200.e+3        !  Rossby radius in the tropical regions: 200 km
       rn_zRocoef   = 25.e+3         !  a prescribed "typical" eddy scale: 25 or 50 km
       rn_eiwmin    = 100.           !  lower limit of eddy induced velocity (m2/s)
@@ -1110,6 +1113,7 @@
       !                             !                            or  = 1/12 Uv*Lv^3 (blp case)
       rn_Uv      = 0.1              !  lateral viscous velocity [m/s] (nn_ahm_ijk_t= 0, 10, 20, 30)
       rn_Lv      = 10.e+3           !  lateral viscous length   [m]   (nn_ahm_ijk_t= 0, 10)
+      rn_ahm_ratio  = 0.25        ! surface to bottom ratio of lateral eddy coefficient (nn_ahm_ijk_t = 10, 30)
       !                       !  Smagorinsky settings  (nn_ahm_ijk_t= 32) :
       rn_csmc       = 3.5         !  Smagorinsky constant of proportionality
       rn_minfac     = 1.0         !  multiplier of theorectical lower limit
@@ -1356,7 +1360,7 @@
    ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004)
    ln_sm2005   = .false.   !  Compute zav_tide following Saenko and Merryfield (2005)
    ln_leewmx   = .false.   !  addition of Lee Wave mixing (.true.) or not (.false.)
-   rn_lwm      = 0.3       !  lee wave mixing scaling
+   rn_lwm      =  0.0999   !  lee wave mixing scaling
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!

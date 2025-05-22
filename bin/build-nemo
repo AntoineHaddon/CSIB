@@ -20,12 +20,12 @@ set -e
 #
 # Options:
 # All options begin with a dash (-) and must appear before any other command line arg
-#   -j num_proc     ...number of cpus to use for parallel compilation
-#   -p storage_loc  ...instead of storing executables in the CWD, store them in storage_loc
-#   -h              ...show this usage message
-#   -x              ...run this script with 'set -x'
-#   -s              ...executables manipulation when compile. link|copy|move
-#   -f              ...force a "clean" compile
+#   -j num_proc         ...number of cpus to use for parallel compilation
+#   -p storage_loc      ...instead of storing executables in the CWD, store them in storage_loc
+#   -h                  ...show this usage message
+#   -x                  ...run this script with 'set -x'
+#   -s [move|copy|link] ...after compiling, defines how the executables are stored (default is link)
+#   -f                  ...force a "clean" compile
 #
 # Variable definitions:
 #   srcpath=srcpath     ...location of the NEMO source code.
@@ -83,10 +83,10 @@ bail(){
 #===========================================
 nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
-nemo_ref_config=''      # The reference configuration to be used with nemo_config
+nemo_ref_config=''      # The reference configuration to be used with CanNEMO_CONFIG
 storage_method="link"   # Define how the execs will be stored (copy|link|move)
 storage_loc=$(pwd -P)      # tells build-nemo where to store executables
-comp_np=24              # Number of processors to use during nemo compilation
+comp_np=12              # Number of processors to use during nemo compilation
 xios_comp_np=12          # Number of processors to use during xios compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
 clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
@@ -100,7 +100,7 @@ printf " ------------------- \n"
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts p:j:s:hxdcf opt; do
+while getopts p:j:s:hxdf opt; do
     case $opt in
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
@@ -126,10 +126,10 @@ for arg in "$@"; do
         		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
-                cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
+                cfg)        CanNEMO_CONFIG="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
-        		util_arch)  nemo_util_arch="$val" ;; # utility arch name (for RTD, REBUILD and so on)
+        		util_arch)  nemo_util_arch_file="$val" ;; # utility arch name (for RTD, REBUILD and so on)
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
@@ -143,13 +143,21 @@ done
 # Consistency Checks
 #====================
 
-# Make sure the required arguments were given
+# make sure the required variables are set
 [[ -z "$storage_loc" ]]             && bail "-p must be followed by a directory in which to store the execs! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_arch" ]]           && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_util_arch" ]]           && bail "nemo_util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$CanNEMO_CONFIG" ]]          && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_arch" ]]               && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+
+# make sure a valid storage method was given
+case $storage_method in
+    copy|link|move) : ;; # valid
+    *) bail "Accepted values for the storage method are 'link|copy|move'! See ${THIS_SCRIPT_PATH} -h";;
+esac
+
+# make sure the source directory exists
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
 # make sure a valid storage method was given
@@ -179,7 +187,7 @@ make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
 
 # define target executables (must be consistent with make_xios, makenemo and other makefiles)
 target_xios_exec=${nemo_xios_build_dir}/bin/$xios_exec
-target_model_exec=${nemo_model_build_dir}/${cfgdir}/${nemo_config}/BLD/bin/nemo.exe
+target_model_exec=${nemo_model_build_dir}/${cfgdir}/${CanNEMO_CONFIG}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
@@ -198,7 +206,7 @@ else
 fi
 
 # all non-model executables get saved without renamining, store in list
-non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
+non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
@@ -261,16 +269,16 @@ cd $nemo_model_build_dir
 # nemo compilation environment
 echo "NEMO arch file = $nemo_arch"
 
-# clean temporary dirs if this is a "clean" compile
-if (( clean_compile == 1 )); then
-    ./makenemo -r $nemo_config clean
-fi
-
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
-ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
+ARGS=( -j $comp_np -m $nemo_arch -n $CanNEMO_CONFIG )
 [[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
+
+# clean temporary dirs if this is a "clean" compile
+if (( clean_compile == 1 )); then
+    ./makenemo "${ARGS[@]}" clean 
+fi
 
 # Create model executable
 echo 'makenemo '"${ARGS[@]}"
@@ -278,7 +286,7 @@ echo 'makenemo '"${ARGS[@]}"
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
 # files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
-files_to_reset="${cfgdir}/${nemo_config}/cpp_${nemo_config}.fcm"
+files_to_reset="${cfgdir}/${CanNEMO_CONFIG}/cpp_${CanNEMO_CONFIG}.fcm"
 files_to_reset=
 
 # log cpp_${nemo_config}.fcm
@@ -296,28 +304,27 @@ for f in $files_to_reset; do
         echo "Resetting $f to HEAD"
         git checkout HEAD $f
     fi
-done 
+done
 
 #-------------------------------
 # compile exec's using makefiles
 #-------------------------------
-
-# COMPILER_TEMPLATE (utility arch file) is Makefile argument
-COMPILER_TEMPLATE=${nemo_source_path}/nemo/arch/CCCMA/$nemo_util_arch
-echo "Utility arch file = $nemo_util_arch"
-
-for build_dir in $make_build_dirs; do 
+nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
+for build_dir in $make_build_dirs; do
     echo ""
     echo "=============================================="
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
-    [[ -n "$build_dir" ]] && cd $build_dir
+    cd $build_dir
+
+    # get make template file
+    ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
 
     # compile
-    if (( clean_compile == 1 )); then 
+    if (( clean_compile == 1 )); then
         make clean
     fi
-    make COMPILER_TEMPLATE=$COMPILER_TEMPLATE
+    make COMPILER_TEMPLATE=$nemo_util_arch_file_basename
     [[ -n "$build_dir" ]] && make
 done
 

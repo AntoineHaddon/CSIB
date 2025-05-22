@@ -80,6 +80,7 @@ PROGRAM nemo_ocean_diag
 ! 2. xlf90_r -o nemo_physical_rtd.exe ccc_nemo_rtd_utils.F90 ccc_nemo_physical_rtd.F90 uvic_netcdf.f `nf-config --fflags --flibs`
 ! ======================================================================
       USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, moc, noleap_days
+      USE netcdf
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
@@ -87,7 +88,7 @@ PROGRAM nemo_ocean_diag
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
-      INTEGER :: eivid, status, nf_inq_varid, nf_get_att
+      INTEGER :: varid, status, nf_inq_varid, nf_get_att
       REAL    :: recn, cp, tz, sz, w_meanx, w_meany, area1, area2
       REAL    :: area, arc, arcn, arcs
       REAL(kind=4) :: fill_value
@@ -391,8 +392,8 @@ PROGRAM nemo_ocean_diag
           do j = 1, jmt
 ! Mask for tropical Pacific upwelling
               trop_up_mask(i,j) = 0. 
-              if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then 
-                  if (lat2d(10,j).gt.-2..and.lat2d(10,j).lt.2.) then 
+              if (lon2d(i,j).ge.150..or.lon2d(i,j).le.-75.) then 
+                  if (lat2d(i,j).gt.-2..and.lat2d(i,j).lt.2.) then 
                       if (t_mask(i,j,k60).eq.1.) then ! ~ 60m
                           trop_up_mask(i,j) = 1. 
                       endif
@@ -404,17 +405,17 @@ PROGRAM nemo_ocean_diag
              nino34_mask(i,j)= 0. 
              nino4_mask(i,j) = 0.
              if (t_mask(i,j,1).eq.1.) then ! sst 
-               if (lat2d(10,j).ge.-5..and.lat2d(10,j).le.5.) then 
+               if (lat2d(i,j).ge.-5..and.lat2d(i,j).le.5.) then 
 ! Nino3
-                 if (lon2d(i,10).ge.-150..and.lon2d(i,10).le.-90.) then
+                 if (lon2d(i,j).ge.-150..and.lon2d(i,j).le.-90.) then
                    nino3_mask(i,j) =  1. 
                  endif
 ! Nino3.4
-                 if (lon2d(i,10).ge.-170..and.lon2d(i,10).le.-120.) then
+                 if (lon2d(i,j).ge.-170..and.lon2d(i,j).le.-120.) then
                    nino34_mask(i,j) = 1. 
                  endif
 ! Nino4
-                 if (lon2d(i,10).ge.160..or.lon2d(i,10).le.-150.) then 
+                 if (lon2d(i,j).ge.160..or.lon2d(i,j).le.-150.) then 
                    nino4_mask(i,j) = 1. 
                  endif
                endif           
@@ -459,7 +460,7 @@ PROGRAM nemo_ocean_diag
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
          ! vertical scale factors - nonlinear free surface case 
-          CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
+          CALL getvara ('thkcello', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
           CALL getvara ('e3u', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
           CALL getvara ('e3v', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
          ! temperature
@@ -476,18 +477,19 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('vo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
          ! w-velocity 
           CALL getvara ('wo', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
-         ! EI u-velocity 
-          CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
-         ! EI v-velocity 
-          CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
-         ! EI w-velocity 
-          CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
-         ! If eddy fields contain NaNs, set them to zeros.
-          status = nf_inq_varid(iou3, "voce_eiv", eivid)
-          status = nf_get_att(iou3, eivid, '_FillValue', fill_value)
-          WHERE (gmv == fill_value)
-            gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
-          ENDWHERE
+          gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
+          ! EI u-velocity (only if present in the file)
+          status = nf_inq_varid(iou2, "uoce_eiv", varid)
+          IF (status.eq.nf90_noerr) THEN 
+              CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
+          ELSE; print*,'WARNING: Eddy induced velovity n ot found (normal if ln_ldfeiv = .FALSE.)'
+          ENDIF
+          ! EI v-velocity (only if present in the file)
+          status = nf_inq_varid(iou3, "voce_eiv", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
+          ! EI w-velocity (only if present in the file)
+          status = nf_inq_varid(iou4, "woce_eiv", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! Wind Stress along i-axis
           CALL getvara ('tauuo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
@@ -509,11 +511,18 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('sndmassmelt', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
           isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
-          CALL getvara ('O_QsrMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
-          CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-          CALL getvara ('O_QsrIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
-          CALL getvara ('O_QnsIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
-          hflx_qns_tot=hflx_qns_tot - hflx_evap_cea + hflx_rain_cea
+          hflx_qsr_tot =0. ; hflx_qns_tot =0. ; hflx_qsr_ice =0. ; hflx_qns_ice =0. 
+          status = nf_inq_varid(iou1, "O_QnsMix", varid)
+          IF (status.eq.nf90_noerr) THEN 
+              CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+          ELSE; print*,'WARNING: Coupler fluxes not found (normal if forcing from blk)'
+          ENDIF
+          status = nf_inq_varid(iou1, "O_QsrMix", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QsrMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
+          status = nf_inq_varid(iou6, "O_QsrIce", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QsrIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
+          status = nf_inq_varid(iou6, "O_QnsIce", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QnsIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
           CALL getvara ('volo', iou7, 1, (/l/), (/1/), vol(l), 1., 0.)
           CALL getvara ('thetaoga', iou7, 1, (/l/), (/1/), tvol(l), 1., 0.)
@@ -629,7 +638,7 @@ PROGRAM nemo_ocean_diag
             &           , km, t_nino4(l), dvol, 1) 
 
           do i = 1, imt
-               if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
+               if (lon2d(i,j_eq).ge.150..or.lon2d(i,j_eq).le.-75.) then
                    do k = 1, k500 
                      if (u_mask(i,j_eq,k).gt.0.5) then
                        if (u(i, j_eq, k).gt. euc_max(l)) then
@@ -760,8 +769,8 @@ PROGRAM nemo_ocean_diag
     ! Upper Southern Ocean MOC
           do k = 1, km 
               do j =1, jmt   
-                  if (lat2d(10,j).le.-40.) then ! south of 40S 
-                    if (v_mask(10,j,k).gt.0.5) then      
+                  if (lat2d(i,j).le.-40.) then ! south of 40S 
+                    if (v_mask(i,j,k).gt.0.5) then      
                       if (over_psi(j, k).gt.over_max_SO_net(l)) then      
                           over_max_SO_net(l) = over_psi(j, k) 
                       endif
@@ -841,6 +850,13 @@ PROGRAM nemo_ocean_diag
           call area_ave_flx(e1t, e2t, g_mask, hflx_qns_ice(:, :), imt      &
             &                  , jmt, hflx_qns_ice_ave(l), dum)
 
+    !---------------------------------------------------
+    ! (10) definition in server.R
+    !---------------------------------------------------
+    
+          ! hglo is treated in server.R as if it does not include melt(PCPN) but include hrunoff. 
+          ! So melt(PCPN) is removed and hflx_rnf is added 
+          hglo(l)=hglo(l)-hflx_snow(i)-hflx_snow(l)+hflx_rnf(l)
 !---------------------------------------------------
 !   Main outputs 
 !--------------------------------------------------

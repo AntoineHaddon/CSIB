@@ -55,7 +55,6 @@
           <field field_ref="pCO2"     name="pCO2"   level="0" />
           <field field_ref="pO2"      name="pO2"    level="0" />
 
-          <field field_ref="surf_chla" name="surf_chla"  level="0" />
 
           <!-- CMOC PP diagnostics -->
           <field field_ref="PPPHY"    name="PPPHY"     level="0" />

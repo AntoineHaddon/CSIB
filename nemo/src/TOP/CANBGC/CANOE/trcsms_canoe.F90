@@ -17,6 +17,7 @@ MODULE trcsms_canoe
    USE trdtrc
    !
    USE lbclnk             ! exchange fields over tile boundaries
+   !USE lib_fortran
    !
    USE trcopt_canbgc      ! PAR attenuation
    USE trcche_canbgc      ! carbon chemistry eq. constants
@@ -24,7 +25,8 @@ MODULE trcsms_canoe
    USE trcsink_canbgc     ! particule sinking
    !
    USE sms_top_canbgc     ! basic shared TOP variables, also contains ext. src array declarations
-   USE sms_canoe, ONLY    : ln_canoenegtr
+   USE sms_canoe
+   !USE sms_canoe, ONLY    : ln_canoenegtr
    !
    USE canoetemp          ! CanOE temperature dependencies module   
    USE canoeprod          ! CanOE PP module
@@ -35,6 +37,7 @@ MODULE trcsms_canoe
 
    PUBLIC   trc_sms_canoe       ! called by trcsms.F90 module
    PUBLIC   trc_sms_canoe_alloc ! called by trcini_canoe.F90 module
+   !PUBLIC   trc_sms_canoe_dmp
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: rnegtr2     ! Array used to indicate negative tracer values 
    LOGICAL , PUBLIC ::   ll_sbc  ! trigger for external sources (ln_dust0, ln_river0, and ln_ndepo0)
@@ -126,7 +129,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
+          CALL trc_che_2D( kt, Kmm )   ! initialization of carbon chemistry constants
         ELSE
             WRITE(numout,*)
             WRITE(numout,*) 'Should something be done for the restart mode here? Nothing coded here yet, some code exists in TOP/trcini.F90 to take care of this though.'
@@ -144,6 +147,7 @@ CONTAINS
         IF(lwp) write(numout,*) '~~~~~~'
   
         CALL trc_che_2D( kt,Kmm )           ! computation of carbon chemistry constants
+        CALL trc_che_3D( kt,Kmm )           ! computation of carbon chemistry constants
             !
       ENDIF  
       !
@@ -169,7 +173,7 @@ CONTAINS
        !
         CALL canoe_sink( kt , jnt, Kbb, Kmm, Krhs )     ! particle sinking 
        !
-        CALL trc_opt( kt, jnt, Kmm )       ! 3-band PAR attenuation
+        CALL trc_opt( kt, jnt, Kbb, Kmm )       ! 3-band PAR attenuation
        !
        ! call CanOE production S/R
         CALL canoe_prod( kt, jnt, Kbb, Kmm, Krhs  )
@@ -181,6 +185,7 @@ CONTAINS
         CALL trc_src_fedep( kt, Kbb, Kmm, Krhs )
         CALL trc_src_fesed( Kbb, Kmm, Krhs )
         CALL trc_n2fx_canoe( kt, jnt, Kbb, Kmm, Krhs )
+        CALL trc_sms_canoe_dmp( kt, Kbb, Kmm, Krhs )
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
@@ -223,6 +228,39 @@ CONTAINS
       !
    END SUBROUTINE trc_sms_canoe
    
+   SUBROUTINE trc_sms_canoe_dmp( kt, Kbb, Kmm, Krhs )
+      !!----------------------------------------------------------------------
+      !!                    ***  trc_sms_canoe_dmp  ***
+      !!
+      !! adjust global total N and TA while leaving spatial distribution intact
+      !! enforces global conservation in case that DNF is larger or smaller than denitrification
+      !!----------------------------------------------------------------------
+      !
+      USE lib_fortran,   ONLY: glob_sum
+
+      INTEGER, INTENT( in )  ::     kt, Kbb, Kmm, Krhs
+      !
+      REAL(wp) :: zdntrsum, zdnfsum, ztau, znsum, zalksum  !   , zalksum0
+      !!---------------------------------------------------------------------
+
+         ! adjust NO3 according to difference between global total rates of denitrification and N2 fixation
+         ! in CanESM5 this adjustment was made multiplicative rather than additive to prevent negative concentrations
+         ! however that approach can not work in NEMO4 as we are avoiding any direct alteration to the tracer concentration arrays
+         ! it might work if we apply it only to a subset of the model layers
+         ! at present denitr is in mmol/m^3/tstep and zn2fix is in mmol/m^3/d
+
+         znsum = glob_sum('totalNO3', tr(:,:,35:74,jqno3,Kbb)*cvol(:,:,35:74) )               ! global total N in mmol^-1
+         zdnfsum = glob_sum('totalDNF',  zn2fix(:,:,:) * cvol(:,:,:)  )*xstepb                ! global total in mmolN tstep^-1
+         zdntrsum = glob_sum('totalDenitr',  denitr(:,:,:) * cvol(:,:,:)  )                   ! global total in mmolN tstep^-1
+         ztau = (zdntrsum-zdnfsum)/(znsum*1.0008)                                             ! 1.0008 is an approximate correction for non-NO3 N
+         tr(:,:,35:74,jqno3,Krhs) = tr(:,:,35:74,jqno3,Krhs) + tr(:,:,35:74,jqno3,Kbb) * ztau           ! correction to NO3
+! add/remove alkalinity to compensate for processes bypassed in nonphysical addition/subtraction of NO3 (- 1 mol / mol N)
+         zalksum = glob_sum('totalTA',  tr(:,:,35:74,jqtal,Kbb)*cvol(:,:,35:74) )
+         tr(:,:,35:74,jqtal,Krhs) = tr(:,:,35:74,jqtal,Krhs) - tr(:,:,35:74,jqtal,Kbb) * ztau * znsum/zalksum * 1.e-6
+         !tr(:,:,35:74,jqtal,Krhs) = tr(:,:,35:74,jqtal,Krhs) - tr(:,:,35:74,jqno3,Kbb) * ztau * 1.e-6
+
+   END SUBROUTINE trc_sms_canoe_dmp
+
    SUBROUTINE total_element(totfe,totn, Kmm)
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE total_element  ***
@@ -268,6 +306,7 @@ CONTAINS
       !
       IF( trc_sms_canoe_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_canoe_alloc : failed to allocate arrays' )
       !
+
    END FUNCTION trc_sms_canoe_alloc
 
    !!======================================================================

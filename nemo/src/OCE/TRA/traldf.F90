@@ -30,6 +30,7 @@ MODULE traldf
    USE lib_mpp        ! distribued memory computing library
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE timing         ! Timing
+   USE iom            ! IOM library
 
    IMPLICIT NONE
    PRIVATE
@@ -75,6 +76,15 @@ CONTAINS
       CASE ( np_blp , np_blp_i , np_blp_it )             ! bilaplacian: iso-level & iso-neutral operators
          CALL tra_ldf_blp  ( kt, Kmm, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, pts(:,:,:,:,Kbb), pts(:,:,:,:,Krhs),             jpts, nldf_tra )
       END SELECT
+
+      ! Output invariant ahtu & ahtv
+      IF ( .NOT. l_ldftra_time) THEN
+         CALL iom_put( "ahtuc_2d", ahtu(:,:,1) )   ! surface u-eddy diffusivity coeff.
+         CALL iom_put( "ahtvc_2d", ahtv(:,:,1) )   ! surface v-eddy diffusivity coeff.
+         CALL iom_put( "ahtuc_3d", ahtu(:,:,:) )   ! 3D      u-eddy diffusivity coeff.
+         CALL iom_put( "ahtvc_3d", ahtv(:,:,:) )   ! 3D      v-eddy diffusivity coeff.
+      ENDIF
+
       !
       IF( l_trdtra )   THEN                    !* save the horizontal diffusive trends for further diagnostics
          ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs) - ztrdt(:,:,:)

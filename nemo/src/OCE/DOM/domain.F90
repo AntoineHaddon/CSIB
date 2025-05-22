@@ -237,7 +237,11 @@ CONTAINS
 #if defined key_agrif
       IF( .NOT. Agrif_Root() ) CALL Agrif_Init_Domain( Kbb, Kmm, Kaa )
 #endif
+#if ! defined key_si3
+      ! Will be written in ice_init if SI3 is enable (to put hi_max values)
+      ! We have to use the key_si3 because nn_ice is not defined yet (in sbc_init)
       IF( ln_meshmask    )   CALL dom_wri       ! Create a domain file
+#endif
       IF( .NOT.ln_rstart )   CALL dom_ctl       ! Domain control
       !
       IF( ln_write_cfg   )   CALL cfg_write     ! create the configuration file

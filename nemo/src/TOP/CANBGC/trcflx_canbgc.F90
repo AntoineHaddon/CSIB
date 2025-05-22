@@ -106,7 +106,7 @@ CONTAINS
       REAL(wp) ::   ztc, ztc2, ztc3, ztc4, zws, zkgwan
       REAL(wp) ::   zfld, zflu, zfld16, zflu16, zfact
       REAL(wp) ::   zsch_o2, zsch_co2
-      REAL(wp), DIMENSION(jpi,jpj) :: zkgco2, zkgo2, zo2flx, zco2flx
+      REAL(wp), DIMENSION(jpi,jpj) :: zkgco2, zkgo2, zo2flx, zco2flx, zph0
       REAL(wp) ::   zyr_dec, zdco2dt
 
       !!---------------------------------------------------------------------
@@ -184,6 +184,7 @@ CONTAINS
       ! 3. compute partial pressure differences and fluxes
       ! -------------------------------------------
 
+      zco2flx(:,:)=0.
       DO jj = 1, jpj
          DO ji = 1, jpi
             ! Compute CO2 flux for the sea and air
@@ -217,6 +218,8 @@ CONTAINS
       CALL iom_put("DpO2" , ( satmo2g(:,:) - tr(:,:,1,jqoxy, Kmm) * no3_sf / ( K0O2(:,:) + rtrn ) )  * tmask_bgc_closea(:,:,1) )
       CALL iom_put("pO2"  ,                  tr(:,:,1,jqoxy, Kmm) * no3_sf / ( K0O2(:,:) + rtrn )  * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
+      zph0(:,:) = -1. * LOG10( MAX( qhi(:,:,1) + rtrn , rtrn ) )
+      CALL iom_put("pH"  , zph0(:,:) * tmask_bgc_closea(:,:,1) )
       ! other fields will be set to 0s by default (compilation setting)
       ! CALL iom_put("CO3",      )
       ! CALL iom_put("CO3sat",   )

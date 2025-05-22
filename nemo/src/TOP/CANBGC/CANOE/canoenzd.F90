@@ -5,12 +5,13 @@ MODULE canoenzd
 
    USE sms_top_canbgc     ! TOP Source Minus Sink variables
    USE sms_canoe          ! CanOE specific parameters declaration
-   USE canoetemp          ! CanOE temperature dependencies module
-   USE trcopt_canbgc      ! PAR attenuation
-
    USE trc_closea_canbgc  !  tmask_bgc_closea
+   USE trcopt_canbgc      ! PAR attenuation
+   USE canoetemp          ! CanOE temperature dependencies module
 
    USE prtctl          !  print control for debugging
+   USE lib_mpp         !  ctl_stop on failed mem allocate check
+   USE lib_fortran     !  access glob_sum function
    USE iom             !  I/O manager
 
    ! timing modules
@@ -27,12 +28,21 @@ MODULE canoenzd
    PUBLIC canoe_mort2
    PUBLIC canoe_rem
    PUBLIC canoe_nzd_init
+   PUBLIC canoe_nzd_alloc
  
-   REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
-   REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
-   REAL(wp), PUBLIC :: mpratm  = 5.E-2_wp   !: Phytoplankton minimum mortality rate
-   REAL(wp), PUBLIC :: mpqua   = 1.E-09_wp  !: quadratic mortality of phytoplankton
-   REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
+   REAL(wp), PUBLIC :: mpratps = 5.E-2_wp   !: small phytoplankton mortality rate
+   REAL(wp), PUBLIC :: mpratpl = 5.E-2_wp   !: large phytoplankton mortality rate
+   REAL(wp), PUBLIC :: mpratzs = 5.E-2_wp   !: microzooplankton mortality rate
+   REAL(wp), PUBLIC :: mpratzl = 2.E-1_wp   !: mesozooplankton mortality rate
+   REAL(wp), PUBLIC :: mpquaps = 6.E-2_wp   !: quadratic mortality of small phytoplankton
+   REAL(wp), PUBLIC :: mpquapl = 6.E-2_wp   !: quadratic mortality of large phytoplankton
+   REAL(wp), PUBLIC :: mpquazs = 6.E-2_wp   !: quadratic mortality of microzooplankton
+   REAL(wp), PUBLIC :: mpquazl = 6.E-2_wp   !: quadratic mortality of mesozooplankton
+!   REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
+!   REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
+!   REAL(wp), PUBLIC :: mpratm  = 5.E-2_wp   !: Phytoplankton minimum mortality rate
+!   REAL(wp), PUBLIC :: mpqua   = 1.E-09_wp  !: quadratic mortality of phytoplankton
+!   REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
    REAL(wp), PUBLIC :: chldegr = 2.E-2_wp   !: Chlorophyll photooxidation rate
    REAL(wp), PUBLIC :: picfrx  = 1.E-1_wp   !: CaCO3 fraction of mortality (0.1 implies 1 mol caCO3 for each 10 mol POC)
    REAL(wp), PUBLIC :: xminp   = 0.01       !: minimum phytoplankton concentration for linear mortality
@@ -47,16 +57,20 @@ MODULE canoenzd
    REAL(wp), PUBLIC :: zsr2    = 0.3_wp     !: specific respiration rate
    REAL(wp), PUBLIC :: lambda2 = 0.8_wp     !: assimilation efficiency
    REAL(wp), PUBLIC :: xremik = 0.25_wp     !: remineralisation rate of POC 
-   REAL(wp), PUBLIC :: xremip = 0.025_wp    !: remineralisation rate of DOC
+   REAL(wp), PUBLIC :: xremip = 0.025_wp    !: remineralisation rate of DOC (not used)
    REAL(wp), PUBLIC :: nitrif = 0.05_wp     !: NH4 nitrification rate 
    REAL(wp), PUBLIC :: xlam1  = 0.0001_wp   !: scavenging rate of iron (low concentrations)
    REAL(wp), PUBLIC :: xlam2  = 2.5_wp      !: scavenging rate of iron (high concentrations)
    REAL(wp), PUBLIC :: ligand = 6.0E+2_wp   !: ligand concentration
-   REAL(wp), PUBLIC :: pocfctr= 0.65574_wp  !: multiplier for POC-dependent scavenging
-   REAL(wp), PUBLIC :: o2thresh  = 6._wp    !: O2 threshold for denitrification
+   REAL(wp), PUBLIC :: pocfctr = 0.65574_wp !: multiplier for POC-dependent Fe scavenging
+   REAL(wp), PUBLIC :: o2thresh = 6._wp     !: O2 threshold for denitrification
    REAL(wp), PUBLIC :: nh4frx = 0.25_wp     !: anammox fraction of denitrification
-   REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for anoxia 
+   REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for O2 inhibition of nitrification
    REAL(wp), PUBLIC :: nyld   = 0.8_wp      !: denitrification stoichiometric coefficient
+   REAL(wp), PUBLIC :: kdca   = 0.0074_wp   !: dissolution rate of CaCO3
+   REAL(wp), PUBLIC :: nca    = 1._wp       !: order of dissolution reaction (not used)
+
+   !REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
 
 #  include "vectopt_loop_substitute.h90"
 
@@ -92,11 +106,11 @@ CONTAINS
                ztn = ts(ji,jj,jk,jp_tem, Kmm)
                Tf = tgfuncz20(ji,jj,jk)
 
-               lpc = MAX(tr(ji,jj,jk,jrdia,Kmm),0.)
-               lpn = MAX(tr(ji,jj,jk,jrdn,Kmm),0.)
-               lpf = MAX(tr(ji,jj,jk,jrdfe,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrdch,Kmm),0.)
-               szc = MAX(tr(ji,jj,jk,jrzoo,Kmm),0.)
+               lpc = MAX(tr(ji,jj,jk,jrdia,Kbb),0.)
+               lpn = MAX(tr(ji,jj,jk,jrdn,Kbb),0.)
+               lpf = MAX(tr(ji,jj,jk,jrdfe,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrdch,Kbb),0.)
+               szc = MAX(tr(ji,jj,jk,jrzoo,Kbb),0.)
                itfc=1./(lpc+szc+rtrn)
 
                c2n=lpc/(lpn+rtrn)
@@ -107,7 +121,7 @@ CONTAINS
                fe2n=lpf/(lpn+rtrn)
 
 ! assume grazing hyperbola is determined by total food concentration and the two food types are consumed in proportion to their concentrations (in C units)
-               grazt=gmax2*(1.-EXP(-apl*(lpc+szc)))*tr(ji,jj,jk,jrmes,Kmm)*xstepb
+               grazt=gmax2*(1.-EXP(-apl*(lpc+szc)))*tr(ji,jj,jk,jrmes,Kbb)*xstepb
                grazz=grazt*szc*itfc
                grazp=grazt*lpc*itfc
 ! reduce phytoplankton fraction to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
@@ -132,7 +146,7 @@ CONTAINS
                nxs2 = csw1*nxs2
                fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr2*Tf*tr(ji,jj,jk,jrmes,Kmm)*xstepb-cxs,0.)
+               R = MAX(zsr2*Tf*tr(ji,jj,jk,jrmes,Kbb)*xstepb-cxs,0.)
 
                !   Update the arrays TRA which contain the biological sources and sinks
                tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + (R + cxs)*1.E-6
@@ -205,10 +219,10 @@ CONTAINS
                ztn = ts(ji,jj,jk,jp_tem, Kmm)
                Tf = tgfuncz0(ji,jj,jk) 
 
-               spc = MAX(tr(ji,jj,jk,jrphy,Kmm),0.)
-               spn = MAX(tr(ji,jj,jk,jrnn,Kmm),0.)
-               spf = MAX(tr(ji,jj,jk,jrnfe,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrnch,Kmm),0.)
+               spc = MAX(tr(ji,jj,jk,jrphy,Kbb),0.)
+               spn = MAX(tr(ji,jj,jk,jrnn,Kbb),0.)
+               spf = MAX(tr(ji,jj,jk,jrnfe,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrnch,Kbb),0.)
 
                c2n=spc/(spn+rtrn)
                n2c=spn/(spc+rtrn)
@@ -218,7 +232,7 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
 
 ! Micrograzer functional response is determined by phytoplankton C
-               grazp=gmax1*(1.-EXP(-aps*spc))*tr(ji,jj,jk,jrzoo,Kmm)*xstepb
+               grazp=gmax1*(1.-EXP(-aps*spc))*tr(ji,jj,jk,jrzoo,Kbb)*xstepb
 ! reduce phytoplankton consumption to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
                grazp=grazp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
 ! calculate "excess" relative to grazer RR
@@ -241,7 +255,7 @@ CONTAINS
                nxs2 = csw1*nxs2
                fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr1*Tf*tr(ji,jj,jk,jrzoo,Kmm)*xstepb-cxs,0.)
+               R = MAX(zsr1*Tf*tr(ji,jj,jk,jrzoo,Kbb)*xstepb-cxs,0.)
 
                ! Grazing by microzooplankton
                !grazing1(ji,jj,jk) = grazp
@@ -318,11 +332,11 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
 
-               spc = MAX(tr(ji,jj,jk,jrphy,Kmm),0.)
-               spn = MAX(tr(ji,jj,jk,jrnn,Kmm),0.)
-               spf = MAX(tr(ji,jj,jk,jrnfe,Kmm),0.)
-               szc = MAX(tr(ji,jj,jk,jrzoo,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrnch,Kmm),0.)
+               spc = MAX(tr(ji,jj,jk,jrphy,Kbb),0.)
+               spn = MAX(tr(ji,jj,jk,jrnn,Kbb),0.)
+               spf = MAX(tr(ji,jj,jk,jrnfe,Kbb),0.)
+               szc = MAX(tr(ji,jj,jk,jrzoo,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrnch,Kbb),0.)
 
                c2n=spc/(spn+rtrn)
                n2c=spn/(spc+rtrn)
@@ -333,10 +347,10 @@ CONTAINS
                thetac=chl/(spc+rtrn)
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
-               zmortp = mprat * xstepb * spc + mpqua * xstepb * spc * spc
-               if (spc.le.xminp) zmortp = mpqua * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
-               zmortz = mprat * xstepb * szc + mpqua * xstepb * szc * szc
-               if (szc.le.xminp) zmortz = mpqua * xstepb * szc * szc
+               zmortp = mpratps * xstepb * spc + mpquaps * xstepb * spc * spc
+               if (spc.le.xminp) zmortp = mpquaps * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
+               zmortz = mpratzs * xstepb * szc + mpquazs * xstepb * szc * szc
+               if (szc.le.xminp) zmortz = mpquazs * xstepb * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
                zmortpn(ji,jj,jk) = zmortp
@@ -434,11 +448,11 @@ CONTAINS
 
                !     Phytoplankton mortality. 
                !     ------------------------
-               spc = MAX(tr(ji,jj,jk,jrdia,Kmm),0.)
-               spn = MAX(tr(ji,jj,jk,jrdn,Kmm),0.)
-               spf = MAX(tr(ji,jj,jk,jrdfe,Kmm),0.)
-               szc = MAX(tr(ji,jj,jk,jrmes,Kmm),0.)
-               chl = MAX(tr(ji,jj,jk,jrdch,Kmm),0.)
+               spc = MAX(tr(ji,jj,jk,jrdia,Kbb),0.)
+               spn = MAX(tr(ji,jj,jk,jrdn,Kbb),0.)
+               spf = MAX(tr(ji,jj,jk,jrdfe,Kbb),0.)
+               szc = MAX(tr(ji,jj,jk,jrmes,Kbb),0.)
+               chl = MAX(tr(ji,jj,jk,jrdch,Kbb),0.)
 
                c2n=spc/(spn+rtrn)
                n2c=spn/(spc+rtrn)
@@ -448,10 +462,10 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
                thetac=chl/(spc+rtrn)
 
-               zmortp = mpratm * xstepb * spc + mpqua * xstepb * spc * spc
-               if (spc.le.xminp) zmortp = mpqua * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
-               zmortz = mprat2 * xstepb * szc + mpquad * xstepb * szc * szc
-               if (szc.le.xminp) zmortz = mpquad * xstepb * szc * szc
+               zmortp = mpratpl * xstepb * spc + mpquapl * xstepb * spc * spc
+               if (spc.le.xminp) zmortp = mpquapl * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
+               zmortz = mpratzl * xstepb * szc + mpquazl * xstepb * szc * szc
+               if (szc.le.xminp) zmortz = mpquazl * xstepb * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
                zmortpd(ji,jj,jk) = zmortp
@@ -512,7 +526,7 @@ CONTAINS
       !!
       !! ** Method  : - ???
       !!---------------------------------------------------------------------
-      !
+
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !
@@ -524,15 +538,16 @@ CONTAINS
       REAL(wp) ::   zscave, zscavex, fexs, zcoag
       REAL(wp) ::   zlamfac, zonitr, zstep, znitro2dep
       REAL(wp) ::   zrfact2
-      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nh4ox, denitr
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nh4ox
       CHARACTER (len=25) :: charout
 
-      ALLOCATE( nh4ox(  jpi, jpj, jpk ), denitr(  jpi, jpj, jpk ) )
+      ALLOCATE( nh4ox(  jpi, jpj, jpk ) )
       !REAL(wp), POINTER, DIMENSION(:,:,:) :: zolimi, zolimi2, zwork
       !!---------------------------------------------------------------------
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_rem')
       !
+
       nh4ox(:,:,:)=0.
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -542,10 +557,10 @@ CONTAINS
                !    below 2 umol/L. Inhibited at strong light 
                !    ----------------------------------------------------------
                ! nitrification rate depends on O2 concentration
-               znitro2dep = MAX(0., 0.4*(6.-tr(ji,jj,jk,jqoxy,Kmm))/(oxymin + tr(ji,jj,jk,jqoxy,Kmm)))
+               znitro2dep = MAX(0., 0.4*(6.-tr(ji,jj,jk,jqoxy,Kbb))/(oxymin + tr(ji,jj,jk,jqoxy,Kbb)))
                znitro2dep = MIN(1., znitro2dep )
-               zonitr = nitrif * zstep * tr(ji,jj,jk,jrnh4,Kmm) / (1.+ par_3bands(ji,jj,jk)) * (1.- znitro2dep) 
-               !denitnh4(ji,jj,jk) = nitrif * zstep * tr(ji,jj,jk,jpnh4,Kmm) * nitrfac(ji,jj,jk) 
+               zonitr = nitrif * zstep * tr(ji,jj,jk,jrnh4,Kbb) / (1.+ par_3bands(ji,jj,jk)) * (1.- znitro2dep) 
+               !denitnh4(ji,jj,jk) = nitrif * zstep * tr(ji,jj,jk,jpnh4,Kbb) * nitrfac(ji,jj,jk) 
                !   Update of the tracers trends
                !   ----------------------------
                tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) - zonitr
@@ -575,14 +590,14 @@ CONTAINS
             DO ji = 1, jpi
 
                Tf = tgfuncr0(ji,jj,jk)
-               zorem  = xremik * xstepb * Tf * tr(ji,jj,jk,jrpoc,Kmm)
+               zorem  = xremik * xstepb * Tf * tr(ji,jj,jk,jrpoc,Kbb)
                zofer  = zorem * rr_fe2c
-               zorem2 = xremik * xstepb * Tf * tr(ji,jj,jk,jrgoc,Kmm)
+               zorem2 = xremik * xstepb * Tf * tr(ji,jj,jk,jrgoc,Kbb)
                zofer2 = zorem2 * rr_fe2c
 
-! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<10 uM
+! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<6 uM
 ! NO3 fraction is then divided between NO3 and NH4 according to the parameter nh4frx (for anammox 50% of N comes from NO3 and 50% from NH4)
-               zonitr=1.-MIN(tr(ji,jj,jk,jqoxy,Kmm),o2thresh)/o2thresh
+               zonitr=1.-MIN(tr(ji,jj,jk,jqoxy,Kbb),o2thresh)/o2thresh
                tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) + (zorem + zorem2)*rr_n2c - (zorem + zorem2)*nyld*zonitr*0.5*nh4frx
                tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) - (zorem + zorem2)*nyld*zonitr*(1.-0.5*nh4frx)
                tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - (zorem + zorem2)*(1.-zonitr)
@@ -593,6 +608,12 @@ CONTAINS
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*rr_n2c                         ! 1 mol of alkalinity per mol of N
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*nyld*zonitr*(1.-nh4frx)        ! +1 mol if denitrification, 0 if anammox
                denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
+
+! CaCO3 dissolution
+               zorem2 = kdca * xstepb * tr(ji,jj,jk,jrcal,Kbb)
+               tr(ji,jj,jk,jrcal, Krhs) = tr(ji,jj,jk,jrcal, Krhs) - zorem2 
+               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + zorem2 * 1.e-6
+               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + zorem2 * 2.e-6
 
             END DO
          END DO
@@ -615,9 +636,9 @@ CONTAINS
            DO ji = 1, jpi
                zstep = xstepb
 ! irreversible scavenging as in Christian et al 2002
-               zcoag = MIN((tr(ji,jj,jk,jrpoc,Kmm)+tr(ji,jj,jk,jrgoc,Kmm))*pocfctr,1.)
-               fexs = MAX(tr(ji,jj,jk,jrfer,Kmm)-ligand,0.)
-               zscave = xlam1 * xstepb * (tr(ji,jj,jk,jrfer,Kmm)-fexs) * zcoag
+               zcoag = MIN((tr(ji,jj,jk,jrpoc,Kbb)+tr(ji,jj,jk,jrgoc,Kbb))*pocfctr,1.)
+               fexs = MAX(tr(ji,jj,jk,jrfer,Kbb)-ligand,0.)
+               zscave = xlam1 * xstepb * (tr(ji,jj,jk,jrfer,Kbb)-fexs) * zcoag
                zscavex = xlam2 * xstepb * fexs
                tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) - (zscave+zscavex)
             END DO
@@ -636,15 +657,13 @@ CONTAINS
 
       IF( lk_iomput ) THEN
          zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
-         denitr(:,:,:) = denitr(:,:,:) * zrfact2
-         nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
          IF( jnt == qnrdttrc ) THEN
-           CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
-           CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
+           CALL iom_put( "Denitr"   , denitr(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+           CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
          ENDIF
       ENDIF
 
-      DEALLOCATE( nh4ox, denitr )
+      DEALLOCATE( nh4ox )
 
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('rem6')")
@@ -666,12 +685,13 @@ CONTAINS
       !!                called at the first timestep
       !!
       !!----------------------------------------------------------------------
-      INTEGER ::   ios       ! Local integer
-      NAMELIST/namcanmort/ mpqua, mpquad, mprat, mprat2, mpratm, chldegr, picfrx, xminp
+      INTEGER ::   ios, ierr ! Local integers
+      NAMELIST/namcanmort/ mpratps, mpratzs, mpratpl, mpratzl, mpquaps, mpquazs, mpquapl, mpquazl, chldegr, picfrx, xminp
       NAMELIST/namcanzoo/ part, gmax1, aps, zsr1, lambda1
       NAMELIST/namcanmes/ part2, gmax2, apl, zsr2, lambda2
       NAMELIST/namcanrem/ xremik, xremip, nitrif, xlam1, xlam2, ligand, pocfctr, o2thresh, &
                         & nh4frx, oxymin
+      NAMELIST/namcancal/ kdca, nca
 
       !!----------------------------------------------------------------------
 
@@ -707,18 +727,29 @@ CONTAINS
 908   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanrem in configuration namelist_canoe' )
       IF(lwp) WRITE( numonpb, namcanrem )
 
+      REWIND( numnatp_refb )              ! Namelist namcancal in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcancal, IOSTAT = ios, ERR = 909)
+909   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcancal in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcancal in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcancal, IOSTAT = ios, ERR = 910 )
+910   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcancal in configuration namelist_canoe' )
+      IF(lwp) WRITE( numonpb, namcancal )
+
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for phytoplankton mortality: '
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    quadratic mortality of phytoplankton      mpqua     =', mpqua
-         WRITE(numout,*) '    maximum quadratic mortality of diatoms    mpquad    =', mpquad
-         WRITE(numout,*) '    phytoplankton mortality rate              mprat     =', mprat
-         WRITE(numout,*) '    Diatoms mortality rate                    mprat2    =', mprat2
-         WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
-         WRITE(numout,*) '    Chlorophyll photooxidation rate           chldegr   =', chldegr
-         WRITE(numout,*) '    CaCO3 production rate                     picfrx    =', picfrx
-         WRITE(numout,*) '    Biomass threshold for linear mortality    xminp     =', xminp
+         WRITE(numout,*) '    small phytoplankton mortality rate          mpratps   =', mpratps
+         WRITE(numout,*) '    microzooplankton mortality rate             mpratzs   =', mpratzs
+         WRITE(numout,*) '    large phytoplankton mortality rate          mpratpl   =', mpratpl
+         WRITE(numout,*) '    mesozooplankton mortality rate              mpratzl   =', mpratzl
+         WRITE(numout,*) '    quadratic mortality of small phytoplankton  mpquaps   =', mpquaps
+         WRITE(numout,*) '    quadratic mortality of microzooplankton     mpquazs   =', mpquazs
+         WRITE(numout,*) '    quadratic mortality of large phytoplankton  mpquapl   =', mpquapl
+         WRITE(numout,*) '    quadratic mortality of mesozooplankton      mpquazl   =', mpquazl
+         WRITE(numout,*) '    Chlorophyll photooxidation rate             chldegr   =', chldegr
+         WRITE(numout,*) '    CaCO3 production rate                       picfrx    =', picfrx
+         WRITE(numout,*) '    Biomass threshold for linear mortality      xminp     =', xminp
 
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for microzooplankton'
@@ -751,9 +782,28 @@ CONTAINS
          WRITE(numout,*) '    Annamox fraction of denitrification       nh4frx    =', nh4frx
          WRITE(numout,*) '    O2 dependence of nitrification            oxymin    =', oxymin
 
+         WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for CaCO3 dissolution'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    calcite dissolution rate constant in d^-1           =', kdca
+         WRITE(numout,*) '    order of dissolution reaction (not used)            =', nca
+
       ENDIF
 
    END SUBROUTINE canoe_nzd_init
+
+   INTEGER FUNCTION canoe_nzd_alloc()
+      !!----------------------------------------------------------------------
+      !!              ***  ROUTINE trc_sms_canoe_alloc  ***
+      !!----------------------------------------------------------------------
+      !
+      ! ALLOCATE here the arrays specific to CANOE
+      ! ALLOCATE( tab(...) , STAT=trc_sms_canoe_alloc )
+      !
+      ALLOCATE( denitr(  jpi, jpj, jpk ) , STAT=canoe_nzd_alloc )
+      IF( canoe_nzd_alloc /= 0 ) CALL ctl_stop( 'STOP', 'canoe_nzd_alloc : failed to allocate denitr array' )
+
+   END FUNCTION canoe_nzd_alloc
 
 END MODULE canoenzd
 

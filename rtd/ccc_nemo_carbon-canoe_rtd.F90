@@ -99,7 +99,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL, DIMENSION(:), ALLOCATABLE       :: deptht
 
 !     Monthly DIC, CaCO3, TA, PH, O2
-      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, ph, oxy
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, oxy
 
 !     Monthly POC, GOC
       REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: e3t, poc, goc
@@ -117,13 +117,13 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL, DIMENSION(:, :, :), ALLOCATABLE :: epc100, epcal100
 
 !     Monthly surface fluxes of DIC, O2
-      REAL, DIMENSION(:, :, :), ALLOCATABLE :: cflux, oflux
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: cflux, oflux, ph
 
 ! ======================================================================
 !     Working arrays / variables  
 ! ======================================================================
       REAL :: dum, dvol, vol 
-      REAL :: dicz, caco3z, talz, phz, oxyz, pocz, gocz, no3z, nh4z
+      REAL :: dicz, caco3z, talz, oxyz, pocz, gocz, no3z, nh4z
       REAL :: dfez, phyz, phy2z, phynz, phy2nz, zooz, zoo2z 
       REAL :: ppphyz, ppphy2z, nfixz, irondepz
       REAL :: test_var
@@ -139,17 +139,17 @@ SUBROUTINE calc (imt, jmt, km, lm)
 ! ======================================================================
 ! (1) Global-mean profiles for 3D data:
 
-      REAL, DIMENSION(:, :), ALLOCATABLE :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
+      REAL, DIMENSION(:, :), ALLOCATABLE :: dic_z, caco3_z, tal_z, oxy_z, poc_z
       REAL, DIMENSION(:, :), ALLOCATABLE :: goc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z, phyn_z, phy2n_z
       REAL, DIMENSION(:, :), ALLOCATABLE :: zoo_z, zoo2_z, ppphy_z, ppphy2_z, nfix_z, irondep_z
 
 ! (2) Global-mean (volume weighted) or integral
 
 !     DIC, CaCO3 TA, PH, O2
-      REAL, DIMENSION(:), ALLOCATABLE :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
+      REAL, DIMENSION(:), ALLOCATABLE :: dicvol, caco3vol, talvol, oxyvol, pocvol, gocvol
       REAL, DIMENSION(:), ALLOCATABLE :: no3vol, nh4vol, dfevol, phyvol, phy2vol, phynvol, phy2nvol
       REAL, DIMENSION(:), ALLOCATABLE :: zoovol, zoo2vol, ppphyvol, ppphy2vol, nfixvol, irondepvol
-      REAL, DIMENSION(:), ALLOCATABLE :: epc100glo, epcal100glo, cglo, ofluxglo
+      REAL, DIMENSION(:), ALLOCATABLE :: epc100glo, epcal100glo, cglo, ofluxglo, phglo 
 
 !----------------
 !  NetCDF-output specific
@@ -188,22 +188,22 @@ SUBROUTINE calc (imt, jmt, km, lm)
       ALLOCATE( e3t(imt,jmt,km,lm), t_mask(imt,jmt,km), STAT=ierr(2) )
       ALLOCATE( deptht(km), STAT=ierr(3) )
       ALLOCATE( dic(imt,jmt,km,lm), caco3(imt,jmt,km,lm),tal (imt,jmt,km,lm),    &
-         &      ph(imt,jmt,km,lm), oxy(imt,jmt,km,lm), poc(imt,jmt,km,lm),       &
+         &      oxy(imt,jmt,km,lm), poc(imt,jmt,km,lm),                          &
          &      goc(imt,jmt,km,lm), no3(imt,jmt,km,lm), nh4(imt,jmt,km,lm),      &
          &      dfe(imt,jmt,km,lm), phy(imt,jmt,km,lm), phy2(imt,jmt,km,lm),     &
          &      phyn(imt,jmt,km,lm), phy2n(imt,jmt,km,lm), zoo(imt,jmt,km,lm),   &
          &      zoo2(imt,jmt,km,lm), ppphy(imt,jmt,km,lm), ppphy2(imt,jmt,km,lm),&
          &      nfix(imt,jmt,km,lm), irondep(imt,jmt,km,lm), STAT=ierr(4) )
       ALLOCATE( epc100(imt,jmt,lm), epcal100(imt,jmt,lm), cflux(imt,jmt,lm),     &
-         &      oflux(imt,jmt,lm),    STAT=ierr(5) ) 
-      ALLOCATE( dic_z(km, lm), caco3_z(km, lm), tal_z(km, lm), ph_z(km, lm),     &
+         &      oflux(imt,jmt,lm), ph(imt,jmt,lm),    STAT=ierr(5) ) 
+      ALLOCATE( dic_z(km, lm), caco3_z(km, lm), tal_z(km, lm),                   &
          &      oxy_z(km, lm), poc_z(km, lm), goc_z(km, lm), no3_z(km, lm),      &
          &      nh4_z(km, lm), dfe_z(km, lm), phy_z(km, lm), phy2_z(km, lm),     &
          &      phyn_z(km, lm), phy2n_z(km, lm), zoo_z(km, lm), zoo2_z(km, lm),  &
          &      ppphy_z(km, lm), ppphy2_z(km, lm), nfix_z(km, lm),               &
          &      irondep_z(km, lm), STAT=ierr(6) )
       ALLOCATE( toc(lm), ton(lm), dicvol(lm), caco3vol(lm), talvol(lm),          &
-         &      phvol(lm), oxyvol(lm), pocvol(lm), gocvol(lm), no3vol(lm),       &
+         &      phglo(lm), oxyvol(lm), pocvol(lm), gocvol(lm), no3vol(lm),       &
          &      nh4vol(lm), dfevol(lm), phyvol(lm), phy2vol(lm), phynvol(lm),    &
          &      phy2nvol(lm), zoovol(lm), zoo2vol(lm), ppphyvol(lm),             &
          &      ppphy2vol(lm), nfixvol(lm), irondepvol(lm), epc100glo(lm),       &
@@ -230,7 +230,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
       CALL closefile (iou5)
       CALL openfile(fname08,iou7) 
-      CALL getvara ('e3t', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+      CALL getvara ('thkcello', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
       CALL closefile(iou7)  
 
 !---------------------------------------------------
@@ -277,18 +277,17 @@ SUBROUTINE calc (imt, jmt, km, lm)
       
 !        Diagnostic variables
          if (exists) then 
-!            3-D: PH, PPPHY, PPPHY2, EPC100,
-             CALL getvara('pH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),      ph, 1., 0.)   
+!            3-D: PPPHY, PPPHY2, EPC100, Nfix, Irondep
              CALL getvara('PPPHY',    iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   ppphy, 1., 0.)   
              CALL getvara('PPPHY2',   iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  ppphy2, 1., 0.)   
              CALL getvara('Nfix',     iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),    nfix, 1., 0.)   
              CALL getvara('Irondep',  iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), irondep, 1., 0.)   
-
-!            2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep
+!            2-D: PH, EPCAL100, DIC flux, Oflux
              CALL getvara('EPC100',   iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),   epc100, 1., 0.)    
              CALL getvara('EPCALC100',iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), epcal100, 1., 0.)    
              CALL getvara('Cflx',     iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),    cflux, 1., 0.)    
              CALL getvara('Oflx',     iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),    oflux, 1., 0.)    
+             CALL getvara('pH',       iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),       ph, 1., 0.)   
          endif 
       CALL closeall ! close all open netcdf files
 
@@ -302,7 +301,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       dicvol(:)   = 0.0_dp
       caco3vol(:) = 0.0_dp
       talvol(:)   = 0.0_dp
-      phvol(:)    = 0.0_dp
+      phglo(:)    = 0.0_dp
       oxyvol(:)   = 0.0_dp
 ! POC, GOC
       pocvol(:)   = 0.0_dp
@@ -354,7 +353,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
              if (exists) then
     !            PPPHY, PPPHY2      
-                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ph(:, :, k, l),      imt, jmt, km, phz,      dvol, k)  
+                 !CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ph(:, :, k, l),      imt, jmt, km, phz,      dvol, k)  
                  CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ppphy(:, :, k, l),   imt, jmt, km, ppphyz,   dvol, k) 
                  CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ppphy2(:, :, k, l),  imt, jmt, km, ppphy2z,  dvol, k) 
                  CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, nfix(:, :, k, l),    imt, jmt, km, nfixz,    dvol, k) 
@@ -387,7 +386,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
              zoo2_z(k, l)  = zoo2z
          
              if (exists) then
-                 ph_z(k, l)    = phz  
+                 !ph_z(k, l)    = phz  
                  ppphy_z(k, l) = ppphyz
                  ppphy2_z(k, l)= ppphy2z
                  nfix_z(k, l)= nfixz
@@ -418,7 +417,6 @@ SUBROUTINE calc (imt, jmt, km, lm)
              zoo2vol(l)    = zoo2vol(l)  + zoo2z*dvol 
 
              if (exists) then 
-                 phvol(l)      =     phvol(l)  + phz*dvol    
                  ppphyvol(l)   =  ppphyvol(l)  + ppphyz*dvol  
                  ppphy2vol(l)  = ppphy2vol(l)  + ppphy2z*dvol  
                  nfixvol(l)  = nfixvol(l)  + nfixz*dvol  
@@ -453,7 +451,6 @@ SUBROUTINE calc (imt, jmt, km, lm)
              dfevol(l)  = dfevol(l) /vol
 
              if (exists) then   
-                 phvol(l)   = phvol(l) /vol 
     !            convert to PgC/y
                  ppphyvol(l)   = ppphyvol(l)  * 12.e-15 * 86400. * 365.
                  ppphy2vol(l)  = ppphy2vol(l)  * 12.e-15 * 86400. * 365.
@@ -483,6 +480,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
     !        Cflux, Oflux, Nfix, Irondep  
              CALL area_ave_flx (e1t, e2t, g_mask, cflux(:,:,l),   imt, jmt, cglo(l),       dum) 
              CALL area_ave_flx (e1t, e2t, g_mask, oflux(:,:,l),   imt, jmt, ofluxglo(l),   dum) 
+             CALL area_ave_flx (e1t, e2t, g_mask, ph(:,:,l),   imt, jmt, phglo(l),   dum) 
 
     !       <PISCES OR 01/15/2014> convert into PgC/y 
              cglo(l)          = cglo(l)         * dum * 12.e-15 * 86400. * 365.
@@ -630,9 +628,9 @@ SUBROUTINE calc (imt, jmt, km, lm)
      &            , 1.e4,' ', 'F', 'Global mean pH'                              & 
      &            , 'PH', '')
 
-              CALL defvar ('PHz', iou, 2, (/id_z, id_time/), -1.e4               &
-     &            , 1.e4,' ', 'F', 'pH by level'                                 & 
-     &            , 'PHz', '')
+!              CALL defvar ('PHz', iou, 2, (/id_z, id_time/), -1.e4               &
+!     &            , 1.e4,' ', 'F', 'pH by level'                                 & 
+!     &            , 'PHz', '')
 
 !             PPPHY
               CALL defvar ('PPPHY', iou, 1, (/id_time/), -1.e4                   &
@@ -742,8 +740,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !       Diagnostic variables
         if (exists) then 
 !           PH
-            CALL putvars ('PH', iou, ntrec2, phvol(l), 1., 0.)
-            CALL putvara ('PHz', iou, km, (/1, ntrec2/), (/km, 1/), ph_z(:, l), 1., 0.)
+            CALL putvars ('PH', iou, ntrec2, phglo(l), 1., 0.)
+            !CALL putvara ('PHz', iou, km, (/1, ntrec2/), (/km, 1/), ph_z(:, l), 1., 0.)
 
 !           PHY
             CALL putvars ('PPPHY', iou, ntrec2, ppphyvol(l), 1., 0.)

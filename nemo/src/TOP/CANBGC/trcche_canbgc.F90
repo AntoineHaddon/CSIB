@@ -21,7 +21,7 @@ MODULE trcche_canbgc
    USE lib_mpp           !  MPP library
 
    USE in_out_manager    ! in_out_manager grants access to numout file ID
-   USE iom                       ! to access iom_put for diagnostics
+   !USE iom                       ! to access iom_put for diagnostics
    
    USE trc_closea_canbgc ! bgc-specific closea mask
    USE trcsrc_canbgc     ! external sources module
@@ -40,6 +40,7 @@ MODULE trcche_canbgc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   K0O2
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qh2co3
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qco3
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qomegac
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksp
 
 ! Constants and conversion factors
@@ -63,8 +64,10 @@ MODULE trcche_canbgc
    REAL(wp) ::   rgas   = 83.143         ! universal gas constants
    REAL(wp) ::   oxyco  = 1. / 22.4144   ! converts from liters of an ideal gas to moles
 
-   REAL(wp) ::   bor1   = 0.000232       ! qborat constants
+   REAL(wp) ::   bor1   = 0.000232       ! constants for calculating borate concentration
    REAL(wp) ::   bor2   = 1. / 10.811
+
+   REAL(wp) ::   calcium = 1.03e-2       ! calcium fraction of sea salt
 
    REAL(wp) ::   ca0    = -160.7333   ! WEISS & PRICE 1980, units mol/(kg atm)
    REAL(wp) ::   ca1    =  215.4152
@@ -216,21 +219,7 @@ MODULE trcche_canbgc
 
    !!* Substitution
 #  include "domzgr_substitute.h90"
-! #include "top_substitute.h90" !!! O Riche June 23rd 2022
-!                               !!! This call other F90 headers
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "domzgr_substitute.h90"
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "ldfeiv_substitute.h90"
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "ldftra_substitute.h90"
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "vectopt_loop_substitute.h90"
-								!!! which use old variables for the grid/z-levels
-								!!! e.g. fse3t instead of e3t, optimization,
-								!!! scaling of lateral diffusion terms, etc.
 
-   !!----------------------------------------------------------------------
-   !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcche.F90 3294 2012-01-28 16:44:18Z rblod $ 
-   !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
 CONTAINS
 
    SUBROUTINE trc_che_2D( kt, Kmm )
@@ -251,7 +240,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: hi
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
+      !REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
 
@@ -313,6 +302,9 @@ CONTAINS
                zbot = qborat2(ji,jj) * ztmas + 0.000416 * ztmas1 
                zdic = tr(ji,jj,1,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
                ztalk = tr(ji,jj,1,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+               ! add 400 uM "guardrail" to prevent extreme pCO2 in runoff-dominated environments
+               zdic = MAX(zdic,0.0004)
+               ztalk = MAX(ztalk,0.0004)
 
                zpo4 = tr(ji,jj,1,jqno3, Kmm) * no3_sf / 16. / zfact                        ! needs to include NH4 for CanOE when available
                zsi = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
@@ -344,16 +336,17 @@ CONTAINS
       !
       ! OR Jan 24th 2023
       ! Moving pH diagnostics here
-      ALLOCATE( zph0(jpi,jpj,jpk) )
-      zph0(:,:,:) = rtrn 
-      DO jj= 1, jpj
-        DO ji= 1, jpi
-          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
-        END DO
-      END DO
-      !
-      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
-      DEALLOCATE( zph0 )
+!      IF ( ln_cmoc ) THEN
+!       ALLOCATE( zph0(jpi,jpj,jpk) )
+!       zph0(:,:,:) = 0. 
+!       DO jj= 1, jpj
+!        DO ji= 1, jpi
+!          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
+!        END DO
+!       END DO
+!       CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+!       DEALLOCATE( zph0 )
+!      END IF
       ! 
       DEALLOCATE( hi )
       !
@@ -372,12 +365,12 @@ CONTAINS
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
       INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  ::   ji, jj, jk, jm
-      REAL(wp) ::   zph, zah2, zbot, zdic, zcalk, ztalk, zfact
+      REAL(wp) ::   zph, zah2, zbot, zdic, zcalk, ztalk, zfact, zcalcon
       REAL(wp) ::   zpo4, zsi
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: hi
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
+      !REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
       !
@@ -404,6 +397,8 @@ CONTAINS
                   zbot = qborat3(ji,jj,jk) * ztmas + 0.000416 * ztmas1 
                   zdic = tr(ji,jj,jk,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
                   ztalk = tr(ji,jj,jk,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+                  zdic = MAX(zdic,0.0004)
+                  ztalk = MAX(ztalk,0.0004)
                   zpo4 = tr(ji,jj,jk,jqno3, Kmm) * no3_sf / 16. / zfact               ! needs to include NH4 for CanOE when available
                   zsi = qasi3(ji,jj,jk) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
@@ -427,6 +422,9 @@ CONTAINS
                   hi(ji,jj,jk) = zah2 * zfact
                ! calculate [CO3--] and [H+] for export to other SR's
                   qco3(ji,jj,jk) = zcalk / ( 2. + zah2 / zak2 )     ! no conversion to mol L^-1 as it is not applied to Ksp
+                  zcalcon  = calcium * ( ts(ji,jj,jk,jp_sal,Kmm) / 35._wp )
+                  zfact    = rhop(ji,jj,jk) / 1000._wp
+                  qomegac(ji,jj,jk) = ( zcalcon * qco3(ji,jj,jk) * zfact ) / qaksp(ji,jj,jk)
                   qhi(ji,jj,jk) = hi(ji,jj,jk)     ! OR Jan 19th 2023
 
                END DO
@@ -435,20 +433,17 @@ CONTAINS
          !
       END DO 
       !
-      ! OR Jan 24th 2023
-      ! Moving pH diagnostics here
-      ALLOCATE( zph0(jpi,jpj,jpk) )
-      zph0(:,:,:) = rtrn 
-      DO jk= 1, jpk
-        DO jj= 1, jpj
-          DO ji= 1, jpi
-          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
-          END DO
-        END DO
-      END DO
-      !
-      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
-      DEALLOCATE( zph0 )      
+!      ALLOCATE( zph0(jpi,jpj,jpk) )
+!      zph0(:,:,:) = rtrn 
+!      DO jk= 1, jpk
+!        DO jj= 1, jpj
+!          DO ji= 1, jpi
+!          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
+!          END DO
+!        END DO
+!      END DO
+!      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+!      DEALLOCATE( zph0 )      
       !
       DEALLOCATE( hi )
       !
@@ -713,14 +708,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_alloc  ***
       !!----------------------------------------------------------------------
-      INTEGER ::   ierr(5)        ! Local variables
+      INTEGER ::   ierr(6)        ! Local variables
       !!----------------------------------------------------------------------
 
       ierr(:)=0
 
       ALLOCATE( K0CO2 (jpi,jpj),    K0O2 (jpi,jpj),    & 
               & qh2co3(jpi,jpj),    qco3(jpi,jpj,jpk), & 
-              & qaksp(jpi,jpj,jpk),     STAT=ierr(1) )
+              & qaksp(jpi,jpj,jpk), qomegac(jpi,jpj,jpk),    STAT=ierr(1) )
       !
       trc_che_alloc = MAXVAL( ierr )
 

@@ -50,7 +50,7 @@
 
 %CPP	             cpp
 %FC                  mpif90 
-%FCFLAGS             -i4 -r8 -O3 -fp-model strict -xHost -fno-alias
+%FCFLAGS             -i4 -r8 -O3 -xHost -fno-alias -qmkl -threads
 %FFLAGS              %FCFLAGS
 %LD                  %FC
 %LDFLAGS             

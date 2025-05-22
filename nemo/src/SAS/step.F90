@@ -87,7 +87,7 @@ CONTAINS
       IF( Agrif_Nbstepint() == 0 )   CALL iom_swap( cxios_context )
 # endif   
 #endif   
-      IF( kstp == nit000 )   CALL iom_init( cxios_context ) ! iom_put initialization (must be done after nemo_init for AGRIF+XIOS+OASIS)
+      IF( kstp == nit000 )   CALL iom_init( cxios_context ) ! iom_put initialization (must be done after nemo_init for AGRIF+XIOS+Coupler)
                              CALL iom_setkt( kstp - nit000 + 1, cxios_context )   ! tell iom we are at time step kstp
       IF((kstp == nitrst) .AND. lwxios) THEN
          CALL iom_swap(      cw_ocerst_cxt          )
@@ -114,8 +114,8 @@ CONTAINS
       !           From SAS: ocean bdy data are wrong  (but we do not care) and ice bdy data are OK.  
       !           This is not clean and should be changed in the future. 
       ! ==>
-      IF( ln_bdy     )       CALL bdy_dta( kstp,      Nnn )                   ! update dynamic & tracer data at open boundaries
                              CALL sbc    ( kstp, Nbb, Nnn )                   ! Sea Boundary Condition (including sea-ice)
+      IF( ln_bdy     )       CALL bdy_dta( kstp,      Nnn )                   ! update dynamic & tracer data at open boundaries
 
                              CALL dia_wri( kstp,      Nnn )                   ! ocean model: outputs
 
@@ -153,7 +153,7 @@ CONTAINS
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Coupled mode
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      IF( lk_oasis .AND. nstop == 0 ) CALL sbc_cpl_snd( kstp, Nbb, Nnn )       ! coupled mode : field exchanges if OASIS-coupled ice
+      IF( ln_cpl .AND. nstop == 0 ) CALL sbc_cpl_snd( kstp, Nbb, Nnn )       ! coupled mode : field exchanges if coupled ice
 
 #if defined key_xios
       IF( kstp == nitrst ) THEN

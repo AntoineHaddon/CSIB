@@ -72,7 +72,7 @@ CONTAINS
       REWIND( numnatp_refb )              ! Namelist namcanoetf in reference namelist : Passive tracer variables
       READ  ( numnatp_refb, namcanoetf, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanoetf in reference namelist_canoe' )
-      REWIND( numnatp_cfgb )              ! Namelist namcanoeprod in configuration namelist : Passive tracer variables
+      REWIND( numnatp_cfgb )              ! Namelist namcanoetf in configuration namelist : Passive tracer variables
       READ  ( numnatp_cfgb, namcanoetf, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanoetf in configuration namelist_canoe' )
 

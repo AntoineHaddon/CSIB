@@ -65,7 +65,6 @@
           <field field_ref="pCO2"        level="0" />
           <field field_ref="pO2"         level="0" />
 
-          <field field_ref="surf_chla"   level="0" />
 
           <!-- CanOE diagnostics -->
                  

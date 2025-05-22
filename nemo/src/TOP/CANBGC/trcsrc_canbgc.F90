@@ -611,13 +611,13 @@ CONTAINS
             no3bott_cmoc(ji,jj) =  tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
             oxybott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
             pocbott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
-            IF( write_rhs_flag0 ) THEN
+            !IF( write_rhs_flag0 ) THEN
               tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + dicbott_cmoc(ji,jj)
               tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + talbott_cmoc(ji,jj)
               tr(ji,jj,ikt,jqno3, Krhs) = tr(ji,jj,ikt,jqno3, Krhs) + no3bott_cmoc(ji,jj)
               tr(ji,jj,ikt,jqoxy, Krhs) = tr(ji,jj,ikt,jqoxy, Krhs) + oxybott_cmoc(ji,jj)
               tr(ji,jj,ikt,jqpoc, Krhs) = tr(ji,jj,ikt,jqpoc, Krhs) + pocbott_cmoc(ji,jj)
-            END IF      
+            !END IF      
             !
          END DO
       END DO
@@ -629,11 +629,11 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar, kt, jnt ,Kmm, Krhs,write_rhs_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar, kt, jnt , Kbb, Kmm, Krhs,write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
-      INTEGER, INTENT(in) ::    Kmm, Krhs  ! time level indices
+      INTEGER, INTENT(in) ::    Kbb, Kmm, Krhs  ! time level indices
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
@@ -722,7 +722,7 @@ CONTAINS
       !
       DO jk = 1, jpkm1
         IF( write_rhs_flag0 ) THEN  
-          tr(:,:,jk,jqno3, Krhs) = tr(:,:,jk,jqno3, Krhs) +  zJNd(:,:,jk)
+          tr(:,:,jk,jqno3, Kbb) = tr(:,:,jk,jqno3, Kbb) +  zJNd(:,:,jk)
         END IF
       END DO
       !

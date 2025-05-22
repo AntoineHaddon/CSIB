@@ -189,6 +189,17 @@
 &namberg       !   iceberg parameters                                   (default: OFF)
 !-----------------------------------------------------------------------
    ln_icebergs = .true.    ! activate iceberg floats (force =F with "key_agrif")
+   !                          ! restart
+   cn_icbrst_in     = "restart_icb_in" !  suffix of iceberg restart name (input)
+   cn_icbrst_out    = "restart_icb"    !  suffix of ocean restart name (output)
+   !
+   ln_use_calving= .false.  ! Use calving data even when nn_test_icebergs > 0
+   nn_test_icebergs = -1    ! Create test icebergs of this class (-1 = no)
+   nn_verbose_level  = 4             ! Turn on more verbose output if level > 0
+   !
+   ! nn_verbose_write and nn_sample_rate need to be a multiple of nn_fsbc
+   nn_verbose_write  = 16            ! Timesteps between verbose messages
+   nn_sample_rate    = 16            ! Timesteps between sampling for trajectory storage
 
    cn_dir = './'  !  root directory for the location of drag coefficient files
    !______!___________!___________________!______________!______________!_________!___________!__________!__________!_______________!
@@ -410,12 +421,12 @@
    !___________!_________________________!___________________!_____________!_____________!________!___________!__________________!__________!_______________!
    !           !        file name        ! frequency (hours) ! variable    ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name      !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_mpb      = 'zdfiwm_forcing_orca2'  ,       -12.        , 'power_bot' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
-   sn_mpc      = 'zdfiwm_forcing_orca2'  ,       -12.        , 'power_cri' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
-   sn_mpn      = 'zdfiwm_forcing_orca2'  ,       -12.        , 'power_nsq' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
-   sn_mps      = 'zdfiwm_forcing_orca2'  ,       -12.        , 'power_sho' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
-   sn_dsb      = 'zdfiwm_forcing_orca2'  ,       -12.        , 'scale_bot' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
-   sn_dsc      = 'zdfiwm_forcing_orca2'  ,       -12.        , 'scale_cri' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
+   sn_mpb      = 'zdfiwm_forcing'        ,       -12.        , 'power_bot' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
+   sn_mpc      = 'zdfiwm_forcing'        ,       -12.        , 'power_cri' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
+   sn_mpn      = 'zdfiwm_forcing'        ,       -12.        , 'power_nsq' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
+   sn_mps      = 'zdfiwm_forcing'        ,       -12.        , 'power_sho' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
+   sn_dsb      = 'zdfiwm_forcing'        ,       -12.        , 'scale_bot' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
+   sn_dsc      = 'zdfiwm_forcing'        ,       -12.        , 'scale_cri' ,   .false.   , .true. , 'yearly' , '' , ''  , ''
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!

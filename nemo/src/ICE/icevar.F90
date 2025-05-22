@@ -1346,13 +1346,13 @@ CONTAINS
    SUBROUTINE ice_var_snwblow_2d( pin, pout )
       REAL(wp), DIMENSION(:,:), INTENT(in   ) :: pin   ! previous fraction lead ( 1. - a_i_b )
       REAL(wp), DIMENSION(:,:), INTENT(inout) :: pout
-      pout = ( 1._wp - ( pin )**rn_snwblow )
+      pout = ( 1._wp - ( MAX(0.0_wp, MIN(rn_amax_2d, pin)) )**rn_snwblow )
    END SUBROUTINE ice_var_snwblow_2d
 
    SUBROUTINE ice_var_snwblow_1d( pin, pout )
       REAL(wp), DIMENSION(:), INTENT(in   ) :: pin
       REAL(wp), DIMENSION(:), INTENT(inout) :: pout
-      pout = ( 1._wp - ( pin )**rn_snwblow )
+      pout = ( 1._wp - ( MAX(0.0_wp, MIN(rn_amax_1d(1:npti), pin)) )**rn_snwblow )
    END SUBROUTINE ice_var_snwblow_1d
 
 #else

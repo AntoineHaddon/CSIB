@@ -80,11 +80,12 @@ CONTAINS
           IF( ierror > 0 )   CALL ctl_stop( 'STOP', 'sbc_apr: unable to allocate sf_apr structure' )
           !
           CALL fld_fill( sf_apr, (/ sn_apr /), cn_dir, 'sbc_apr', 'Atmospheric pressure ', 'namsbc_apr' )
-                                    ALLOCATE( sf_apr(1)%fnow(jpi,jpj,1)   )
+                                 ALLOCATE( sf_apr(1)%fnow(jpi,jpj,1)   )
           IF( sn_apr%ln_tint )   ALLOCATE( sf_apr(1)%fdta(jpi,jpj,1,2) )
+          ! ssh_ib, ssh_ibb and apr are allocated in sbccpl if l_aprcpl=.true.
+          ALLOCATE( ssh_ib(jpi,jpj) , ssh_ibb(jpi,jpj) )
+          ALLOCATE( apr (jpi,jpj) )
       ENDIF
-                             ALLOCATE( ssh_ib(jpi,jpj) , ssh_ibb(jpi,jpj) )
-                             ALLOCATE( apr (jpi,jpj) )
       !
       IF( lwp )THEN                                 !* control print
          WRITE(numout,*)
@@ -144,6 +145,7 @@ CONTAINS
          apr   (:,:) =     sf_apr(1)%fnow(:,:,1)                        ! atmospheric pressure
          !
          CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
+         CALL iom_put( "apr", apr )                   !* output the inverse barometer ssh
       ENDIF
 
       !                                         ! ---------------------------------------- !
