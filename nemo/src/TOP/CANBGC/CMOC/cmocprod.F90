@@ -109,7 +109,7 @@ CONTAINS
       zprbio  (:,:,:) = 0._wp
       zprnch  (:,:,:) = 0._wp
       zlimn   (:,:,:) = 1._wp
-      zliml   (:,:,:) = 1._wp
+      zliml   (:,:,:) = 0._wp
       !
       DO jk = 1, jpkm1
       !

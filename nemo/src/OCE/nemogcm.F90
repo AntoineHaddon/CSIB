@@ -62,6 +62,7 @@ MODULE nemogcm
 #if defined key_top
    USE trcini         ! passive tracer initialisation
 #endif
+   USE checksums, only : now_state_chksum
 #if defined key_nemocice_decomp
    USE ice_domain_size, only: nx_global, ny_global
 #endif
@@ -113,6 +114,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ::   istp   ! time step index
       REAL(wp)::   zstptiming   ! elapsed time for 1 time step
+      INTEGER ::   numfin     ! File unit to write the final state of the model
       !!----------------------------------------------------------------------
       !
 #if defined key_agrif
@@ -203,6 +205,11 @@ CONTAINS
       !                            !------------------------!
       !                            !==  finalize the run  ==!
       !                            !------------------------!
+      ! Write the final state of the model into a text file
+      IF( lwp ) THEN
+        CALL ctl_opn( numfin, 'final.state', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp ) 
+      ENDIF
+      CALL now_state_chksum("at run finalization", Nnn, alt_unit = numfin) 
       IF(lwp) WRITE(numout,cform_aaa)        ! Flag AAAAAAA
       !
       IF( nstop /= 0 .AND. lwp ) THEN        ! error print
