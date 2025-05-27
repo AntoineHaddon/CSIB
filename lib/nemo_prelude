@@ -362,7 +362,7 @@ else
 fi  # config != AMIP
   for file in "${xios_files[@]}"; do
     echo $file
-    find_nemo_config_EXP00 $file ${WRK_DIR}/config/namelists/$file
+    find_nemo_config_EXP00 $file
     # Update NEMO priority level of output variables in each file: output_level 
     # Not all have the output_level, but this is a secure way to have the same
     # output_level everywhere (should be in "context_nemo.mxl")
