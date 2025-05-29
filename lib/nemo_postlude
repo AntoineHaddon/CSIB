@@ -291,8 +291,8 @@
     [ -s rs_output.namelist.dyn ] && filelist="$filelist rs_output.namelist.dyn"
 
     # checksum file of ocean prognostic state (for bit identity checks)
-    #cp -f final.state rs_final.state || :
-    #[ -s rs_final.state ] && filelist="$filelist rs_final.state"
+    cp -f final.state rs_final.state || :
+    [ -s rs_final.state ] && filelist="$filelist rs_final.state"
 
     # ocean timing stats
     cp -f timing.output rs_timing.output || :
