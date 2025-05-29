@@ -30,11 +30,19 @@ MODULE canoenzd
    PUBLIC canoe_nzd_init
    PUBLIC canoe_nzd_alloc
  
-   REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
-   REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
-   REAL(wp), PUBLIC :: mpratm  = 5.E-2_wp   !: Phytoplankton minimum mortality rate
-   REAL(wp), PUBLIC :: mpqua   = 1.E-09_wp  !: quadratic mortality of phytoplankton
-   REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
+   REAL(wp), PUBLIC :: mpratps = 5.E-2_wp   !: small phytoplankton mortality rate
+   REAL(wp), PUBLIC :: mpratpl = 5.E-2_wp   !: large phytoplankton mortality rate
+   REAL(wp), PUBLIC :: mpratzs = 5.E-2_wp   !: microzooplankton mortality rate
+   REAL(wp), PUBLIC :: mpratzl = 2.E-1_wp   !: mesozooplankton mortality rate
+   REAL(wp), PUBLIC :: mpquaps = 6.E-2_wp   !: quadratic mortality of small phytoplankton
+   REAL(wp), PUBLIC :: mpquapl = 6.E-2_wp   !: quadratic mortality of large phytoplankton
+   REAL(wp), PUBLIC :: mpquazs = 6.E-2_wp   !: quadratic mortality of microzooplankton
+   REAL(wp), PUBLIC :: mpquazl = 6.E-2_wp   !: quadratic mortality of mesozooplankton
+!   REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
+!   REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
+!   REAL(wp), PUBLIC :: mpratm  = 5.E-2_wp   !: Phytoplankton minimum mortality rate
+!   REAL(wp), PUBLIC :: mpqua   = 1.E-09_wp  !: quadratic mortality of phytoplankton
+!   REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
    REAL(wp), PUBLIC :: chldegr = 2.E-2_wp   !: Chlorophyll photooxidation rate
    REAL(wp), PUBLIC :: picfrx  = 1.E-1_wp   !: CaCO3 fraction of mortality (0.1 implies 1 mol caCO3 for each 10 mol POC)
    REAL(wp), PUBLIC :: xminp   = 0.01       !: minimum phytoplankton concentration for linear mortality
@@ -339,10 +347,10 @@ CONTAINS
                thetac=chl/(spc+rtrn)
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
-               zmortp = mprat * xstepb * spc + mpqua * xstepb * spc * spc
-               if (spc.le.xminp) zmortp = mpqua * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
-               zmortz = mprat * xstepb * szc + mpqua * xstepb * szc * szc
-               if (szc.le.xminp) zmortz = mpqua * xstepb * szc * szc
+               zmortp = mpratps * xstepb * spc + mpquaps * xstepb * spc * spc
+               if (spc.le.xminp) zmortp = mpquaps * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
+               zmortz = mpratzs * xstepb * szc + mpquazs * xstepb * szc * szc
+               if (szc.le.xminp) zmortz = mpquazs * xstepb * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
                zmortpn(ji,jj,jk) = zmortp
@@ -454,10 +462,10 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
                thetac=chl/(spc+rtrn)
 
-               zmortp = mpratm * xstepb * spc + mpqua * xstepb * spc * spc
-               if (spc.le.xminp) zmortp = mpqua * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
-               zmortz = mprat2 * xstepb * szc + mpquad * xstepb * szc * szc
-               if (szc.le.xminp) zmortz = mpquad * xstepb * szc * szc
+               zmortp = mpratpl * xstepb * spc + mpquapl * xstepb * spc * spc
+               if (spc.le.xminp) zmortp = mpquapl * xstepb * spc * spc           ! no linear mortality below biomass threshold xminp
+               zmortz = mpratzl * xstepb * szc + mpquazl * xstepb * szc * szc
+               if (szc.le.xminp) zmortz = mpquazl * xstepb * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
                zmortpd(ji,jj,jk) = zmortp
@@ -678,7 +686,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       INTEGER ::   ios, ierr ! Local integers
-      NAMELIST/namcanmort/ mpqua, mpquad, mprat, mprat2, mpratm, chldegr, picfrx, xminp
+      NAMELIST/namcanmort/ mpratps, mpratzs, mpratpl, mpratzl, mpquaps, mpquazs, mpquapl, mpquazl, chldegr, picfrx, xminp
       NAMELIST/namcanzoo/ part, gmax1, aps, zsr1, lambda1
       NAMELIST/namcanmes/ part2, gmax2, apl, zsr2, lambda2
       NAMELIST/namcanrem/ xremik, xremip, nitrif, xlam1, xlam2, ligand, pocfctr, o2thresh, &
@@ -731,14 +739,17 @@ CONTAINS
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for phytoplankton mortality: '
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    quadratic mortality of phytoplankton      mpqua     =', mpqua
-         WRITE(numout,*) '    maximum quadratic mortality of diatoms    mpquad    =', mpquad
-         WRITE(numout,*) '    phytoplankton mortality rate              mprat     =', mprat
-         WRITE(numout,*) '    Diatoms mortality rate                    mprat2    =', mprat2
-         WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
-         WRITE(numout,*) '    Chlorophyll photooxidation rate           chldegr   =', chldegr
-         WRITE(numout,*) '    CaCO3 production rate                     picfrx    =', picfrx
-         WRITE(numout,*) '    Biomass threshold for linear mortality    xminp     =', xminp
+         WRITE(numout,*) '    small phytoplankton mortality rate          mpratps   =', mpratps
+         WRITE(numout,*) '    microzooplankton mortality rate             mpratzs   =', mpratzs
+         WRITE(numout,*) '    large phytoplankton mortality rate          mpratpl   =', mpratpl
+         WRITE(numout,*) '    mesozooplankton mortality rate              mpratzl   =', mpratzl
+         WRITE(numout,*) '    quadratic mortality of small phytoplankton  mpquaps   =', mpquaps
+         WRITE(numout,*) '    quadratic mortality of microzooplankton     mpquazs   =', mpquazs
+         WRITE(numout,*) '    quadratic mortality of large phytoplankton  mpquapl   =', mpquapl
+         WRITE(numout,*) '    quadratic mortality of mesozooplankton      mpquazl   =', mpquazl
+         WRITE(numout,*) '    Chlorophyll photooxidation rate             chldegr   =', chldegr
+         WRITE(numout,*) '    CaCO3 production rate                       picfrx    =', picfrx
+         WRITE(numout,*) '    Biomass threshold for linear mortality      xminp     =', xminp
 
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for microzooplankton'

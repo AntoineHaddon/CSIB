@@ -155,10 +155,10 @@ CONTAINS
       zprochld(:,:,:) = 0._wp
       zpronew (:,:,:) = 0._wp
       zpronewd(:,:,:) = 0._wp
-      xlimdn  (:,:,:) = 0._wp
-      xlimdfe0(:,:,:) = 0._wp
-      xlimnn  (:,:,:) = 0._wp
-      xlimdn  (:,:,:) = 0._wp
+      xlimnfe0(:,:,:) = 1._wp
+      xlimdfe0(:,:,:) = 1._wp
+      xlimnn  (:,:,:) = 1._wp
+      xlimdn  (:,:,:) = 1._wp
       zprdia  (:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprdch  (:,:,:) = 0._wp
