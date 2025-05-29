@@ -46,7 +46,6 @@
 
           <field field_ref="PAR"         level="0" />
 
-          <field field_ref="tmask"      level="0" />
           <field field_ref="closea"     level="0" />
 
           <field field_ref="Irondep"     level="0" />   
