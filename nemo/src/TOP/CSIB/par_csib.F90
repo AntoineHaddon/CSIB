@@ -14,14 +14,16 @@ MODULE par_csib
 
    IMPLICIT NONE
    
-   INTEGER, PUBLIC      ::    jp_csib =3                 ! number of ice tracers in CSIB model
+   INTEGER, PUBLIC      ::    jp_csib =5                 ! number of ice tracers in CSIB model
    
    ! Indices of tracers
-   INTEGER, PUBLIC      ::    jridia=1                   ! Ice diatoms
-   INTEGER, PUBLIC      ::    jrino3=2                   ! Ice nitrate
-   INTEGER, PUBLIC      ::    jrinh4=3                   ! Ice ammonium
+   INTEGER, PUBLIC      ::    jridiac=1                  ! Ice diatoms C biomass
+   INTEGER, PUBLIC      ::    jridian=2                  ! Ice diatoms N biomass
+   INTEGER, PUBLIC      ::    jridiach=3                 ! Ice diatoms Chl biomass
+   INTEGER, PUBLIC      ::    jrino3=4                   ! Ice nitrate
+   INTEGER, PUBLIC      ::    jrinh4=5                   ! Ice ammonium
    
-   CHARACTER(len=lca), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   icetrcnm   !: tracer name 
+   CHARACTER(len=lca), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   icetrcnm   !: tracer names (used for restart input and output. can't init here because if restart then ice model executed first and needs to read restart files. So init is in function trcini_csib.f90/trc_ini_csibnames.) 
    
 
    !!======================================================================

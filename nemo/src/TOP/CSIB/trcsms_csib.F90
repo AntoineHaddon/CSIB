@@ -50,10 +50,11 @@ MODULE trcsms_csib
    !! ** variables 
    !! name        | indice                                                 |
    !!-------------|-------------|---------------------------------|------------|
-   !! icedia      | jridia      | Ice diatoms per ice area        | mmol C /m3 |
+   !! icedia      | jridiac     | Ice diatoms C  per ice area     | mg C /m3   |
+   !! icedia      | jridian     | Ice diatoms N per ice area      | mmol N /m3 |
+   !! icedia      | jridiach    | Ice diatoms Chl per ice area    | mg Chl /m3 |
    !! iceno3      | jrino3      | Ice NO3 per ice area            | mmol N /m3 |
    !! icenh4      | jrinh4      | Ice NH4 per ice area            | mmol N /m3 |
-   !!                                                                          |
    !!-------------|-------------|---------------------------------|------------|
    !!
 
@@ -61,6 +62,9 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)     :: icetra_gca        !  Ice tracer grid cell average
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: icetragca_2d      !  Ice tracer grid cell average, 2d version for ice model
 
+   !! Biomass ratios (used to convert C fluxes to N or Chl fluxes)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: qndia             !  Ice diatoms N/C 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: qchdia            !  Ice diatoms Chl/C
 
 
    !!
@@ -164,12 +168,12 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_csib:  CSIB model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' time step kt ', kt
-      IF(lwp) WRITE(numout,*) ' rDt_trc ', rDt_trc
-      IF(lwp) WRITE(numout,*) ' rn_Dt ', rn_Dt
-      IF(lwp) WRITE(numout,*) ' nsec_day ', nsec_day
-      IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*)
+      ! IF(lwp) WRITE(numout,*) ' time step kt ', kt
+      ! IF(lwp) WRITE(numout,*) ' rDt_trc ', rDt_trc
+      ! IF(lwp) WRITE(numout,*) ' rn_Dt ', rn_Dt
+      ! IF(lwp) WRITE(numout,*) ' nsec_day ', nsec_day
+      ! IF(lwp) WRITE(numout,*)
+      ! IF(lwp) WRITE(numout,*)
 
       ! Initiation from ocean surface concentrations (need to do it here and not in trcini_csib because CanOE initiation occurs after?)
       IF ( (kt == 1) .AND. (.NOT. ln_rsttr) ) THEN
@@ -178,7 +182,12 @@ CONTAINS
             DO jj = 1, jpj
                DO ji = 1, jpi
                   IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
-                     icetra(ji,jj,jl,jridia) = tr(ji,jj,1,jrdia,Kmm)
+                     icetra(ji,jj,jl,jridiac) = tr(ji,jj,1,jrdia,Kmm)
+                     icetra(ji,jj,jl,jridian) = tr(ji,jj,1,jrdn,Kmm)
+                     icetra(ji,jj,jl,jridiach) = tr(ji,jj,1,jrdch,Kmm)
+                     qndia(ji,jj,jl) = icetra(ji,jj,jl,jridian) /  MAX(1.e-15_wp, icetra(ji,jj,jl,jridiac) )
+                     qchdia(ji,jj,jl) = icetra(ji,jj,jl,jridiach) /  MAX(1.e-15_wp, icetra(ji,jj,jl,jridiac) )
+
                      icetra(ji,jj,jl,jrino3) = tr(ji,jj,1,jqno3,Kmm)
                      icetra(ji,jj,jl,jrinh4) = tr(ji,jj,1,jrnh4,Kmm)
                   END IF
@@ -190,7 +199,7 @@ CONTAINS
          ENDDO
       END IF
 
-      ! Conversion from global to equivalent variables
+      ! Conversion from global (extensive used by ice transport model) to equivalent (intensive, used by bgc model) variables
       ! and set to 0 if low ice concentration 
       DO jl = 1, jpl ! loop ice categories
          DO jj = 1, jpj
@@ -200,13 +209,19 @@ CONTAINS
                   DO jn = 1,jp_csib
                      icetra(ji,jj,jl,jn) = icetra_gca(ji,jj,jl,jn) / a_i(ji,jj,jl)
                   ENDDO
+                  qndia(ji,jj,jl) = icetra(ji,jj,jl,jridian) /  MAX(1.e-15_wp, icetra(ji,jj,jl,jridiac) )
+                  qchdia(ji,jj,jl) = icetra(ji,jj,jl,jridiach) /  MAX(1.e-15_wp, icetra(ji,jj,jl,jridiac) )
 
                ELSE ! low ice
                   ! set tracers to 0 
                   icetra(ji,jj,jl,:)=0._wp
+                  qndia(ji,jj,jl)=0._wp
+                  qchdia(ji,jj,jl)=0._wp
                   ! send what was there to the ocean
                   zscale = z_ia / e3t_0(ji,jj,1)
-                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + icetra_gca(ji,jj,jl,jridia) * zscale
+                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + icetra_gca(ji,jj,jl,jridiac) * zscale
+                  tr(ji,jj,1,jrdn ,Kmm) = tr(ji,jj,1,jrdia,Kmm) + icetra_gca(ji,jj,jl,jridian) * zscale
+                  tr(ji,jj,1,jrdch,Kmm) = tr(ji,jj,1,jrdia,Kmm) + icetra_gca(ji,jj,jl,jridiach) * zscale
                   tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + icetra_gca(ji,jj,jl,jrino3) * zscale
                   tr(ji,jj,1,jrnh4,Kmm) = tr(ji,jj,1,jrnh4,Kmm) + icetra_gca(ji,jj,jl,jrinh4) * zscale
                ENDIF ! if ice
@@ -251,17 +266,17 @@ CONTAINS
       ! Compute friction velocity, for molecular diffusion at sea ice ocean interface
       CALL ice_friction_velocity
 
-
+      
+      
       DO jj = 1, jpj
          DO ji = 1, jpi
-
+            
             ! Bottom ice variables
             DO jl = 1, jpl ! loop ice cat
-         
+               
                IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
-         
-
-            ! Loss of ice tracers from ice-ocean exchanges
+                  
+               ! Loss of ice tracers from ice-ocean exchanges
 
                   ! flushrate: water flowrate per ice area (m/s) 
                   flushrate(ji,jj,jl) = &
@@ -276,12 +291,12 @@ CONTAINS
                      &     + a_i(ji,jj,jl) * tprecip(ji,jj) / rhow ! dev run : tprecip seems to be only rain
 
                   ! flushing of ice tracers: flushrate * ice tracers concentration/ height of skeletal layer  = mass flux (mmol/m3/s)
-                  flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jridia)  ! ice diatoms   
+                  flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jridiac)  ! ice diatoms   
                   flush_no3(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jrino3)  ! ice no3   
                   flush_nh4(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jrinh4)  ! ice nh4   
 
                   ! loss of ice tracers from lateral melt : fraction of ice concentration lost (1/s) * ice tracers concentration (mmol/m3)
-                  lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jridia)   ! ice diatoms
+                  lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jridiac)   ! ice diatoms
                   lamloss_no3(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jrino3)   ! ice no3
                   lamloss_nh4(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jrinh4)   ! ice nh4
 
@@ -304,122 +319,111 @@ CONTAINS
                   ! Uptake of ice diatoms from lateral ice growth  
                   lagup_dia(ji,jj,jl) = &
                         ! water uptake flowrate per ice area * skeletal layer * ocean surface diatoms concentration     
-                        ! & lagup(ji,jj,jl) / z_ia * zdiaos_old     &
                         & lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdia,Kbb)     &
                         ! - ice tracer conc * (sic increase rate / sic)
-                        & - icetra(ji,jj,jl,jridia) * da_lag_cat(ji,jj,jl)
+                        & - icetra(ji,jj,jl,jridiac) * da_lag_cat(ji,jj,jl)
                   ! Uptake of ice N from lateral ice growth  
                   lagup_no3(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jqno3,Kbb) - icetra(ji,jj,jl,jrino3) * da_lag_cat(ji,jj,jl)
                   lagup_nh4(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrnh4,Kbb) - icetra(ji,jj,jl,jrinh4) * da_lag_cat(ji,jj,jl)
 
-                  ! Diffusion of N at ice ocean interface
-                  ! = D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
-                  ! IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
-                  !    moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - icetra(ji,jj,jl,jrino3) ) /z_ia
-                  !    moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icetra(ji,jj,jl,jrinh4) ) /z_ia
-                  ! ENDIF
 
                   
                ! Biogeochemical processes
                   
-                  ! Light limitation factor, from qtr_ice_bot: shortwave radiation transmitted through ice (W/m2)
-                  lim_lig(ji,jj,jl) = tanh( r_pp * qtr_ice_bot(ji,jj,jl) ) 
+                  ! ! Light limitation factor, 
+                  ! from qtr_ice_bot: shortwave radiation transmitted through ice (W/m2)
+                  ! lim_lig(ji,jj,jl) = tanh( r_pp * qtr_ice_bot(ji,jj,jl) ) 
                   
-                  ! N limitation factor
-                  lim_nut_ice(ji,jj,jl) = (icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4) ) / ( h_ni + icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4) )
+                  ! ! N limitation factor
+                  ! lim_nut_ice(ji,jj,jl) = (icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4) ) / ( h_ni + icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4) )
                   
-                  ! Ice diatom growth rate 
-                  growth_dia(ji,jj,jl) = mu_max * zln2                            &
-                           &    * exp( t_ia * sst_m(ji,jj) )                          & ! temperature factor
-                           &    * MIN( lim_lig(ji,jj,jl) , lim_nut_ice(ji,jj,jl) )    & ! PAR and N limitation
-                           &    * icetra(ji,jj,jl,jridia)
+                  ! ! Ice diatom growth rate 
+                  ! growth_dia(ji,jj,jl) = mu_max * zln2                            &
+                  !          &    * exp( t_ia * sst_m(ji,jj) )                          & ! temperature factor
+                  !          &    * MIN( lim_lig(ji,jj,jl) , lim_nut_ice(ji,jj,jl) )    & ! PAR and N limitation
+                  !          &    * icetra(ji,jj,jl,jridia)
                   
-                  ! Ice diatom mortality, off if below threshold b_ia
-                  if_below_bia = MAX( 0._wp , SIGN(1._wp, icetra(ji,jj,jl,jridia) - b_ia) )
-                  ! Linear mortality
-                  mortlin_dia(ji,jj,jl) = if_below_bia * r_m1 * zln2 * exp(t_ia* sst_m(ji,jj) ) * icetra(ji,jj,jl,jridia)
-                  ! Quadratic mortality
-                  mortquad_dia(ji,jj,jl) = if_below_bia * r_m2 * icetra(ji,jj,jl,jridia) * icetra(ji,jj,jl,jridia)
+                  ! ! Ice diatom mortality, off if below threshold b_ia
+                  ! if_below_bia = MAX( 0._wp , SIGN(1._wp, icetra(ji,jj,jl,jridia) - b_ia) )
+                  ! ! Linear mortality
+                  ! mortlin_dia(ji,jj,jl) = if_below_bia * r_m1 * zln2 * exp(t_ia* sst_m(ji,jj) ) * icetra(ji,jj,jl,jridia)
+                  ! ! Quadratic mortality
+                  ! mortquad_dia(ji,jj,jl) = if_below_bia * r_m2 * icetra(ji,jj,jl,jridia) * icetra(ji,jj,jl,jridia)
 
-                  ! N uptake by ice diatoms
-                  diaup_no3(ji,jj,jl) = N2C_dia * growth_dia(ji,jj,jl) * vnh4/(vnh4+icetra(ji,jj,jl,jrinh4))             &
-                        &     * icetra(ji,jj,jl,jrino3) / MAX(1.e-15_wp, icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4))
-                  diaup_nh4(ji,jj,jl) = N2C_dia * growth_dia(ji,jj,jl) * ( 1._wp- vnh4/(vnh4+icetra(ji,jj,jl,jrinh4)) )  &
-                        &     * icetra(ji,jj,jl,jrino3) / MAX(1.e-15_wp, icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4))
+                  ! ! N uptake by ice diatoms
+                  ! diaup_no3(ji,jj,jl) = N2C_dia * growth_dia(ji,jj,jl) * vnh4/(vnh4+icetra(ji,jj,jl,jrinh4))             &
+                  !       &     * icetra(ji,jj,jl,jrino3) / MAX(1.e-15_wp, icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4))
+                  ! diaup_nh4(ji,jj,jl) = N2C_dia * growth_dia(ji,jj,jl) * ( 1._wp- vnh4/(vnh4+icetra(ji,jj,jl,jrinh4)) )  &
+                  !       &     * icetra(ji,jj,jl,jrino3) / MAX(1.e-15_wp, icetra(ji,jj,jl,jrino3) + icetra(ji,jj,jl,jrinh4))
 
-                  ! Remineralization
-                  remin_dia(ji,jj,jl) = N2C_dia * f_rm * mortlin_dia(ji,jj,jl)
+                  ! ! Remineralization
+                  ! remin_dia(ji,jj,jl) = N2C_dia * f_rm * mortlin_dia(ji,jj,jl)
 
-                  ! Nitrification, reduced by light
-                  nitri(ji,jj,jl) = r_ni / (1.0_wp+qtr_ice_bot(ji,jj,jl)) * icetra(ji,jj,jl,jrinh4)
-
-
+                  ! ! Nitrification, reduced by light
+                  ! nitri(ji,jj,jl) = r_ni / (1.0_wp+qtr_ice_bot(ji,jj,jl)) * icetra(ji,jj,jl,jrinh4)
 
 
-                  ! Ice diatoms dynamics
-                  icetra(ji,jj,jl,jridia) = icetra(ji,jj,jl,jridia) + rn_Dt * (           &
-                                       ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                              &        - flush_dia(ji,jj,jl)                  & 
-                                       ! sink: loss from lateral melting of ice
-                              &        - lamloss_dia(ji,jj,jl)                & 
-                                       ! source: Uptake from bottom ice growth
-                              &        + bogup_dia(ji,jj,jl)                  &
-                                       ! source: Uptake from lateral ice growth
-                              &        + lagup_dia(ji,jj,jl)                  &
-                                       ! source: growth
-                              &        + growth_dia(ji,jj,jl)                 &
-                                       ! sink: linear mortality
-                              &        - mortlin_dia(ji,jj,jl)                &
-                                       ! sink: quadratic mortality
-                              &        - mortquad_dia(ji,jj,jl)               &
+
+
+                  ! Ice diatoms C biomass dynamics
+                  icetra(ji,jj,jl,jridiac) = icetra(ji,jj,jl,jridiac) + rn_Dt * (      &
+                              &        - flush_dia(ji,jj,jl)                           & ! loss from flushing 
+                              &        - lamloss_dia(ji,jj,jl)                         & ! loss from lateral melting of ice
+                              &        + bogup_dia(ji,jj,jl)                           & ! Uptake from bottom ice growth
+                              &        + lagup_dia(ji,jj,jl)                           & ! Uptake from lateral ice growth
+                              ! &        + growth_dia(ji,jj,jl)                 & ! growth
+                              ! &        - mortlin_dia(ji,jj,jl)                & ! linear mortality
+                              ! &        - mortquad_dia(ji,jj,jl)               & ! quadratic mortality
                               )
                   ! guarantee positive concentration
-                  icetra(ji,jj,jl,jridia) = MAX(0._wp, icetra(ji,jj,jl,jridia) )
-                  ! icetra(ji,jj,jl,jridia) = MIN(1000._wp, icetra(ji,jj,jl,jridia) ) 
+                  icetra(ji,jj,jl,jridiac) = MAX(0._wp, icetra(ji,jj,jl,jridiac) )
+                  ! icetra(ji,jj,jl,jridiac) = MIN(1000._wp, icetra(ji,jj,jl,jridiac) ) 
+
+
+                  ! Ice diatoms N biomass dynamics
+                  icetra(ji,jj,jl,jridian) = icetra(ji,jj,jl,jridian) + rn_Dt * (      &
+                              &    - flush_dia(ji,jj,jl) * qndia(ji,jj,jl)             & ! loss from flushing 
+                              &    - lamloss_dia(ji,jj,jl) * qndia(ji,jj,jl)           & ! loss from lateral melting of ice 
+                              &    + bogup(ji,jj,jl) * tr(ji,jj,1,jrdn,Kbb) /z_ia      & ! Uptake from bottom ice growth
+                              &    + lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdn,Kbb) - icetra(ji,jj,jl,jridian) * da_lag_cat(ji,jj,jl)   & ! Uptake from lateral ice growth
+                              )
+                  ! guarantee positive concentration
+                  icetra(ji,jj,jl,jridian) = MAX(0._wp, icetra(ji,jj,jl,jridian) )
+
+
+                  ! Ice diatoms Chl biomass dynamics
+                  icetra(ji,jj,jl,jridiach) = icetra(ji,jj,jl,jridiach) + rn_Dt * (    &
+                              &    - flush_dia(ji,jj,jl) * qchdia(ji,jj,jl)            & ! loss from flushing
+                              &    - lamloss_dia(ji,jj,jl) * qchdia(ji,jj,jl)          & ! loss from lateral melting of ice 
+                              &    + bogup(ji,jj,jl) * tr(ji,jj,1,jrdch,Kbb) /z_ia     & ! Uptake from bottom ice growth 
+                              &    + lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdch,Kbb) - icetra(ji,jj,jl,jridiach) * da_lag_cat(ji,jj,jl)   & ! Uptake from lateral ice growth
+                              )
+                  ! guarantee positive concentration
+                  icetra(ji,jj,jl,jridiach) = MAX(0._wp, icetra(ji,jj,jl,jridiach) )
 
 
                   ! Ice NO3 dynamics
-                  icetra(ji,jj,jl,jrino3) = icetra(ji,jj,jl,jrino3) + rn_Dt * (         &
-                                       ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                              &        - flush_no3(ji,jj,jl)                  & 
-                                       ! sink: loss from lateral melting of ice
-                              &        - lamloss_no3(ji,jj,jl)                &           
-                                       ! source: Uptake from lateral ice growth
-                              &        + lagup_no3(ji,jj,jl)                  &
-                                       ! source: Uptake from bottom ice growth
-                              &        + bogup_no3(ji,jj,jl)                  &
-                                       ! source/sink: diffusion at ocean interface
-                              ! &        + moldif_no3(ji,jj,jl)                 &
-                                       ! sink: uptake by ice diatoms
-                              &        - diaup_no3(ji,jj,jl)                  &
-                                       ! source: nitrification                
-                              &        + nitri(ji,jj,jl)                      &
+                  icetra(ji,jj,jl,jrino3) = icetra(ji,jj,jl,jrino3) + rn_Dt * (        &
+                              &        - flush_no3(ji,jj,jl)                           & ! loss from flushing 
+                              &        - lamloss_no3(ji,jj,jl)                         & ! loss from lateral melting of ice
+                              &        + bogup_no3(ji,jj,jl)                           & ! Uptake from bottom ice growth
+                              &        + lagup_no3(ji,jj,jl)                           & ! Uptake from lateral ice growth
+                              ! &        - diaup_no3(ji,jj,jl)                           & ! uptake by ice diatoms
+                              ! &        + nitri(ji,jj,jl)                               & ! nitrification     
                               )
                   ! guarantee positive concentration
                   icetra(ji,jj,jl,jrino3) = MAX(0._wp, icetra(ji,jj,jl,jrino3) )
 
- 
-                 
-
 
                   ! Ice NH4 dynamics
-                  icetra(ji,jj,jl,jrinh4) = icetra(ji,jj,jl,jrinh4) + rn_Dt * (           &
-                                       ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                              &        - flush_nh4(ji,jj,jl)                  & 
-                                       ! sink: loss from lateral melting of ice
-                              &        - lamloss_nh4(ji,jj,jl)                &
-                                       ! source: Uptake from lateral ice growth
-                              &        + lagup_nh4(ji,jj,jl)                  & 
-                                       ! source: Uptake from bottom ice growth
-                              &        + bogup_nh4(ji,jj,jl)                  & 
-                                       ! source/sink: diffusion at ocean interface
-                              ! &        + moldif_nh4(ji,jj,jl)                 &
-                                       ! sink: uptake by ice diatoms
-                              &        - diaup_nh4(ji,jj,jl)                  &
-                                       ! sink: nitrification                
-                              &        - nitri(ji,jj,jl)                      &
-                                       ! source: remineraliztion                
-                              &        + remin_dia(ji,jj,jl)                  &
+                  icetra(ji,jj,jl,jrinh4) = icetra(ji,jj,jl,jrinh4) + rn_Dt * (        &
+                              &        - flush_nh4(ji,jj,jl)                           & ! loss from flushing 
+                              &        - lamloss_nh4(ji,jj,jl)                         & ! loss from lateral melting of ice
+                              &        + bogup_nh4(ji,jj,jl)                           & ! Uptake from bottom ice growth
+                              &        + lagup_nh4(ji,jj,jl)                           & ! Uptake from lateral ice growth
+                              ! &        - diaup_nh4(ji,jj,jl)                           & ! uptake by ice diatoms
+                              ! &        - nitri(ji,jj,jl)                               & ! nitrification                
+                              ! &        + remin_dia(ji,jj,jl)                           & ! remineraliztion                
                               )
                   ! guarantee positive concentration
                   icetra(ji,jj,jl,jrinh4) = MAX(0._wp, icetra(ji,jj,jl,jrinh4) )
@@ -478,75 +482,50 @@ CONTAINS
 
                ! Ocean surface large phytoplankton C biomass
                   tr(ji,jj,1,jrdia,Krhs) = tr(ji,jj,1,jrdia,Krhs) +  (                    &
-                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & 
-                           ! source: ice diatoms from lateral melting of ice
-                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & 
-                           ! sink: Uptake from bottom ice growth
-                  &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
-                           ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdia,Kbb)             &
+                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & ! flushing of ice diatoms
+                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & ! ice diatoms from lateral melting of ice
+                  &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          & ! Uptake from bottom ice growth
+                  &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kbb) * zscale             & ! Uptake from lateral ice growth
                   )
 
                ! Ocean surface large phytoplankton N biomass
-                  tr(ji,jj,1,jrdn,Krhs) = tr(ji,jj,1,jrdn,Krhs) + N2C_dia * (             &
-                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & 
-                           ! source: ice diatoms from lateral melting of ice
-                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & 
-                           ! sink: Uptake from bottom ice growth
-                  &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
-                           ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdn,Kbb)              &
+                  tr(ji,jj,1,jrdn,Krhs) = tr(ji,jj,1,jrdn,Krhs) + (                          &
+                  &        + f_p2 * flush_dia(ji,jj,jl) * qndia(ji,jj,jl) * z_ia * zscale    & ! flushing of ice diatoms 
+                  &        + f_p2 * lamloss_dia(ji,jj,jl) * qndia(ji,jj,jl) * z_ia * zscale  & ! ice diatoms from lateral melting of ice
+                  &        - bogup(ji,jj,jl) * tr(ji,jj,1,jrdn,Kbb) * zscale                 & ! Uptake from bottom ice growth
+                  &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrdn,Kbb) * zscale                 & ! Uptake from lateral ice growth
                   )
 
                ! Ocean surface large phytoplankton Chl biomass
-                  tr(ji,jj,1,jrdch,Krhs) = tr(ji,jj,1,jrdch,Krhs) + CH2C_dia * (          &
-                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + f_p2 * flush_dia(ji,jj,jl) * z_ia * zscale                   & 
-                           ! source: ice diatoms from lateral melting of ice
-                  &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia * zscale                 & 
-                           ! sink: Uptake from bottom ice growth
-                  &        - bogup_dia(ji,jj,jl) * z_ia * zscale                          &
-                           ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdch,Kbb)             &
+                  tr(ji,jj,1,jrdch,Krhs) = tr(ji,jj,1,jrdch,Krhs) + (                        &
+                  &        + f_p2 * flush_dia(ji,jj,jl) * qchdia(ji,jj,jl) * z_ia * zscale   & ! flushing of ice diatoms 
+                  &        + f_p2 * lamloss_dia(ji,jj,jl) * qchdia(ji,jj,jl) * z_ia * zscale & ! ice diatoms from lateral melting of ice
+                  &        - bogup(ji,jj,jl) * tr(ji,jj,1,jrdch,Kbb) * zscale                & ! Uptake from bottom ice growth
+                  &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrdch,Kbb) * zscale                & ! Uptake from lateral ice growth
                   )
 
                ! Ocean surface large POC
-                  tr(ji,jj,1,jrgoc,Krhs) = tr(ji,jj,1,jrgoc,Krhs) + (                    &
-                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + (1.0_wp - f_p2) * flush_dia(ji,jj,jl) * z_ia * zscale                          & 
-                           ! source: ice diatoms from lateral melting of ice
-                  &        + (1.0_wp - f_p2) * lamloss_dia(ji,jj,jl) * z_ia * zscale                        & 
-                           ! source : linear mortality 
-                  &        + (1.0_wp - f_rm) * mortlin_dia(ji,jj,jl) * z_ia * zscale                        &
-                           ! source : quadratic mortality 
-                  &        + mortquad_dia(ji,jj,jl) * z_ia * zscale                        &
+                  tr(ji,jj,1,jrgoc,Krhs) = tr(ji,jj,1,jrgoc,Krhs) + (                     &
+                  &        + (1.0_wp - f_p2) * flush_dia(ji,jj,jl) * z_ia * zscale        & ! flushing of ice diatoms
+                  &        + (1.0_wp - f_p2) * lamloss_dia(ji,jj,jl) * z_ia * zscale      & ! ice diatoms from lateral melting of ice
+                  ! &        + (1.0_wp - f_rm) * mortlin_dia(ji,jj,jl) * z_ia * zscale      & ! linear mortality 
+                  ! &        + mortquad_dia(ji,jj,jl) * z_ia * zscale                       & ! quadratic mortality 
                   )
 
                ! Ocean surface NO3 
                   tr(ji,jj,1,jqno3,Krhs) = tr(ji,jj,1,jqno3,Krhs) +  (                    &
-                           ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + flush_no3(ji,jj,jl) * z_ia * zscale                          & 
-                           ! source: ice NO3 from lateral melting of ice
-                  &        + lamloss_no3(ji,jj,jl) * z_ia * zscale                        &
-                           ! sink: Uptake from bottom ice growth
-                  &        - bogup_no3(ji,jj,jl) * z_ia * zscale                          &
-                           ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kbb)             &
+                  &        + flush_no3(ji,jj,jl) * z_ia * zscale                          & ! flushing of ice NO3
+                  &        + lamloss_no3(ji,jj,jl) * z_ia * zscale                        & ! ice NO3 from lateral melting of ice
+                  &        - bogup_no3(ji,jj,jl) * z_ia * zscale                          & ! Uptake from bottom ice growth
+                  &        - lagup(ji,jj,jl) * tr(ji,jj,1,jqno3,Kbb) * zscale             & ! Uptake from lateral ice growth
                   )
-
 
                ! Ocean surface NH4 
                   tr(ji,jj,1,jrnh4,Krhs) = tr(ji,jj,1,jrnh4,Krhs) + (                     &
-                           ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + flush_nh4(ji,jj,jl) * z_ia * zscale                          & 
-                           ! source: ice NO3 from lateral melting of ice
-                  &        + lamloss_nh4(ji,jj,jl) * z_ia * zscale                        & 
-                           ! sink: Uptake from bottom ice growth
-                  &        - bogup_nh4(ji,jj,jl) * z_ia * zscale                          &
-                           ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kbb)             &
+                  &        + flush_nh4(ji,jj,jl) * z_ia * zscale                          & ! flushing of ice NO3
+                  &        + lamloss_nh4(ji,jj,jl) * z_ia * zscale                        & ! ice NO3 from lateral melting of ice
+                  &        - bogup_nh4(ji,jj,jl) * z_ia * zscale                          & ! Uptake from bottom ice growth
+                  &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrnh4,Kbb) * zscale             & ! Uptake from lateral ice growth
                   )
 
                   
@@ -624,9 +603,7 @@ CONTAINS
       ALLOCATE( &
       ! variables
          &     icetra(jpi,jpj,jpl,jp_csib) , icetra_gca (jpi,jpj,jpl,jp_csib) , icetragca_2d(jpij,jpl,jp_csib) , &
-         ! &     icedia    (jpi,jpj,jpl) , icedia_gca (jpi,jpj,jpl) , icediagca_2d(jpij,jpl)    , &
-         ! &     iceno3    (jpi,jpj,jpl) , iceno3_gca (jpi,jpj,jpl) , iceno3gca_2d(jpij,jpl)    , &
-         ! &     icenh4    (jpi,jpj,jpl) , icenh4_gca (jpi,jpj,jpl) , icenh4gca_2d(jpij,jpl)    , &
+         &     qndia(jpi,jpj,jpl)      , qchdia(jpi,jpj,jpl)      ,   &
       ! sources and sinks
          &     flushrate (jpi,jpj,jpl) , flush_dia  (jpi,jpj,jpl) , lamloss_dia (jpi,jpj,jpl) , &
          &     bogup     (jpi,jpj,jpl) , bogup_dia  (jpi,jpj,jpl) , lagup       (jpi,jpj,jpl) , &

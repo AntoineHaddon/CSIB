@@ -57,27 +57,30 @@ CONTAINS
       IF( .NOT. ln_rsttr ) THEN
          CALL trc_ini_csibnames() ! when there is a restart this is done by the sea ice model
          
-         icetra(:,:,:,:) =0._wp
+         icetra(:,:,:,:) = 0._wp
          
          ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icetra(:,:,3,jridia)=1._wp
          ! END WHERE
-
+         
          ! WHERE( gphit(:,:)>75._wp .AND. gphit(:,:)<80._wp .AND. glamt(:,:)>100._wp .AND. glamt(:,:)<150._wp )  
          !    iceno3(:,:,2)=1._wp
          ! END WHERE
          ! WHERE( gphit(:,:)>70._wp .AND. gphit(:,:)<75._wp .AND. glamt(:,:)>-160._wp .AND. glamt(:,:)<-130._wp )  
          !    icenh4(:,:,2)=1._wp
          ! END WHERE
-
-
+         
+         
          DO jn = 1,jp_csib
             icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
          ENDDO
-
+         
       ENDIF
+      
+      ! initialize ratios, fluxes and process rates
+      qndia(:,:,:) = 0._wp
+      qchdia(:,:,:) = 0._wp
 
-      ! initialize fluxes and process rates
       flushrate(:,:,:) = 0._wp
       bogup(:,:,:) = 0._wp
       lagup(:,:,:) = 0._wp
@@ -110,9 +113,7 @@ CONTAINS
       mortquad_dia(:,:,:) = 0._wp
       remin_dia(:,:,:) = 0._wp
       nitri(:,:,:) = 0._wp
-      !
 
-      
 
    END SUBROUTINE trc_ini_csib
 
@@ -126,7 +127,9 @@ CONTAINS
       ALLOCATE( icetrcnm(jp_csib) ,    STAT=trc_sms_csib_allocnames)
       IF( trc_sms_csib_allocnames /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_allocnames : failed to allocate arrays' )
 
-      icetrcnm(jridia) = 'icedia'
+      icetrcnm(jridiac) = 'icediac'
+      icetrcnm(jridian) = 'icedian'
+      icetrcnm(jridiach) = 'icediach'
       icetrcnm(jrino3) = 'iceno3'
       icetrcnm(jrinh4) = 'icenh4'
 
