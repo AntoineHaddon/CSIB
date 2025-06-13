@@ -16,6 +16,10 @@ MODULE checksums
    USE lib_mpp,        only : mpp_min, mpp_max, mpp_sum
    USE oce,            only : uu, vv, ww, ts
    USE par_oce,        only : jpi, jpj, jpk, jp_tem, jp_sal
+#if defined key_top
+   USE trc,            only : tr
+   USE par_trc,        only : ln_canoe, ln_cmoc, jqdic, jqtal, jqoxy, jqno3
+#endif
    USE in_out_manager, only : lwp
    IMPLICIT NONE
    PRIVATE
@@ -185,6 +189,19 @@ CONTAINS
       bc_sum = bc_sum + bc
       CALL chksum( ts(:,:,:,jp_sal,Nstep), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "S now array "//TRIM(msg))
       bc_sum = bc_sum + bc
+#if defined key_top
+      ! include BGC variables if CanOE or CMOC
+      IF ( ln_canoe .OR. ln_cmoc ) THEN
+        CALL chksum( tr(:,:,:,jqdic,Nstep), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "DIC now array "//TRIM(msg))
+        bc_sum = bc_sum + bc
+        CALL chksum( tr(:,:,:,jqtal,Nstep), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "TAL now array "//TRIM(msg))
+        bc_sum = bc_sum + bc
+        CALL chksum( tr(:,:,:,jqoxy,Nstep), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "DOX now array "//TRIM(msg))
+        bc_sum = bc_sum + bc
+        CALL chksum( tr(:,:,:,jqno3,Nstep), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "NO3 now array "//TRIM(msg))
+        bc_sum = bc_sum + bc
+      ENDIF
+#endif
 
       IF( PRESENT( state_bc )) state_bc = bc_sum
    END SUBROUTINE now_state_chksum
