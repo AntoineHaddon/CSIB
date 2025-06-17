@@ -31,14 +31,10 @@
       # If there is a second argument then assume it is the file name on DATAPATH
       acc_cp $1 $2 nocp=no
     else
-      # Otherwise look for a configuration specific file in the NEMO repository
-      # nemo_repo, nemo_ver and CanNEMO_CONFIG must be defined in this case
-      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$CanNEMO_CONFIG" ] &&
-        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, CanNEMO_CONFIG are undefined"
-      # Attempt to extract this file from the NEMO repository
+      # Otherwise look for a configuration specific file in the config/namelists directory
       rm -f $1
-      cp ${nemo_repo}/nemo/cfgs/$CanNEMO_CONFIG/EXPREF/$1 .
-      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
+      cp ${WRK_DIR}/config/namelists/$1 .
+      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from ${WRK_DIR}/config/namelists/"
     fi
   }
 
@@ -364,19 +360,9 @@ else
                iodef.xml )
 
 fi  # config != AMIP
-
-
   for file in "${xios_files[@]}"; do
     echo $file
     find_nemo_config_EXP00 $file
-    # Update NEMO priority level of output variables in each file: output_level 
-    # Not all have the output_level, but this is a secure way to have the same
-    # output_level everywhere (should be in "context_nemo.mxl")
-    sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
-    if [[ $file == "iodef.xml" ]];then
-       [[  $nemo_use_xios_server -eq 1 ]] && sed -i '/using_server\b/c\           <variable id="using_server"              type="bool">true</variable>' $file
-       [[  $nemo_use_xios_server -eq 0 ]] && sed -i '/using_server\b/c\           <variable id="using_server"              type="bool">false</variable>' $file
-    fi
   done
 
   # disabled the ptr file if nemo_ln_diaptr="off"
