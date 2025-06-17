@@ -210,11 +210,11 @@ CONTAINS
       !                                        !  --------------------------------------
       IF( l_trcdm2dc ) THEN                    !  diurnal cycle
          !
-         zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
+         zqsr_corr(:,:) = qsr_mean(:,:) 
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
          !
-         zqsr_corr(:,:) = max(0.,qsr(:,:)) / ( 1.-fr_i(:,:) + rtrn )
+         zqsr_corr(:,:) = max(0.,qsr(:,:))
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 ) 
          !
@@ -224,7 +224,7 @@ CONTAINS
          !
       ELSE
          !
-         zqsr_corr(:,:) = max(0.,qsr(:,:)) / ( 1.-fr_i(:,:) + rtrn )
+         zqsr_corr(:,:) = max(0.,qsr(:,:))
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
          !

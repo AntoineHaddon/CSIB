@@ -308,6 +308,14 @@ if [[ $config != "AMIP" ]]; then
       
       is_defined $nemo_data_no3_nomask || bail "The variable nemo_data_no3_nomask must be defined in canesm.cfg"      
       acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
+
+      # CanTODS BGC OBCs
+      if [[ $runmode == "CanTODS" ]]; then
+          is_defined $nemo_bn_bgc_north || bail "The variable nemo_bn_bgc_north must be defined in canesm.cfg"      
+          acc_cp bdy_dta_trc_north.nc $nemo_bn_bgc_north
+          is_defined $nemo_bn_bgc_south || bail "The variable nemo_bn_bgc_south must be defined in canesm.cfg"      
+          acc_cp bdy_dta_trc_south.nc $nemo_bn_bgc_south
+      fi
   fi
 
   # Access files required to run NEMO
