@@ -1010,7 +1010,7 @@ contains
        endif
 
        !--- Send the global array to the coupler
-       call send_data_rec(wrk, cpl_master, trim(ssnd(kid)%clname), dbg=ldbg)
+       call send_data_rec(wrk, cpl_master, trim(ssnd(kid)%clname), verbosity=cpl_verbosity)
 
        if ( verbose > 0 ) then
          strng = sprint_var_stats(wrk, cpl_vinfo%size, name=ssnd(kid)%clname)
@@ -1108,7 +1108,7 @@ contains
          endif
 
          !--- Receive the global array from the coupler
-         call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), dbg=ldbg)
+         call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), verbosity=cpl_verbosity)
 
        endif
 
