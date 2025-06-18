@@ -42,7 +42,7 @@ CONTAINS
       INTEGER ::   numonpbcsib      = -1          !! Logical unit for the above ref/cfg namelists output
 
       !!----------------------------------------------------------------------
-      NAMELIST/namicedia/ z_ia, mu_max, t_ia, r_pp, h_ni, vnh4, C2N_dia, C2CH_dia, b_ia, r_m1, r_m2, f_p2
+      NAMELIST/namicedia/ z_ia, qnidiamin, qnidiamax, alphaidia, pcrefidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2
       NAMELIST/namicenit/ f_rm, r_ni, c_di, c_nu
       NAMELIST/namicedic/ sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
       
@@ -94,14 +94,17 @@ CONTAINS
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Bottom diatoms'
          WRITE(numout,*) ' z_ia =',z_ia 
-         WRITE(numout,*) ' mu_max =',mu_max
+         WRITE(numout,*) ' qnidiamin =',qnidiamin 
+         WRITE(numout,*) ' qnidiamax =',qnidiamax 
+         WRITE(numout,*) ' alphaidia =',alphaidia
+         WRITE(numout,*) ' pcrefidia =',pcrefidia
+         WRITE(numout,*) ' vnref =',vnref
+         WRITE(numout,*) ' knh4 =',knh4
+         WRITE(numout,*) ' kno3 =',kno3
+         WRITE(numout,*) ' etares =',etares
+         WRITE(numout,*) ' ch2nmax =',ch2nmax
+         WRITE(numout,*) ' min_icedia =',min_icedia
          WRITE(numout,*) ' t_ia =',t_ia
-         WRITE(numout,*) ' r_pp =',r_pp
-         WRITE(numout,*) ' h_ni =',h_ni
-         WRITE(numout,*) ' vnh4 =',vnh4
-         WRITE(numout,*) ' C2N_dia =',C2N_dia
-         WRITE(numout,*) ' C2CH_dia =',C2CH_dia
-         WRITE(numout,*) ' b_ia =',b_ia
          WRITE(numout,*) ' r_m1 =',r_m1
          WRITE(numout,*) ' r_m2 =',r_m2
          WRITE(numout,*) ' f_p2 =',f_p2
@@ -122,12 +125,10 @@ CONTAINS
 
       ENDIF
 
-
-      N2C_dia = 1._wp / C2N_dia ! N to C ratio
-      CH2C_dia = 1._wp / C2CH_dia ! CH to C ratio
-
       ! convert time unit from /day to /sec
-      mu_max = mu_max / 86400._wp 
+      alphaidia = alphaidia / 86400._wp 
+      pcrefidia = pcrefidia / 86400._wp
+      vnref = vnref / 86400._wp
       r_m1 = r_m1 / 86400._wp
       r_m2 = r_m2 / 86400._wp
       r_ni = r_ni  / 86400._wp

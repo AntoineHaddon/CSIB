@@ -78,8 +78,8 @@ CONTAINS
       ENDIF
       
       ! initialize ratios, fluxes and process rates
-      qndia(:,:,:) = 0._wp
-      qchdia(:,:,:) = 0._wp
+      qnidia(:,:,:) = 0._wp
+      qchidia(:,:,:) = 0._wp
 
       flushrate(:,:,:) = 0._wp
       bogup(:,:,:) = 0._wp
@@ -104,11 +104,11 @@ CONTAINS
       
       fric_vel(:,:) = 0._wp
       
-      growth_dia(:,:,:) = 0._wp
-      lim_lig(:,:,:) = 0._wp
-      lim_nut_ice(:,:,:) = 0._wp
-      diaup_no3(:,:,:) = 0._wp
-      diaup_nh4(:,:,:) = 0._wp
+      phot_dia(:,:,:) = 0._wp
+      lim_PAR(:,:,:) = 0._wp
+      lim_nut(:,:,:) = 0._wp
+      diaupn(:,:,:) = 0._wp
+      chlsyn(:,:,:) = 0._wp
       mortlin_dia(:,:,:) = 0._wp
       mortquad_dia(:,:,:) = 0._wp
       remin_dia(:,:,:) = 0._wp

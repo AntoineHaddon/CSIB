@@ -84,12 +84,14 @@ CONTAINS
       
 
       ! ! BGC process
-      CALL iom_put( 'growth_dia'       , growth_dia(:,:,:) )
-      CALL iom_put( 'lim_lig'          , lim_lig(:,:,:) )
+      CALL iom_put( 'qnidia'           , qnidia(:,:,:) )
+      CALL iom_put( 'qchidia'          , qchidia(:,:,:) )
+      CALL iom_put( 'phot_dia'         , phot_dia(:,:,:) )
+      CALL iom_put( 'lim_PAR'          , lim_PAR(:,:,:) )
+      CALL iom_put( 'lim_nut'          , lim_nut(:,:,:) )
       CALL iom_put( 'qtr_ice_bot_cat'  , qtr_ice_bot(:,:,:) )
-      CALL iom_put( 'lim_nut_ice'      , lim_nut_ice(:,:,:) )
-      CALL iom_put( 'diaup_no3'        , diaup_no3(:,:,:) )
-      CALL iom_put( 'diaup_nh4'        , diaup_nh4(:,:,:) )
+      CALL iom_put( 'diaupn'           , diaupn(:,:,:) )
+      CALL iom_put( 'chlsyn'           , chlsyn(:,:,:) )
       CALL iom_put( 'mortlin_dia'      , mortlin_dia(:,:,:) )
       CALL iom_put( 'mortquad_dia'     , mortquad_dia(:,:,:) )
       CALL iom_put( 'remin_dia'        , remin_dia(:,:,:) )
