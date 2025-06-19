@@ -27,10 +27,10 @@ MODULE cpl_cancpl
 
   use par_oce                      ! ocean parameters
   use dom_oce                      ! ocean space and time domain
-  use iom            ! I/O library
   use in_out_manager               ! I/O manager
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
   use timing
+  use par_kind, only : wp
   use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop
   use lib_mpp, only : reconstruct_global_2d
   use cpl_types, only : srcv, ssnd, FLD_C, FLD_CPL, nmaxfld
@@ -479,35 +479,73 @@ contains
        call flush(6)
      endif
 
-     ! lat/lon and grid size read from domcfg to have the vavlues even over land eliminated processors
-     if ( rank == ocn_master ) then
-         write(6,*)"cpl_cancpl_define: READ domain variables from ",trim(cn_domcfg)
-         call flush(6)
-         IF (.NOT. ASSOCIATED(nemo_glamt)) ALLOCATE(nemo_glamt(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_glamu)) ALLOCATE(nemo_glamu(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_glamv)) ALLOCATE(nemo_glamv(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_glamf)) ALLOCATE(nemo_glamf(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_gphit)) ALLOCATE(nemo_gphit(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_gphiu)) ALLOCATE(nemo_gphiu(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_gphiv)) ALLOCATE(nemo_gphiv(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_gphif)) ALLOCATE(nemo_gphif(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e1t)) ALLOCATE(nemo_e1t(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e1u)) ALLOCATE(nemo_e1u(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e1v)) ALLOCATE(nemo_e1v(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e1f)) ALLOCATE(nemo_e1f(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e2t)) ALLOCATE(nemo_e2t(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e2u)) ALLOCATE(nemo_e2u(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e2v)) ALLOCATE(nemo_e2v(nemo_jpiglo,nemo_jpjglo))
-         IF (.NOT. ASSOCIATED(nemo_e2f)) ALLOCATE(nemo_e2f(nemo_jpiglo,nemo_jpjglo))
-         CALL hgr_read_glo( nemo_glamt , nemo_glamu , nemo_glamv  , nemo_glamf  ,   &    ! gridpoints position (required)
-             &              nemo_gphit , nemo_gphiu , nemo_gphiv  , nemo_gphif  ,   &     
-             &              nemo_e1t  , nemo_e1u  , nemo_e1v   , nemo_e1f   ,   &    ! scale factors       (required)
-             &              nemo_e2t  , nemo_e2u  , nemo_e2v   , nemo_e2f   )
-     endif
+    !--- Gather glamt into nemo_glamt (found in com_cpl)
+    !--- glamt is found in module dom_oce
+    call cpl_gather("glamt", rank)
 
-     ! Mask fields not in the domcfg file, must relu on the calcuated done in dommsk
+    !--- Gather glamu into nemo_glamu (found in com_cpl)
+    !--- glamu is found in module dom_oce
+    call cpl_gather("glamu", rank)
+
+    !--- Gather glamv into nemo_glamv (found in com_cpl)
+    !--- glamv is found in module dom_oce
+    call cpl_gather("glamv", rank)
+
+    !--- Gather glamf into nemo_glamf (found in com_cpl)
+    !--- glamf is found in module dom_oce
+    call cpl_gather("glamf", rank)
+
+    !--- Gather gphit into nemo_gphit (found in com_cpl)
+    !--- gphit is found in module dom_oce
+    call cpl_gather("gphit", rank)
+
+    !--- Gather gphiu into nemo_gphiu (found in com_cpl)
+    !--- gphiu is found in module dom_oce
+    call cpl_gather("gphiu", rank)
+
+    !--- Gather gphiv into nemo_gphiv (found in com_cpl)
+    !--- gphiv is found in module dom_oce
+    call cpl_gather("gphiv", rank)
+
+    !--- Gather gphif into nemo_gphif (found in com_cpl)
+    !--- gphif is found in module dom_oce
+    call cpl_gather("gphif", rank)
+
+    !--- Gather e1t into nemo_e1t (found in com_cpl)
+    !--- e1t is found in module dom_oce
+    call cpl_gather("e1t", rank)
+
+    !--- Gather e1u into nemo_e1u (found in com_cpl)
+    !--- e1u is found in module dom_oce
+    call cpl_gather("e1u", rank)
+
+    !--- Gather e1v into nemo_e1v (found in com_cpl)
+    !--- e1v is found in module dom_oce
+    call cpl_gather("e1v", rank)
+
+    !--- Gather e1f into nemo_e1f (found in com_cpl)
+    !--- e1f is found in module dom_oce
+    call cpl_gather("e1f", rank)
+
+    !--- Gather e2t into nemo_e2t (found in com_cpl)
+    !--- e2t is found in module dom_oce
+    call cpl_gather("e2t", rank)
+
+    !--- Gather e2u into nemo_e2u (found in com_cpl)
+    !--- e2u is found in module dom_oce
+    call cpl_gather("e2u", rank)
+
+    !--- Gather e2v into nemo_e2v (found in com_cpl)
+    !--- e2v is found in module dom_oce
+    call cpl_gather("e2v", rank)
+
+    !--- Gather e2f into nemo_e2f (found in com_cpl)
+    !--- e2f is found in module dom_oce
+    call cpl_gather("e2f", rank)
+
      !--- Gather tmask into nemo_tmask (found in com_cpl)
-     call cpl_gather("tmask", rank)
+     !--- tmask_i is found in module dom_oce
+     call cpl_gather("tmask_i", rank)
 
      !--- Gather umask (level 1) into nemo_umask (found in com_cpl)
      !--- umask is found in module dom_oce
@@ -665,8 +703,8 @@ contains
         CALL iom_close(inum)
     ENDIF
     !--- Gather the variable vname into work, and then
-    !       store it in global array named nemo_vname. work will not contain the
-    !       Nemo northfold
+    !       store it in global array named nemo_vname. work will contain the
+    !       Nemo northfold, but we will avoid copying this into the nemo_* arrays
     !--- This data is then sent to the coupler in cpl_initialize_events
     select case (trim(adjustl(vname)))
       case ("glamt")
