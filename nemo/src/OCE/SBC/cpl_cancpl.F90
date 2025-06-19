@@ -635,58 +635,6 @@ contains
 
   end subroutine cpl_cancpl_define
 
-   SUBROUTINE hgr_read_glo( plamt , plamu , plamv  , plamf  ,   &    ! gridpoints position (required)
-      &                     pphit , pphiu , pphiv  , pphif  ,   &     
-      &                     pe1t  , pe1u  , pe1v   , pe1f   ,   &    ! scale factors       (required)
-      &                     pe2t  , pe2u  , pe2v   , pe2f   )
-      !!---------------------------------------------------------------------
-      !!              ***  ROUTINE hgr_read  ***
-      !!
-      !! ** Purpose :   Read a mesh_mask file in NetCDF format using IOM
-      !!
-      !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:), INTENT(out) ::   plamt, plamu, plamv, plamf   ! longitude outputs 
-      REAL(wp), DIMENSION(:,:), INTENT(out) ::   pphit, pphiu, pphiv, pphif   ! latitude outputs
-      REAL(wp), DIMENSION(:,:), INTENT(out)  :: pe1v! i-scale factors
-      REAL(wp), DIMENSION(:,:), INTENT(out)  :: pe1t, pe1u, pe1f! i-scale factors
-      REAL(wp), DIMENSION(:,:), INTENT(out)  :: pe2u! j-scale factors
-      REAL(wp), DIMENSION(:,:), INTENT(out)  :: pe2t, pe2v, pe2f! j-scale factors
-      !
-      INTEGER  ::   inum                  ! logical unit
-      !!----------------------------------------------------------------------
-      !
-      IF(lwp) THEN
-         WRITE(numout,*)
-         WRITE(numout,*) '   hgr_read_glo : read the global horizontal coordinates in mesh_mask (cpl_cancpl_define)'
-         WRITE(numout,*) '   ~~~~~~~~      jpiglo = ', jpiglo, ' jpjglo = ', jpjglo, ' jpk = ', jpk
-      ENDIF
-      !
-      CALL iom_open( cn_domcfg, inum )
-      !
-      CALL iom_get( inum, jpdom_unknown, 'glamt', plamt(1:Ni0glo,1:Nj0glo), cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'glamu', plamu(1:Ni0glo,1:Nj0glo), cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'glamv', plamv(1:Ni0glo,1:Nj0glo), cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'glamf', plamf(1:Ni0glo,1:Nj0glo), cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
-      !
-      CALL iom_get( inum, jpdom_unknown, 'gphit', pphit(1:Ni0glo,1:Nj0glo), cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'gphiu', pphiu(1:Ni0glo,1:Nj0glo), cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'gphiv', pphiv(1:Ni0glo,1:Nj0glo), cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'gphif', pphif(1:Ni0glo,1:Nj0glo), cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
-      !
-      CALL iom_get( inum, jpdom_unknown, 'e1t'  , pe1t(1:Ni0glo,1:Nj0glo) , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e1u'  , pe1u(1:Ni0glo,1:Nj0glo) , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e1v'  , pe1v(1:Ni0glo,1:Nj0glo) , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e1f'  , pe1f(1:Ni0glo,1:Nj0glo) , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
-      !
-      CALL iom_get( inum, jpdom_unknown, 'e2t'  , pe2t(1:Ni0glo,1:Nj0glo) , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e2u'  , pe2u(1:Ni0glo,1:Nj0glo) , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e2v'  , pe2v(1:Ni0glo,1:Nj0glo) , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
-      CALL iom_get( inum, jpdom_unknown, 'e2f'  , pe2f(1:Ni0glo,1:Nj0glo) , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
-      !
-      CALL iom_close( inum )
-      !
-   END SUBROUTINE hgr_read_glo
-
   subroutine cpl_gather(vname, rank)
     character(*), intent(in) :: vname
     integer(kind=impi), intent(in) :: rank
