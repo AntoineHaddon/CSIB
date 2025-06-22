@@ -853,8 +853,8 @@ PROGRAM nemo_ocean_diag
     !---------------------------------------------------
           ! hflx_qns_tot_ave is treated in server.R as if it does not include melt(PCPN) in the ocean. 
           ! So melt(PCPN) is removed and hflx_snow_ice is added with the rest of [P-E+R]
-          hflx_qns_tot_ave(l)=hflx_qns_tot_ave(l)+hflx_rain(l)-hflx_evap(l)+hflx_rnf(l)+hflx_snow_ice(l)
-          hflx_qns_ice_ave(l)=hflx_qns_ice_ave(l)+hflx_snow_ice(l)
+          hflx_qns_tot_ave(l)=hflx_qns_tot_ave(l)+hflx_rain(l)-hflx_evap(l)+hflx_rnf(l)
+          hglo(l)=hglo(l)+hflx_rnf(l)
 
 !---------------------------------------------------
 !   Main outputs 
@@ -863,10 +863,10 @@ PROGRAM nemo_ocean_diag
       print*,'-------------------------------------'
       print*,'    Heat fluxes (W/m2)               '
       print*,'-------------------------------------'      
-      print*,'BEGT (O_QnsMIX+O_QsrMix)', hflx_qsr_tot_ave(l)+hflx_qns_tot_ave(l)+hflx_snow(l)
+      print*,'BEGT (O_QnsMIX+O_QsrMix)', hflx_qsr_tot_ave(l)+hflx_qns_tot_ave(l)+hflx_snow(l)+hflx_snow_ice(l)
       print*,'BEGT (qt_atm_oi)', hglt(l)+hflx_rnf(l)
-      print*,'BEGO (O_QnsOCE+O_QsrOCE)', hflx_qsr_tot_ave(l)-hflx_qsr_ice_ave(l)+hflx_qns_tot_ave(l)-hflx_qns_ice_ave(l)+hflx_snow(l)
-      print*,'BEGO (qt_atm_oi-qt_ice)',  hglt(l)+hflx_rnf(l)-hgli(l)
+      print*,'BEGO (O_QnsOCE+O_QsrOCE)', hflx_qsr_tot_ave(l)-hflx_qsr_ice_ave(l)+hflx_qns_tot_ave(l)-hflx_qns_ice_ave(l)+hflx_snow(l)+hflx_snow_ice(l)
+      print*,'BEGO (qt_atm_oi-qt_ice)',  hglo(l)+hflx_rnf(l)
       print*,'BEGI (O_QnsICE+O_QsrICE)', hflx_qsr_ice_ave(l)+hflx_qns_ice_ave(l)
       print*,'BEGI (qt_ice)', hgli(l)
       print*,'Snow on ocean', hflx_snow(l)
@@ -969,9 +969,9 @@ PROGRAM nemo_ocean_diag
       print*,'-------------------------------------'
       print*,'    Heat fluxes (W/m2) YEARLY        ' 
       print*,'-------------------------------------'      
-      print*,'BEGT (O_QnsMIX+O_QsrMix)', sum((hflx_qsr_tot_ave+hflx_qns_tot_ave+hflx_snow)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
+      print*,'BEGT (O_QnsMIX+O_QsrMix)', sum((hflx_qsr_tot_ave+hflx_qns_tot_ave+hflx_snow+hflx_snow_ice)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
       print*,'BEGT (qt_atm_oi)', sum((hglt+hflx_rnf)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
-      print*,'BEGO (O_QnsOCE+O_QsrOCE)',sum((hflx_qsr_tot_ave-hflx_qsr_ice_ave+hflx_qns_tot_ave-hflx_qns_ice_ave+hflx_snow)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
+      print*,'BEGO (O_QnsOCE+O_QsrOCE)',sum((hflx_qsr_tot_ave-hflx_qsr_ice_ave+hflx_qns_tot_ave-hflx_qns_ice_ave+hflx_snow+hflx_snow_ice)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
       print*,'BEGO (qt_atm_oi-qt_ice)', sum((hglt+hflx_rnf-hgli)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
       print*,'BEGI (O_QnsICE+O_QsrICE)', sum((hflx_qsr_ice_ave+hflx_qns_ice_ave)*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
       print*,'BEGI (qt_ice)', sum(hgli*(/31,28,31,30,31,30,31,31,30,31,30,31/))/365
@@ -1298,7 +1298,7 @@ PROGRAM nemo_ocean_diag
 !       MEAN HEAT FLUX SURFACE (W/M^2)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)
         call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)
-        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l)*-1.0, 1., 0.)
+        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l), 1., 0.)
         call putvars ('hflx_snow_ice', iou, ntrec2, hflx_snow_ice(l), 1., 0.)
 
         call putvars ('hflx_qsr_tot', iou, ntrec2, hflx_qsr_tot_ave(l), 1., 0.)
