@@ -13,20 +13,21 @@ source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
 cp ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.json remap_canesm.json
 
 # overwrite default JSON file values
-sed -i "\"years\":/c\  \"years\": [$(($NEMO_CHUNK_START_YEAR - 1)), $(($NEMO_CHUNK_START_YEAR +1))],/" remap_canesm.json
-sed -i "\"parent_path\":/c\  \"parent_path\": \"${dada_parent_path}\",/" remap_canesm.json
-sed -i "\"parent_name\":/c\  \"parent_name\": \"${dada_parent_name}\",/" remap_canesm.json
-sed -i "\"parent_ensemble\":/c\  \"parent_ensemble\": \"${dada_parent_ensemble}\",/" remap_canesm.json
-sed -i "\"parent_experiment\":/c\  \"parent_experiment\": \"${dada_parent_experiment}\",/" remap_canesm.json
-sed -i "\"meshfile\":/c\  \"meshfile\": \"domain_cfg.nc\",/" remap_canesm.json
-sed -i "\"ic_ind\":/c\  \"ic_ind\": $(( $dada_ic_month - 1 )),/" remap_canesm.json
-sed -i "\"run_start_year\":/c\  \"run_start_year\": \"${run_start_year}\",/" remap_canesm.json
-sed -i "\"run_start_month\":/c\  \"run_start_month\": \"${run_start_month}\",/" remap_canesm.json
-sed -i "\"nemo_freq_months\":/c\  \"nemo_freq_months\": \"${months}\",/" remap_canesm.json
+sed -i "/\"years\":/c\ \"years\": [$(($NEMO_CHUNK_START_YEAR - 1)), $(($NEMO_CHUNK_START_YEAR +1))]," remap_canesm.json
+sed -i "/\"parent_path\":/c\ \"parent_path\": \"${dada_parent_path}\"," remap_canesm.json
+sed -i "/\"parent_name\":/c\ \"parent_name\": \"${dada_parent_name}\"," remap_canesm.json
+sed -i "/\"parent_ensemble\":/c\ \"parent_ensemble\": \"${dada_parent_ensemble}\"," remap_canesm.json
+sed -i "/\"parent_experiment\":/c\ \"parent_experiment\": \"${dada_parent_experiment}\"," remap_canesm.json
+sed -i "/\"meshfile\":/c\ \"meshfile\": \"domain_cfg.nc\"," remap_canesm.json
+sed -i "/\"ic_ind\":/c\ \"ic_ind\": $(( $dada_ic_month - 1 ))," remap_canesm.json
+sed -i "/\"run_start_year\":/c\ \"run_start_year\": ${run_start_year}," remap_canesm.json
+sed -i "/\"run_start_month\":/c\ \"run_start_month\": ${run_start_month}," remap_canesm.json
+sed -i "/\"nemo_freq_months\":/c\ \"nemo_freq_months\": ${months}," remap_canesm.json
 if [[ ! -z "${dada_year_offset}" ]] && [[ ! -z "${dada_loop_year}" ]] ; then
-  sed -i "\"iaf_year_offset\":/c\  \"iaf_year_offset\": \"${dada_year_offset}\",/" remap_canesm.json
-  sed -i "\"iaf_loop_year\":/c\  \"iaf_loop_year\": \"${dada_loop_year}\",/" remap_canesm.json
-sed -i "\"mor\":/c\  \"mor\": \"${dada_forcing_freq}\",/" remap_canesm.json
+  sed -i "/\"iaf_year_offset\":/c\ \"iaf_year_offset\": \"${dada_year_offset}\"," remap_canesm.json
+  sed -i "/\"iaf_loop_year\":/c\ \"iaf_loop_year\": \"${dada_loop_year}\"," remap_canesm.json
+fi
+sed -i "/\"mor\":/c\ \"mor\": \"${dada_forcing_freq}\"," remap_canesm.json
 
 # determine loop parameters/iteration info
 python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -t -1 
