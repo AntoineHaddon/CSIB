@@ -1,0 +1,19 @@
+{
+    "runid": ["RUNID1", "RUNID2"],
+    "runpath": ["PATH1", "PATH2"],
+    "meshfile": null,
+    "all": true,
+    "outdir": "./",
+    "redo": false,
+    "ice": 0,
+    "phys": 0,
+    "trans": 0,
+    "depths": "0,250,1000,all",
+    "xlim": [0, 1000],
+    "year0": null,
+    "regions": "labsea,arctic,canpac,canatl",
+    "plot": true,
+    "link": true,
+    "source": ".",
+    "version": null
+}

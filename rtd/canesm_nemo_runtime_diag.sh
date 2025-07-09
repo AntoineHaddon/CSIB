@@ -68,8 +68,10 @@
     rtdrst=$(expr $run_start_time + 0)
     rtdYR=$(( rtdyear - rtdrst ))
 
-    # run script
-    python3 ${CCRNSRC}/CanESM/CanNEMO/rtd/cantods_rtd.py -r $runid -p  ${RUNPATH%%${runid_env}*} -o ${RUNPATH}/RTD -x [${rtdYR},${rtdYR}] -y ${run_start_time} -P True -s ${CCRNSRC}/CanESM/CanNEMO/rtd
+    # copy default json configuration
+    cp ${CCRNSRC}/CanESM/CanNEMO/rtd/cantods_rtd.json .
+    # run RTD, overwriting defaults
+    python3 ${CCRNSRC}/CanESM/CanNEMO/rtd/cantods_rtd.py -r $runid -p ${RUNPATH%%${runid_env}*} -o ${RUNPATH}/RTD -x [${rtdYR},${rtdYR}] -y ${run_start_time} -s ${CCRNSRC}/CanESM/CanNEMO/rtd
 
     # revert to original environment
     source deactivate
