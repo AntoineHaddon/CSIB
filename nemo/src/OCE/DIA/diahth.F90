@@ -134,9 +134,9 @@ CONTAINS
       IF( l_hth ) THEN
          !
          ! initialization
-         IF( iom_use( 'tinv'   ) )   ztinv  (:,:) = 0._wp  
-         IF( iom_use( 'depti'  ) )   zdepinv(:,:) = 0._wp  
-         IF( iom_use( 'mlddzt' ) )   zmaxdzT(:,:) = 0._wp  
+         ztinv  (:,:) = 0._wp  
+         zdepinv(:,:) = 0._wp  
+         zmaxdzT(:,:) = 0._wp  
          IF( iom_use( 'mlddzt' ) .OR. iom_use( 'mld_dt02' ) .OR. iom_use( 'topthdep' )   &
             &                    .OR. iom_use( 'mldr10_3' ) .OR. iom_use( 'pycndep'  ) ) THEN
             DO_2D( 1, 1, 1, 1 )
