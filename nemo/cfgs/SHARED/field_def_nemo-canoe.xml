@@ -77,8 +77,6 @@
        <field id="pCO2"        long_name="pCO2"                                   unit="uatm"                grid_ref="grid_T_2D" />
        <field id="pO2"         long_name="pO2"                                    unit="atm"                 grid_ref="grid_T_2D" />
 
-       <field id="surf_chla"   long_name="surface chl-a external file"            unit="mg Chla/m3"          grid_ref="grid_T_2D" />
-       
        <!-- CanOE diagnostics -->
        <!-- Primary Production -->       
        <field id="PPPHY"       long_name="Primary production of nanophyto   "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
