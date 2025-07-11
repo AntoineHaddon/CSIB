@@ -132,7 +132,7 @@ CONTAINS
           iom_use( 'masstot' ) .OR. iom_use( 'temptot' )  .OR. iom_use( 'saltot' )  ) THEN
          !
          ztsn(:,:,:,jp_tem) = ts(:,:,:,jp_tem,Kmm)                    ! thermosteric ssh
-         ztsn(:,:,:,jp_sal) = ts(:,:,:,jp_tem,Kmm)
+         ztsn(:,:,:,jp_sal) = ts(:,:,:,jp_tem,Kmm) ! TODO: verify the CMIP7 convention for thermosteric ssh
          ALLOCATE( zgdept(jpi,jpj,jpk) )
          DO jk = 1, jpk
             zgdept(:,:,jk) = gdept(:,:,jk,Kmm)
