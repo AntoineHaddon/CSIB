@@ -6,14 +6,10 @@ set -e
 is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
 access domain_cfg.nc $nemo_coordinates
 
-# activate correct Python environment
-source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
-
-# copy remapping JSON file and overwrite defaults
+# copy remapping JSON file
 cp ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.json remap_canesm.json
 
 # overwrite default JSON file values
-sed -i "/\"years\":/c\ \"years\": [$(($NEMO_CHUNK_START_YEAR - 1)), $(($NEMO_CHUNK_START_YEAR +1))]," remap_canesm.json
 sed -i "/\"parent_path\":/c\ \"parent_path\": \"${dada_parent_path}\"," remap_canesm.json
 sed -i "/\"parent_name\":/c\ \"parent_name\": \"${dada_parent_name}\"," remap_canesm.json
 sed -i "/\"parent_ensemble\":/c\ \"parent_ensemble\": \"${dada_parent_ensemble}\"," remap_canesm.json
@@ -29,10 +25,16 @@ if [[ ! -z "${dada_year_offset}" ]] && [[ ! -z "${dada_loop_year}" ]] ; then
 fi
 sed -i "/\"mor\":/c\ \"mor\": \"${dada_forcing_freq}\"," remap_canesm.json
 
+# activate correct Python environment
+source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
+
 # determine loop parameters/iteration info
 python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -t -1 
 # Source the file with this info
 . nemo_counter_info.cfg
+
+# overwrite model years
+sed -i "/\"years\":/c\ \"years\": [$(($NEMO_CHUNK_START_YEAR - 1)), $(($NEMO_CHUNK_START_YEAR +1))]," remap_canesm.json
 
 # initial conditions
 if [[ $ctds_dnscl != 0 ]] && [[ $NEMO_CHUNK_START_DATE == $run_start_date ]] ; then
