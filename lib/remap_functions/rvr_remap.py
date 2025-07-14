@@ -20,7 +20,7 @@ import xarray as xr
 
 from remap_functions.remap_utils import cellAreas, cleanTmp, matchFileYear, parseArgYears, selYear, subproc
 
-def rvr_remap(args: Namespace):
+def rvr_remap(args: Namespace) -> None:
     """
     (Very) simple river remapping (simply scales one file to match another).
     WARNING: THIS IS A VERY CRUDE APPROXIMATION!!!

@@ -17,7 +17,7 @@ import xarray as xr
 # utilities for remapping
 from remap_functions.remap_utils import addCoords, changeCoords, checkMeshFile, cleanTmp, fillMiss2, getZ, intZ, matchFileYear, remap, selBox, selYear, subproc
 
-def ic_remap(args: Namespace):
+def ic_remap(args: Namespace) -> None:
     """
     Remap initial condition for cold start.
 
@@ -93,7 +93,7 @@ def ic_remap(args: Namespace):
     # # remove intermediate files
     cleanTmp(f"*.tmp.*nc*")
 
-def rs_remap(args: Namespace):
+def rs_remap(args: Namespace) -> None:
     """
     Remap restart files for hot start.
 

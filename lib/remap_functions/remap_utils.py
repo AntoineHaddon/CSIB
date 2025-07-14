@@ -14,6 +14,7 @@ import re
 import shlex
 import subprocess
 import sys
+from typing import List, Optional, Tuple, Union
 import xarray as xr
 
 #####################
@@ -114,7 +115,7 @@ def parseArgYears(args: Namespace) -> List[int]:
         years=np.array(args.years)
     return years
 
-def matchFileYear(year: int, pathPattern: str, file0="": str) -> Tuple[Optional[List[str]], Optional[str], bool]:
+def matchFileYear(year: int, pathPattern: str, file0: Optional[str] = "") -> Tuple[Optional[List[str]], Optional[str], bool]:
     """
     Match the desired year to the file.
     
@@ -275,7 +276,7 @@ def cellAreas(meshFile: str) -> np.ndarray:
 
     return gridArea
 
-def splitCMD(cmd: str): List[str]:
+def splitCMD(cmd: str) -> List[str]:
     """
     Split a command, preserving values in quotations.
 
@@ -331,7 +332,7 @@ def subproc(cmd: Union[str, List[str]]) -> bytes:
 
     return sbpr.stderr
 
-def changeCoords(inFile: str, outFile: str) None:
+def changeCoords(inFile: str, outFile: str) -> None:
     """
     Use ncatted to change coordinate name and ensure CDO-compliant.
 

@@ -15,6 +15,7 @@ import os
 import pandas as pd
 import subprocess
 import time
+from typing import Dict, List, Optional, Tuple, Union
 import warnings
 import xarray as xr
 
@@ -386,7 +387,7 @@ def cantodsIce(vars: Dict[str, Dict[str, np.ndarray]], siconc: np.ndarray, sithi
 
     return vars
 
-def rtdNetCDF(runid: str, timeseries: Dict[str, np.ndarray], var: str, args: argparse.Namespace) -> str:
+def rtdNetCDF(runid: str, timeseries: Dict[str, np.ndarray], var: str, args: Namespace) -> str:
     """
     Write/append data to the "RTD" netCDF file
 

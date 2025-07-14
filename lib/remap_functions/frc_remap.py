@@ -15,6 +15,7 @@ import glob
 import numpy as np
 import os
 import sys
+from typing import Tuple
 import xarray as xr
 
 # utilities for remapping
@@ -101,7 +102,7 @@ def frc_slice(args: Namespace) -> Tuple[int, int]:
                 fcount+=1
     return fcount,fexpect
 
-def sos_remap(args: Namespace):
+def sos_remap(args: Namespace) -> None:
     """
     Remap surface salinity for sssr.
 

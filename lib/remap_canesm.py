@@ -34,8 +34,9 @@ import time
 
 # import specific remapping functions
 from remap_functions.bdy_remap import bdy_remap, bdy_slc
-from remap_functions.ic_remap import ic_remap,rs_remap
 from remap_functions.frc_remap import frc_slice, sos_remap
+from remap_functions.ic_remap import ic_remap,rs_remap
+from remap_functions.remap_utils import calc_nemo_chunk_dates
 from remap_functions.rvr_remap import rvr_remap
 
 # argument parser to get type of remapping to perform and JSON file

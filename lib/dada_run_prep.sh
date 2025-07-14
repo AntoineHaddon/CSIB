@@ -96,7 +96,7 @@ fi
 if [[ $nemo_ln_rnf == "on" ]] && [[ $runmode != *"CanTODS"* ]]; then
   if [[ -z "${nemo_river_remap}" ]] ; then
     # don't remap/rescale rivers; simply copy
-    python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -t 3 > rvr_status
+    python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -t 3 > rvr_status
   else
     # remap/rescale rivers; need to get files for that
     access nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc $nemo_river_remap
