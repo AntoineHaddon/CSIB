@@ -26,7 +26,7 @@ fi
 sed -i "/\"mor\":/c\ \"mor\": \"${dada_forcing_freq}\"," remap_canesm.json
 
 # activate correct Python environment
-source activate /home/scrd102/cccma_conda/envs/py3_analysis_v2
+eval ${dada_env_setup_command}
 
 # determine loop parameters/iteration info
 python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -t -1 
