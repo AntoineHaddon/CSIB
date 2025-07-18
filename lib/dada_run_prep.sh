@@ -101,12 +101,13 @@ if [[ $nemo_ln_rnf == "on" ]] && [[ $runmode != *"CanTODS"* ]]; then
     python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -t 3 > rvr_status
   else
     # remap/rescale rivers; need to get files for that
-    access nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc $nemo_river_remap
+    remapFile=nemo_river_remap_$(printf %04d $NEMO_CHUNK_START_YEAR)01-$(printf %04d $NEMO_CHUNK_END_YEAR)12.nc
+    access $remapFile $nemo_river_remap
     access dpg.nc $dada_parent_grid || ln -s $dada_parent_grid dpg.nc # get parent grid for remapping
     # rescale
-    python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -t 3 -v nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc -g dpg.nc > rvr_status
+    python3 ${CANESM_SRC_ROOT}/CanNEMO/lib/remap_canesm.py -o rvr_${dada_outfield} -y $NEMO_CHUNK_START_YEAR -y $NEMO_CHUNK_END_YEAR -t 3 -v $remapFile -g dpg.nc > rvr_status
     # remove temporary files
-    rm -f nemo_river_remap_${NEMO_CHUNK_START_YEAR}-${NEMO_CHUNK_END_YEAR}.nc
+    rm -f $remapFile
     rm -f dpg.nc
   fi
   if [ -z "$(ls ./rvr_${dada_outfield}).nc" ] ; then

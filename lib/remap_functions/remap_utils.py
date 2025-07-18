@@ -171,7 +171,7 @@ def matchFileYear(year: int, pathPattern: str, file0: Optional[str] = "") -> Tup
             fyears=[]
             for fle in flist:
                 # get dates from file name
-                fyears.append([int(yy[0:-2]) for yy in re.search("([0-9]{6}\-[0-9]{6}", fle)[0].split('-')])
+                fyears.append([int(yy[0:-2]) for yy in re.search("([0-9]{6}\-[0-9]{6})", fle)[0].split('-')])
             print(fyears)
             print(f"  The closest year appears to be {fyears[np.argmin(np.array(fyears)-year)]}")
             print(f"  Range: {np.nanmin(fyears)} to {np.nanmax(fyears)}")
