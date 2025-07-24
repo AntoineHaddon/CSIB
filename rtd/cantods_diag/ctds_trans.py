@@ -117,7 +117,7 @@ def calcTransports(args):
                                 if proceed and np.abs(ds['nav_lat'].isel(x=ix,y=iy).values-lat) < 0.2:
                                     if mm['vmask'].isel(nav_lev=kk[0],time_counter=0,x=ix,y=iy).values==1:
                                         print(f"\r  {f'Calculating: {tpvar} {ii+1}/{len(iX)} (y={int(np.nanmean(years))})':<75}",end='',flush=True)
-                                        dprod=ds['vo'].isel(x=ix,y=iy,depthv=kk)*ds['e3v'].isel(x=ix,y=iy,depthv=kk)*mm['e2u'].isel(x=ix,y=iy)*(mm['vmask'].isel(time_counter=0,x=ix,y=iy,nav_lev=kk).values)
+                                        dprod=ds['vo'].isel(x=ix,y=iy,depthv=kk)*ds['e3v'].isel(x=ix,y=iy,depthv=kk)*mm['e1v'].isel(x=ix,y=iy)*(mm['vmask'].isel(time_counter=0,x=ix,y=iy,nav_lev=kk).values)
                                         ldata[:]+=dprod.sum(dim='depthv').values # volumetric flow in m3/s
                             # convert to Sv and restrict in time
                             ldata=ldata[xlim]*1e-6
