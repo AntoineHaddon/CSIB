@@ -250,17 +250,8 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 [[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
-# compile only if doesn't exist or clean_compile
-if ls ${storage_loc}/$xios_exec 1> /dev/null 2>&1 && [[ "$clean_compile" -ne 1 ]]; then
-echo 'Skip make_xios...'
-else 
-    if [[ $xios_comp -eq 1 ]]; then  
-        echo 'make_xios '"${ARGS[@]}"
-        ./make_xios "${ARGS[@]}"
-    else
-        echo 'No need to compile XIOS'
-    fi
-fi
+echo 'make_xios '"${ARGS[@]}"
+./make_xios "${ARGS[@]}"
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
