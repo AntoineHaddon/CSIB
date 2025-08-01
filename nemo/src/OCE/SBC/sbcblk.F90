@@ -1199,13 +1199,8 @@ CONTAINS
 
             ! Latent Heat
             zztmp1 = zzblk * rLsub * Ce_ice(ji,jj)
-            qla_ice(ji,jj,jl) = MAX( zztmp1 * (zsq - q_zu_i(ji,jj)) , 0._wp )   ! #LB: only sublimation (and not condensation) ???
-            IF(qla_ice(ji,jj,jl)>0._wp) dqla_ice(ji,jj,jl) = zztmp1*dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
-            !                                                                                       !#LB: dq_sat_dt_ice() in "sbc_phy.F90"
-            !#LB: without this unjustified "condensation sensure":
-            !qla_ice( ji,jj,jl) = zztmp1 * (zsq - q_zu_i(ji,jj))
-            !dqla_ice(ji,jj,jl) = zztmp1 * dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
-
+            qla_ice( ji,jj,jl) = zztmp1 * (zsq - q_zu_i(ji,jj))
+            dqla_ice(ji,jj,jl) = zztmp1 * dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
 
             ! ----------------------------!
             !     III    Total FLUXES     !
