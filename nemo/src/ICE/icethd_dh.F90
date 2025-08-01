@@ -190,6 +190,38 @@ CONTAINS
          ENDIF
       END DO
 
+      ! Snow sublimation and deposition
+      !--------------------------------
+      ! evap_ice_1d is >0 (upwards) for sublimation and <0 (downward) for deposition, heat goes and come to/from the atmosphere, therefore snow sublimates
+      !    comment: not counted in mass/heat exchange in iceupdate.F90 since this is an exchange with atm. (not ocean)
+      zdeltah   (1:npti) = 0._wp ! total snow thickness that sublimates, < 0, or condensate, > 0 [kg m-2]
+      zevap_rema(1:npti) = 0._wp ! remaining ice that sublimates, < 0  [kg m-2] (irrelevant for condensation)
+      DO ji = 1, npti
+         zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rDt_ice, - h_s_1d(ji) )   ! thickness of snow that sublimates, < 0,  or deposits, > 0 [m]
+         zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice + zdeltah(ji) * rhos               ! remaining evap [kg m-2] (used for ice sublimation later on), will be zero in the base of sublimation
+      END DO
+
+      DO jk = 0, nlay_s ! iterate on snow layers (including the 0 layer)
+         DO ji = 1, npti ! iterate on horizontal cells
+            IF ( zdeltah(ji) /= 0._wp ) THEN ! if sublimation or deposition left
+               zdum = MAX( -zh_s(ji,jk), zdeltah(ji) ) ! snow layer thickness that sublimates, < 0, or deposit >0 [m]
+
+               ! update thickness
+               h_s_1d(ji)    = MAX( 0._wp , h_s_1d(ji)    + zdum ) ! remove (sublimation) or add (deposition) thickness to total [m]
+               zh_s  (ji,jk) = MAX( 0._wp , zh_s  (ji,jk) + zdum ) ! remove (sublimation) or add (deposition) thickness to the layer [m]
+               IF( zdum > 0._wp .and. sprecip_1d(ji) == 0._wp ) THEN ! if deposition and no precipitation
+                  ze_s(ji,jk) = MAX( 0._wp, - qprec_ice_1d(ji) ) ! Specify the specific enthalpy to the layer, >0 [J m-3]
+               END IF
+               !
+               hfx_sub_1d    (ji) = hfx_sub_1d    (ji) + ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! Heat flux of snw that sublimates, < 0 or deposits > 0 [W m-2]
+               wfx_snw_sub_1d(ji) = wfx_snw_sub_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! Mass flux by sublimation, > 0, or deposition, < 0 [kg m-2]
+
+               ! update sublimation thickness left, < 0, but = 0 in case of deposition and only the 0 layer of snow is affected
+               zdeltah(ji) = MIN( zdeltah(ji) - zdum, 0._wp ) !
+            END IF
+         END DO
+      END DO
+
       ! Snow melting
       ! ------------
       ! If heat still available (zq_top > 0)
@@ -198,9 +230,9 @@ CONTAINS
          DO ji = 1, npti
             IF( zh_s(ji,jk) > 0._wp .AND. zq_top(ji) > 0._wp ) THEN
                !
-               rswitch = MAX( 0._wp , SIGN( 1._wp , ze_s(ji,jk) - epsi20 ) )
-               zdum    = - rswitch * zq_top(ji) / MAX( ze_s(ji,jk), epsi20 )   ! thickness change
-               zdum    = MAX( zdum , - zh_s(ji,jk) )                           ! bound melting
+               rswitch = MAX( 0._wp , SIGN( 1._wp , ze_s(ji,jk) - epsi20 ) )   ! switch for the presence of ice (1) or not (0)
+               zdum    = - rswitch * zq_top(ji) / MAX( ze_s(ji,jk), epsi20 )   ! thickness change <0
+               zdum    = MAX( zdum , - zh_s(ji,jk) )                           ! bound melting <0
 
                hfx_snw_1d    (ji) = hfx_snw_1d    (ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice   ! heat used to melt snow(W.m-2, >0)
                wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice   ! snow melting only = water into the ocean
@@ -213,34 +245,6 @@ CONTAINS
 !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
                !
             ENDIF
-         END DO
-      END DO
-
-      ! Snow sublimation
-      !-----------------
-      ! qla_ice is always >=0 (upwards), heat goes to the atmosphere, therefore snow sublimates
-      !    comment: not counted in mass/heat exchange in iceupdate.F90 since this is an exchange with atm. (not ocean)
-      zdeltah   (1:npti) = 0._wp ! total snow thickness that sublimates, < 0
-      zevap_rema(1:npti) = 0._wp
-      DO ji = 1, npti
-         zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rDt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0
-         zevap_rema(ji) = evap_ice_1d(ji) * rDt_ice + zdeltah(ji) * rhos               ! remaining evap in kg.m-2 (used for ice sublimation later on)
-      END DO
-
-      DO jk = 0, nlay_s
-         DO ji = 1, npti
-            zdum = MAX( -zh_s(ji,jk), zdeltah(ji) ) ! snow layer thickness that sublimates, < 0
-            !
-            hfx_sub_1d    (ji) = hfx_sub_1d    (ji) + ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! Heat flux of snw that sublimates [W.m-2], < 0
-            wfx_snw_sub_1d(ji) = wfx_snw_sub_1d(ji) - rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! Mass flux by sublimation
-
-            ! update thickness
-            h_s_1d(ji)    = MAX( 0._wp , h_s_1d(ji)    + zdum )
-            zh_s  (ji,jk) = MAX( 0._wp , zh_s  (ji,jk) + zdum )
-!!$            IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
-
-            ! update sublimation left
-            zdeltah(ji) = MIN( zdeltah(ji) - zdum, 0._wp )
          END DO
       END DO
 
