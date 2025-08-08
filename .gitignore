@@ -21,4 +21,5 @@ rtd/build/*
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
 !nemo/TOOLS/REBUILD_NEMO/src/build/compile.*
 
-nemo/ARCH/arch-imsi.fcm
+nemo/arch/arch-nemo-imsi.fcm
+nemo/xios-2.6/arch/arch-xios-imsi.fcm
