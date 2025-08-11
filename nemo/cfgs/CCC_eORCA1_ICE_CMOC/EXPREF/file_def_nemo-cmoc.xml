@@ -39,7 +39,6 @@
 
           <!-- PAR that we want to use in CanOE or CMOC production (1 or 3 bands) -->
 
-          <field field_ref="tmask"    name="tmask"     level="0" />
           <field field_ref="closea"   name="closea"    level="0" />
                                           
          <!-- 2D fields here -->

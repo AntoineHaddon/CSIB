@@ -87,7 +87,7 @@
   yearmo=`echo $year $keep_old_rtdiag_number | awk '{printf "%04d", $1 - $2}'`
 
   # current year rtd file names
-  year0=$(pad_integer $start_rtdiag 4)
+  year0=$(pad_integer $year_rtdiag_start 4)
   physical_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_physical_rtd.nc"
   ice_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_ice_rtd.nc"
   carbon_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_carbon_rtd.nc"
@@ -104,7 +104,9 @@
 
 # Access old RTD files from last year. Note, if these files exist, the RTD programs
 # below will automatically append to them.
-  if [ $yr1 -gt ${start_rtdiag} ] ; then
+  yr1_int=$(strip_leading_zeros $yr1)
+  year_rtdiag_start_int=$(strip_leading_zeros $year_rtdiag_start)
+  if (( yr1 > year_rtdiag_start_int )); then
     access nemo_physical_rtd_old.nc $physical_rtdfile1 nocp=off ; cp nemo_physical_rtd_old.nc nemo_physical_rtd.nc ; chmod +w nemo_physical_rtd.nc
     access nemo_ice_rtd_old.nc $ice_rtdfile1 nocp=off ; cp nemo_ice_rtd_old.nc nemo_ice_rtd.nc ; chmod +w nemo_ice_rtd.nc
     if [ "$nemo_carbon" = "on" ] ; then
@@ -118,8 +120,8 @@
   nemo_physical_rtd_exe=nemo_physical_rtd.exe   
   nemo_ice_rtd_exe=nemo_ice_rtd.exe            
   nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe 
-  [[ $nemo_config == *"CMOC" ]] && nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe
-  [[ $nemo_config == *"CANOE" ]] && nemo_carbon_rtd_exe=nemo_carbon-canoe_rtd.exe
+  [[ $CanNEMO_CONFIG == *"CMOC" ]] && nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe
+  [[ $CanNEMO_CONFIG == *"CANOE" ]] && nemo_carbon_rtd_exe=nemo_carbon-canoe_rtd.exe
 
   cp ${EXEC_STORAGE_DIR}/${nemo_physical_rtd_exe} .
 

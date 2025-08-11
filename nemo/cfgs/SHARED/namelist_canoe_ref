@@ -12,7 +12,6 @@
 !!              &namcanrem       !   parameters for remineralization
 !!              &namcanoenfx     !   parameters for N2 fixation
 !!              &namcancal       !   parameters for CaCO3 dissolution
-!!              &namcansed       !   parameters for external nutrient inputs
 !!              &namcanoenegtr   !   switch on/off the negative tracer check
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanws     !   particle sinking parameters
@@ -57,11 +56,14 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanmort     !   parameters for phytoplankton sinks
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   mprat      =  0.05     ! phytoplankton mortality rate
-   mprat2     =  0.1      ! Large zooplankton mortality rate
-   mpratm     =  0.1      ! Diatoms mortality rate
-   mpqua      =  6.E-2    ! quadratic mortality of phytoplankton
-   mpquad     =  6.E-2    ! maximum quadratic mortality of diatoms
+   mpratps    =  0.05     ! small phytoplankton mortality rate
+   mpratzs    =  0.05     ! microzooplankton mortality rate
+   mpratpl    =  0.1      ! large phytoplankton mortality rate
+   mpratzl    =  0.1      ! mesozooplankton mortality rate
+   mpquaps    =  6.E-2    ! quadratic mortality of small phytoplankton
+   mpquazs    =  6.E-2    ! quadratic mortality of microzooplankton
+   mpquapl    =  6.E-2    ! quadratic mortality of large phytoplankton
+   mpquazl    =  6.E-2    ! quadratic mortality of mesozooplankton
    chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
    picfrx     =  0.05     ! CaCO3 production rate (as fraction of POC)
    xminp      =  0.01     ! minimum phytoplankton concentration for linear mortality
@@ -112,26 +114,6 @@
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    kdca       = 7.4E-3    ! calcite dissolution rate constant in d^-1 (2700 m e-folding scale for w=20 m/d)
    nca        = 1.        ! order of dissolution reaction (not used)
-/
-!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcansed     !  parameters for external nutrient inputs
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-!              !  file name        ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
-!              !                   !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_dust     = 'dust.orca'       ,     -1            , 'dust'     ,  .true.      , .true. ,   'yearly'  , ''       , ''
-   sn_riverdic = 'river.orca'      ,    -12            , 'riverdic' ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_riverdoc = 'river.orca'      ,    -12            , 'riverdoc' ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_ndepo    = 'ndeposition.orca',    -12            , 'ndep'     ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_ironsed  = 'bathy.orca'      ,    -12            , 'bathy'    ,  .false.     , .true. ,   'yearly'  , ''       , ''
-!
-   cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_dust     =  .true.   ! boolean for dust input from the atmosphere
-   ln_river    =  .false.  ! boolean for river input of nutrients
-   ln_ndepo    =  .false.  ! boolean for atmospheric deposition of N
-   ln_ironsed  =  .true.   ! boolean for Fe input from sediments
-   sedfeinput  =  1000.    ! Coastal release of Iron
-   dustsolub   =  0.01     ! Solubility of the dust
-   wdust       =  2.0      ! Dust sinking speed
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanoenegtr   !   switch on/off the negative tracer check
