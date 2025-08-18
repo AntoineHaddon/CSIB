@@ -94,7 +94,6 @@
           <field field_ref="CFC11"   name="CFC11"   level="0" />
           <field field_ref="CFC12"   name="CFC12"   level="0" />
           <field field_ref="SF6"     name="SF6"     level="0" />
-          <field field_ref="RC14"    name="RC14"    level="0" />
         </file>
 
       </file_group>
