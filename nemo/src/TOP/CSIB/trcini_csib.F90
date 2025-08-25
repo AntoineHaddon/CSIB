@@ -17,7 +17,7 @@ MODULE trcini_csib
    USE trcsms_csib
 
    USE dom_oce, ONLY: glamt, gphit               ! latitude/longitude for funky initiation
-   USE ice , ONLY: a_i, jpl
+   USE ice , ONLY: a_i, jpl, t_i, nlay_i
    
    IMPLICIT NONE
    PRIVATE
@@ -38,7 +38,7 @@ CONTAINS
       !!
       !! ** Purpose :   initialization for CSIB model
       !!
-      !! ** Method  : - Read the namcfc namelist and check the parameter values
+      !! ** Method  : - Read the csib namelist and check the parameter values
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   Kmm         ! time level indices
       INTEGER  ::   ji, jj, jl,jn          ! dummy loop indices
@@ -86,17 +86,25 @@ CONTAINS
       lagup(:,:,:) = 0._wp
 
       flush_dia(:,:,:) = 0._wp
+      slough_dia(:,:,:) = 0._wp
       lamloss_dia(:,:,:) = 0._wp
+      t_i_b(:,:,:) = 0._wp
+      dt_i(:,:,:) = 0._wp
+      meltoff_dia(:,:,:) = 0._wp
       bogup_dia(:,:,:) = 0._wp
       lagup_dia(:,:,:) = 0._wp
+      nxsicedia(:,:,:) = 0._wp
+      cxsicedia(:,:,:) = 0._wp
       
       flush_no3(:,:,:) = 0._wp
+      slough_no3(:,:,:) = 0._wp
       lamloss_no3(:,:,:) = 0._wp
       moldif_no3(:,:,:) = 0._wp
       lagup_no3(:,:,:) = 0._wp
       bogup_no3(:,:,:) = 0._wp
       
       flush_nh4(:,:,:) = 0._wp
+      slough_nh4(:,:,:) = 0._wp
       lamloss_nh4(:,:,:) = 0._wp
       moldif_nh4(:,:,:) = 0._wp
       lagup_nh4(:,:,:) = 0._wp
@@ -113,7 +121,15 @@ CONTAINS
       mortquad_dia(:,:,:) = 0._wp
       remin_dia(:,:,:) = 0._wp
       nitri(:,:,:) = 0._wp
-
+      
+      ! init sea ice temp at previous time step with current temp: used for sea ice temp change, init at 0 can cause large derivative
+       DO jj = 1, jpj
+         DO ji = 1, jpi
+            DO jl = 1, jpl 
+               t_i_b(ji,jj,jl) = SUM(t_i(ji,jj,:,jl)) / nlay_i  
+            ENDDO
+         ENDDO
+      ENDDO
 
    END SUBROUTINE trc_ini_csib
 

@@ -42,7 +42,7 @@ CONTAINS
       INTEGER ::   numonpbcsib      = -1          !! Logical unit for the above ref/cfg namelists output
 
       !!----------------------------------------------------------------------
-      NAMELIST/namicedia/ z_ia, qnidiamin, qnidiamax, alphaidia, pcrefidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2
+      NAMELIST/namicedia/ z_ia, qnidiamin, qnidiamax, qchidiaref, alrefidia, pcrefidia, betaidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
       NAMELIST/namicenit/ f_rm, r_ni, c_di, c_nu
       NAMELIST/namicedic/ sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
       
@@ -96,8 +96,10 @@ CONTAINS
          WRITE(numout,*) ' z_ia =',z_ia 
          WRITE(numout,*) ' qnidiamin =',qnidiamin 
          WRITE(numout,*) ' qnidiamax =',qnidiamax 
-         WRITE(numout,*) ' alphaidia =',alphaidia
+         WRITE(numout,*) ' qchidiaref =',qchidiaref 
+         WRITE(numout,*) ' alrefidia =',alrefidia
          WRITE(numout,*) ' pcrefidia =',pcrefidia
+         WRITE(numout,*) ' betaidia =',betaidia
          WRITE(numout,*) ' vnref =',vnref
          WRITE(numout,*) ' knh4 =',knh4
          WRITE(numout,*) ' kno3 =',kno3
@@ -108,6 +110,11 @@ CONTAINS
          WRITE(numout,*) ' r_m1 =',r_m1
          WRITE(numout,*) ' r_m2 =',r_m2
          WRITE(numout,*) ' f_p2 =',f_p2
+         WRITE(numout,*) ' f_flsh =',f_flsh
+         WRITE(numout,*) ' f_slgh =',f_slgh
+         WRITE(numout,*) ' dt_mo =',dt_mo
+         WRITE(numout,*) ' t_mo =',t_mo
+         WRITE(numout,*) ' d_mo =',d_mo
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Ice Nitrogen'
          WRITE(numout,*) ' f_rm =',f_rm
@@ -126,12 +133,16 @@ CONTAINS
       ENDIF
 
       ! convert time unit from /day to /sec
-      alphaidia = alphaidia / 86400._wp 
+      alrefidia = alrefidia / 86400._wp 
       pcrefidia = pcrefidia / 86400._wp
+      betaidia = betaidia / 86400._wp
       vnref = vnref / 86400._wp
       r_m1 = r_m1 / 86400._wp
       r_m2 = r_m2 / 86400._wp
       r_ni = r_ni  / 86400._wp
+      dt_mo = dt_mo / 86400._wp
+      ! convert temperature units
+      t_mo = t_mo + 273.15_wp
 
       ! output namelists
       IF(lwm) CALL ctl_opn( numonpbcsib     , 'output.namelist.csib' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )

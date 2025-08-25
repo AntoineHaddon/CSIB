@@ -65,11 +65,17 @@ CONTAINS
       CALL iom_put( 'da_lag_cat'       , da_lag_cat(:,:,:) )
 
       CALL iom_put( 'flush_dia'        , flush_dia(:,:,:) )
+      CALL iom_put( 'slough_dia'       , slough_dia(:,:,:) )
       CALL iom_put( 'lamloss_dia'      , lamloss_dia(:,:,:) )
+      CALL iom_put( 'meltoff_dia'      , meltoff_dia(:,:,:) )
+      CALL iom_put( 'dt_i'             , dt_i(:,:,:) )
       CALL iom_put( 'bogup_dia'        , bogup_dia(:,:,:) )
       CALL iom_put( 'lagup_dia'        , lagup_dia(:,:,:) )
+      CALL iom_put( 'nxsicedia'        , nxsicedia(:,:,:) )
+      CALL iom_put( 'cxsicedia'        , cxsicedia(:,:,:) )
       
       CALL iom_put( 'flush_no3'        , flush_no3(:,:,:) )
+      CALL iom_put( 'slough_no3'       , slough_no3(:,:,:) )
       CALL iom_put( 'lamloss_no3'      , lamloss_no3(:,:,:) )
       CALL iom_put( 'lagup_no3'        , lagup_no3(:,:,:) )
       CALL iom_put( 'bogup_no3'        , bogup_no3(:,:,:) )
@@ -77,6 +83,7 @@ CONTAINS
       CALL iom_put( 'fric_vel'         , fric_vel(:,:) )
 
       CALL iom_put( 'flush_nh4'        , flush_nh4(:,:,:) )
+      CALL iom_put( 'slough_nh4'       , slough_nh4(:,:,:) )
       CALL iom_put( 'lamloss_nh4'      , lamloss_nh4(:,:,:) )
       CALL iom_put( 'moldif_nh4'       , moldif_nh4(:,:,:) )
       CALL iom_put( 'lagup_nh4'        , lagup_nh4(:,:,:) )
