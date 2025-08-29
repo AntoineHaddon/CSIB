@@ -339,7 +339,7 @@ if [[ $config != "AMIP" ]]; then
   fi
 
   if [[ $nemo_cfc == "on" ]] ; then
-      ln -s /home/krr000/site6/inputs/cfc.dat cfc.dat
+      acc_cp cfc.dat $nemo_data_cfc
       xios_files=( "${xios_files[@]}" field_def_nemo-innerttrc.xml )
   fi
 
