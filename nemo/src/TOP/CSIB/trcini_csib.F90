@@ -80,6 +80,7 @@ CONTAINS
       ! initialize ratios, fluxes and process rates
       qnidia(:,:,:) = 0._wp
       qchidia(:,:,:) = 0._wp
+      qnidiamax(:,:,:) = 0._wp
 
       flushrate(:,:,:) = 0._wp
       bogup(:,:,:) = 0._wp

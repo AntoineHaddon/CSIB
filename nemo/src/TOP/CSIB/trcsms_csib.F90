@@ -62,11 +62,12 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)     :: icetra            !  Ice tracer per ice area (4d: 2d horizontal * ice cat * ice tracers)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)     :: icetra_gca        !  Ice tracer grid cell average
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: icetragca_2d      !  Ice tracer grid cell average, 2d version for ice model
-
+   
    !! Biomass ratios (used to convert C fluxes to N or Chl fluxes)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: qnidia             !  Ice diatoms N/C 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: qchidia            !  Ice diatoms Chl/C
-
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)       :: qnidiamax          ! Maximum ice diatom N/C (mmolN mmolC-1)
+   
 
    !!
    !! Sources and sinks
@@ -117,7 +118,8 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer
    ! ice diatoms
    REAL(wp), PUBLIC, SAVE ::   qnidiamin            ! Mininum ice diatom N/C (mmolN mmolC-1)
-   REAL(wp), PUBLIC, SAVE ::   qnidiamax            ! Maximum ice diatom N/C (mmolN mmolC-1)
+   REAL(wp), PUBLIC, SAVE ::   qnmax_fct            ! Factor for Max ice diatom N/C as function of C:Chl (-)
+   REAL(wp), PUBLIC, SAVE ::   qnmax_pow            ! Power exponent for Max ice diatom N/C as function of C:Chl (-)
    REAL(wp), PUBLIC, SAVE ::   qchidiaref           ! Reference ice diatom Chl:C for uptake from ice growth (gChl gC-1)
    REAL(wp), PUBLIC, SAVE ::   ear=4498._wp         ! activation energy / R gas constant (deg K)
    REAL(wp), PUBLIC, SAVE ::   tempref=298.15_wp    ! Reference temperature for photosynthesis (deg K)
@@ -305,6 +307,7 @@ CONTAINS
       
       qnidia(:,:,:) = 0._wp
       qchidia(:,:,:) = 0._wp
+      qnidiamax(:,:,:) = 0._wp
 
       ! Compute friction velocity, for molecular diffusion at sea ice ocean interface
       CALL ice_friction_velocity
@@ -389,8 +392,10 @@ CONTAINS
                   
                ! Biogeochemical processes
                   
+                  ! Optimal C:N dependent on C:Chl
+                  qnidiamax(ji,jj,jl) = min(0.1509_wp, max(0.05_wp, qnmax_fct * qchidia(ji,jj,jl)**qnmax_pow ))
                   ! N limitation factor (for photosynthesis) (-)
-                  lim_nut(ji,jj,jl) = MIN( MAX(0._wp, (qnidia(ji,jj,jl) - qnidiamin) / (qnidiamax - qnidiamin) ) , 1._wp)
+                  lim_nut(ji,jj,jl) = MIN( MAX(0._wp, (qnidia(ji,jj,jl) - qnidiamin) / (qnidiamax(ji,jj,jl) - qnidiamin) ) , 1._wp)
 
                   ! Temperature factor (-)
                   ztemp = EXP(-ear*( 1._wp/(sst_m(ji,jj)+273.15_wp) - 1._wp/tempref) ) 
@@ -406,7 +411,7 @@ CONTAINS
                   phot_dia(ji,jj,jl) = pcrefidia * ztemp * lim_nut(ji,jj,jl) * lim_PAR(ji,jj,jl) * icetra(ji,jj,jl,jridiac)
                   
                   ! N uptake switch (-)
-                  znut = ( MIN( MAX(0._wp, (qnidiamax - qnidia(ji,jj,jl)) / (qnidiamax - qnidiamin) ), 1._wp) )**0.05_wp
+                  znut = ( MIN( MAX(0._wp, (qnidiamax(ji,jj,jl) - qnidia(ji,jj,jl)) / (qnidiamax(ji,jj,jl) - qnidiamin) ), 1._wp) )**0.05_wp
 
                   ! nh4 and no3 limitation factors (-)
                   zlim_nh4 = icetra(ji,jj,jl,jrinh4) / (icetra(ji,jj,jl,jrinh4) + knh4)
@@ -454,7 +459,7 @@ CONTAINS
 
 
                   ! Ice diatoms N biomass dynamics
-                  zphyn2c = MIN(qnidiamax, tr(ji,jj,1,jrdn,Kbb)*mmn / ( tr(ji,jj,1,jrdia,Kbb)*mmc +rtrn) ) ! for uptake from ice growth, to limit ice diatom N:C to qnidiamx 
+                  zphyn2c = MIN(qnidiamax(ji,jj,jl), tr(ji,jj,1,jrdn,Kbb)*mmn / ( tr(ji,jj,1,jrdia,Kbb)*mmc +rtrn) ) ! for uptake from ice growth, to limit ice diatom N:C to qnidiamx 
                   icetra(ji,jj,jl,jridian) = icetra(ji,jj,jl,jridian) + rn_Dt * (            &
                               &    - flush_dia(ji,jj,jl) * qnidia(ji,jj,jl)                  & ! loss from flushing 
                               &    - slough_dia(ji,jj,jl) * qnidia(ji,jj,jl)                 & ! loss from sloughing 
@@ -577,7 +582,7 @@ CONTAINS
                   ) /mmc ! convert to mmol
 
                ! Ocean surface large phytoplankton N biomass
-                  zphyn2c = MIN(qnidiamax, tr(ji,jj,1,jrdn,Kbb)*mmn / ( tr(ji,jj,1,jrdia,Kbb)*mmc +rtrn) ) ! for uptake from ice growth, to limit ice diatom N:C to qnidiamx 
+                  zphyn2c = MIN(qnidiamax(ji,jj,jl), tr(ji,jj,1,jrdn,Kbb)*mmn / ( tr(ji,jj,1,jrdia,Kbb)*mmc +rtrn) ) ! for uptake from ice growth, to limit ice diatom N:C to qnidiamx 
                   tr(ji,jj,1,jrdn,Krhs) = tr(ji,jj,1,jrdn,Krhs) + zscale * (              &
                   &        + f_p2 * flush_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia         & ! flushing of ice diatoms 
                   &        + f_p2 * slough_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia        & ! sloughing of ice diatoms 
@@ -718,7 +723,7 @@ CONTAINS
       ALLOCATE( &
       ! variables
          &     icetra(jpi,jpj,jpl,jp_csib) , icetra_gca (jpi,jpj,jpl,jp_csib) , icetragca_2d(jpij,jpl,jp_csib) , &
-         &     qnidia(jpi,jpj,jpl), qchidia(jpi,jpj,jpl),   &
+         &     qnidia(jpi,jpj,jpl), qchidia(jpi,jpj,jpl), qnidiamax(jpi,jpj,jpl),  &
       ! sources and sinks
          &     flushrate (jpi,jpj,jpl) , flush_dia  (jpi,jpj,jpl) , lamloss_dia (jpi,jpj,jpl) , & 
          &     slough_dia(jpi,jpj,jpl) , meltoff_dia(jpi,jpj,jpl) ,                             &
