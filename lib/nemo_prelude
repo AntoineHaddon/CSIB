@@ -326,6 +326,7 @@ if [[ $config != "AMIP" ]]; then
                domain_def_nemo.xml \
                field_def_nemo-ice.xml \
                field_def_nemo-oce.xml \
+               field_def_nemo-innerttrc.xml \
                file_def_nemo-ice.xml \
                file_def_nemo-oce.xml \
                grid_def_nemo.xml \
@@ -338,6 +339,12 @@ if [[ $config != "AMIP" ]]; then
   elif [[ $CanNEMO_CONFIG == *"PISCES" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
   fi
+
+  if [[ $nemo_cfc == "on" ]] ; then
+      acc_cp cfc.dat $nemo_data_cfc
+      xios_files=( "${xios_files[@]}" field_def_nemo-innerttrc.xml )
+  fi
+
 
 else
     echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
@@ -379,6 +386,16 @@ fi  # config != AMIP
   if [[ $nemo_ln_diaptr == "off" ]]; then
     sed -i '/diaptr/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-oce.xml
   fi 
+
+  # disabled the cfc file if nemo_cfc="off"
+  if [[ $nemo_config == *"CANOE" ]] && [[ $nemo_cfc == "off" ]]; then 
+    sed -i '/cfc_T/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-canoe.xml
+  fi 
+
+  if [[$nemo_config == *"CMOC"]] && [[ $nemo_cfc == "off" ]]; then
+    sed -i '/cfc_T/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-cmoc.xml
+  fi
+
   # =====================
   # Set Inherited params
   # =====================

@@ -1174,9 +1174,6 @@ that are available in the tidal-forcing implementation (see
   <field_group id="top_shared" grid_ref="grid_T_3D">
     <field id="xeps"           long_name="Broadband light attenuation"                     unit="-"                            />
     <field id="Heup"           long_name="Euphotic layer depth"                            unit="m"     grid_ref="grid_T_2D"   />
-    <!-- AGE : variables available with ln_age -->
-    <field id="Age"          long_name="Sea water age since surface contact"      unit="yr"        grid_ref="grid_T_3D"  />
-    <field id="Age_e3t"      long_name="Age * e3t"                                unit="yr * m"   grid_ref="grid_T_3D"    > Age * e3t </field >
   </field_group>
 
 

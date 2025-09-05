@@ -50,6 +50,9 @@
     <field id="K_CO2"        long_name="Global CO2 piston velocity"               unit="cm/h"     />
     <field id="C14Inv"       long_name="global Radiocarbon ocean inventory"       unit="10^26 atoms"   />
 
+    <!-- AGE : variables available with ln_age -->
+    <field id="Age"          long_name="Sea water age since surface contact"      unit="yr"        grid_ref="grid_T_3D"  />
+    <field id="Age_e3t"      long_name="Age * e3t"                                unit="yr * m"   grid_ref="grid_T_3D"    > Age * e3t </field >
 
   </field_group>
 
