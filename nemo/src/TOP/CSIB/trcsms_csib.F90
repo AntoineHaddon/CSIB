@@ -115,7 +115,8 @@ MODULE trcsms_csib
 
 
    ! model parameters
-   REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer
+   REAL(wp), PUBLIC, SAVE ::   ln_ibgcspinup        ! flag to start ice BGC variables from ocean surface values, for spin-up in case of restart from a run without ice BGC
+   REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer (m)
    ! ice diatoms
    REAL(wp), PUBLIC, SAVE ::   qnidiamin            ! Mininum ice diatom N/C (mmolN mmolC-1)
    REAL(wp), PUBLIC, SAVE ::   qnmax_fct            ! Factor for Max ice diatom N/C as function of C:Chl (-)
@@ -142,6 +143,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   dt_mo                ! Melt-off sea ice warming threshold (deg C d-1)/ sec per day
    REAL(wp), PUBLIC, SAVE ::   t_mo                 ! Melt-off sea ice temp trheshold (deg C) + 273.15 = (deg K)
    REAL(wp), PUBLIC, SAVE ::   d_mo                 ! Melt-off coeffecient ((deg C mg m-3)-1)
+   
 
    ! ice N
    REAL(wp), PUBLIC, SAVE ::   f_rm                 ! Remineralization fraction (-)
@@ -216,7 +218,7 @@ CONTAINS
       ! IF(lwp) WRITE(numout,*)
 
       ! Initiation from ocean surface concentrations (need to do it here and not in trcini_csib because CanOE initiation occurs after?)
-      IF ( (kt == 1) .AND. (.NOT. ln_rsttr) ) THEN
+      IF ( (kt == 1) .AND. ((.NOT. ln_rsttr) .OR. ln_ibgcspinup) ) THEN
          IF(lwp) WRITE(numout,*) 'Init from ocean surface'
          DO jl = 1, jpl ! loop ice categories
             DO jj = 1, jpj

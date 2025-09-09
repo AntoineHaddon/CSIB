@@ -146,7 +146,7 @@ CONTAINS
          END DO
       END IF
 
-      IF ( ln_csib ) THEN ! ice BC tracers
+      IF ( ln_csib .AND. (.NOT. ln_ibgcspinup) ) THEN ! ice BGC tracers
          DO jn=1,jp_csib
             CALL iom_get( numrtr, jpdom_auto, icetrcnm(jn), icetra(:,:,:,jn) )
             icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)

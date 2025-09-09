@@ -24,6 +24,7 @@ MODULE icedyn_adv_pra
    USE par_trc , ONLY : ln_csib   ! use of sea ice biogeochemistry model CSIB
    USE par_csib ! sea ice biogeochemistry model CSIB parameters
    USE trcini_csib ! for restart need to initate ice BGC tracer names 
+   USE trcsms_csib , ONLY : ln_ibgcspinup ! in case of ice BGC spin up
    !
    USE in_out_manager ! I/O manager
    USE iom            ! I/O manager library
@@ -1097,18 +1098,22 @@ CONTAINS
 
             IF ( ln_csib ) THEN ! ice BGC 
                CALL trc_ini_csibnames() ! initiate ice BGC tracer names
-               DO jn = 1,jp_csib
-                  znam = 'sx'//icetrcnm(jn)
-                  CALL iom_get( numrir, jpdom_auto, znam , z3d , psgn = -1._wp ) ; sxicetra(:,:,:,jn) = z3d(:,:,:)
-                  znam = 'sy'//icetrcnm(jn)
-                  CALL iom_get( numrir, jpdom_auto, znam , z3d , psgn = -1._wp ) ; syicetra(:,:,:,jn) = z3d(:,:,:)
-                  znam = 'sxx'//icetrcnm(jn)
-                  CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; sxxicetra(:,:,:,jn) = z3d(:,:,:)
-                  znam = 'syy'//icetrcnm(jn)
-                  CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; syyicetra(:,:,:,jn) = z3d(:,:,:)
-                  znam = 'sxy'//icetrcnm(jn)
-                  CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; sxyicetra(:,:,:,jn) = z3d(:,:,:)
-               ENDDO
+               IF ( ln_ibgcspinup ) THEN ! start ice BGC from rest in case of restart from a run without ice BGC
+                  sxicetra = 0._wp   ;   syicetra = 0._wp   ;   sxxicetra = 0._wp   ;   syyicetra = 0._wp   ;   sxyicetra = 0._wp
+               ELSE ! read momments for ice BGC from ice restart file
+                  DO jn = 1,jp_csib
+                     znam = 'sx'//icetrcnm(jn)
+                     CALL iom_get( numrir, jpdom_auto, znam , z3d , psgn = -1._wp ) ; sxicetra(:,:,:,jn) = z3d(:,:,:)
+                     znam = 'sy'//icetrcnm(jn)
+                     CALL iom_get( numrir, jpdom_auto, znam , z3d , psgn = -1._wp ) ; syicetra(:,:,:,jn) = z3d(:,:,:)
+                     znam = 'sxx'//icetrcnm(jn)
+                     CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; sxxicetra(:,:,:,jn) = z3d(:,:,:)
+                     znam = 'syy'//icetrcnm(jn)
+                     CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; syyicetra(:,:,:,jn) = z3d(:,:,:)
+                     znam = 'sxy'//icetrcnm(jn)
+                     CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; sxyicetra(:,:,:,jn) = z3d(:,:,:)
+                  ENDDO
+               ENDIF
             ENDIF
             !
          ELSE                                   !**  start rheology from rest  **!

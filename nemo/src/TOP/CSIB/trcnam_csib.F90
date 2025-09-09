@@ -42,7 +42,7 @@ CONTAINS
       INTEGER ::   numonpbcsib      = -1          !! Logical unit for the above ref/cfg namelists output
 
       !!----------------------------------------------------------------------
-      NAMELIST/namicedia/ z_ia, qnidiamin, qnmax_fct, qnmax_pow, qchidiaref, alrefidia, pcrefidia, betaidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
+      NAMELIST/namicedia/ ln_ibgcspinup, z_ia, qnidiamin, qnmax_fct, qnmax_pow, qchidiaref, alrefidia, pcrefidia, betaidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
       NAMELIST/namicenit/ f_rm, r_ni, c_di, c_nu
       NAMELIST/namicedic/ sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
       
@@ -93,6 +93,7 @@ CONTAINS
          WRITE(numout,*) ' Parameters for CSIB'
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Bottom diatoms'
+         WRITE(numout,*) ' ln_ibgcspinup =',ln_ibgcspinup 
          WRITE(numout,*) ' z_ia =',z_ia 
          WRITE(numout,*) ' qnidiamin =',qnidiamin 
          WRITE(numout,*) ' qnmax_fct =', qnmax_fct 

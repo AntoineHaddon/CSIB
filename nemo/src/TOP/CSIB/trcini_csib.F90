@@ -55,7 +55,7 @@ CONTAINS
 
       
       IF( .NOT. ln_rsttr ) THEN
-         CALL trc_ini_csibnames() ! when there is a restart this is done by the sea ice model
+         CALL trc_ini_csibnames() ! if restart this is done by the sea ice model
          
          icetra(:,:,:,:) = 0._wp
          
