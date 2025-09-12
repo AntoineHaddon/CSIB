@@ -89,6 +89,13 @@
           
         </file>
 
+        <file id="file34" name_suffix="_cfc_T" description="CFC variables" enabled=".TRUE.">
+          <!-- <field field_ref="Age"     name="Age"     level="0" /> -->
+          <field field_ref="CFC11"   name="CFC11"   level="0" />
+          <field field_ref="CFC12"   name="CFC12"   level="0" />
+          <field field_ref="SF6"     name="SF6"     level="0" />
+        </file>
+
       </file_group>
 
    </file_definition>

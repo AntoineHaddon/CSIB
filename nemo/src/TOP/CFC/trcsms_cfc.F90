@@ -99,7 +99,7 @@ CONTAINS
 
       ! Temporal interpolation
       ! ----------------------
-      iyear_beg = nyear - 1900
+      iyear_beg = nyear - nyear_beg + 1 ! updated by KRutherford-- calculate referenced to start year of cfc.dat rather than 1900
       IF ( nmonth <= 6 ) THEN
          iyear_beg = iyear_beg - 1
          im1       =  6 - nmonth + 1
@@ -108,7 +108,7 @@ CONTAINS
          im1       = 12 - nmonth + 7
          im2       =      nmonth - 7
       ENDIF
-      ! Avoid bad interpolation if starting date is =< 1900
+      ! Avoid bad interpolation if starting date is =< nyear_beg
       IF( iyear_beg .LE. 0      )  iyear_beg = 1
       IF( iyear_beg .GE. jpyear )  iyear_beg = jpyear - 1
       !

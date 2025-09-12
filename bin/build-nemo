@@ -120,9 +120,10 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-                xios_comp)  xios_comp="$val"   ;;       # compile xios (=1) or not (=0)
+                xios_server)  xios_server="$val"   ;;   # use xios server (=1) or not (=0)
 		        xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
         		xios_arch)  xios_arch="$val"  ;;        # xios arch name
+                xios_mode)  xios_mode="$val"  ;;        # xios compilation mode (--debug, --dev, --prod)
         		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
@@ -199,7 +200,7 @@ target_diag_execs=$(echo $target_diag_execs | sed "s#[^ ]*#${nemo_diag_build_dir
 target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&#g")
 target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
-if [[ $xios_comp -eq 1 ]]; then  
+if [[ $xios_server -eq 1 ]]; then  
     model_execs="$target_xios_exec $target_model_exec"
 else
     model_execs=" $target_model_exec"
@@ -207,13 +208,6 @@ fi
 
 # all non-model executables get saved without renamining, store in list
 non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
-
-# When debugging is requested, use the debug arch and update the name of the executable
-if (( debug == 1 )); then
-  xios_debug="--debug"
-  nemo_arch="$nemo_arch-debug"
-  nemo_exec="$nemo_exec-debug"
-fi
 
 # set the working directory if it hasn't been set
 if [[ -z "$WRK_DIR" ]]; then
@@ -243,24 +237,13 @@ echo "Compiling in:  ${nemo_xios_build_dir}"
 cd ${nemo_xios_build_dir}
 
 # build command line args into a bash array
-ARGS=( --job $xios_comp_np --arch $xios_arch )
-[[ -n $xios_full ]] && ARGS+=( $xios_full )
-[[ -n $xios_debug ]] && ARGS+=( $xios_debug )
-[[ -n $xios_dev ]] && ARGS+=( $xios_dev )
+ARGS=( --job $xios_comp_np --arch $xios_arch $xios_mode )
 [[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
+[[ $clean_compile -eq 1 ]] && ARGS+=( --full )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
-# compile only if doesn't exist or clean_compile
-if ls ${storage_loc}/$xios_exec 1> /dev/null 2>&1 && [[ "$clean_compile" -ne 1 ]]; then
-echo 'Skip make_xios...'
-else 
-    if [[ $xios_comp -eq 1 ]]; then  
-        echo 'make_xios '"${ARGS[@]}"
-        ./make_xios "${ARGS[@]}"
-    else
-        echo 'No need to compile XIOS'
-    fi
-fi
+echo 'make_xios '"${ARGS[@]}"
+./make_xios "${ARGS[@]}"
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"

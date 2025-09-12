@@ -35,7 +35,8 @@
           <field field_ref="hflx_snow_ao_cea" name="hflx_snow_ao_cea"    level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_rnf_cea"     name="hfrunoffds2d"   level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_evap_cea"    name="hfevapds"       level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
-          <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
+          <field field_ref="qt_atm_oi"        name="qt_atm_oi"      level="0" /> <!-- only rtd -->
+          <field field_ref="qt_oce_ai"        name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <!-- IAT/age tracer running in TOP w/o any BGCM       -->
           <field field_ref="Age"              name="Age"            level="0" />
 	      <field field_ref="runoffs"          name="friver"         level="0" />	  

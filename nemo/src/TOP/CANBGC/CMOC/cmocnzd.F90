@@ -285,11 +285,6 @@ CONTAINS
       REAL(wp) :: zfact2
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zgrapoc0, zgrazpcmoc0
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: mzn_cmoc0, mzd_cmoc0, mz2_cmoc0
-      zgrapoc0(:,:,:)    = 0._wp
-      zgrazpcmoc0(:,:,:) = 0._wp
-      mzn_cmoc0(:,:,:)   = 0._wp
-      mzd_cmoc0(:,:,:)   = 0._wp
-      mz2_cmoc0(:,:,:)   = 0._wp
       ! O Riche Feb 9th 2023
       !!---------------------------------------------------------------------
       !
@@ -299,6 +294,11 @@ CONTAINS
       ALLOCATE( zgrapoc0 (jpi, jpj, jpk), zgrazpcmoc0(jpi, jpj, jpk)                            )
       ALLOCATE( mzn_cmoc0(jpi, jpj, jpk), mzd_cmoc0  (jpi, jpj, jpk), mz2_cmoc0(jpi, jpj, jpk ) )
       ! O Riche Feb 9th 2023      
+      zgrapoc0(:,:,:)    = 0._wp
+      zgrazpcmoc0(:,:,:) = 0._wp
+      mzn_cmoc0(:,:,:)   = 0._wp
+      mzd_cmoc0(:,:,:)   = 0._wp
+      mz2_cmoc0(:,:,:)   = 0._wp
       IF( lwp ) THEN
         WRITE(numout,*)
         WRITE(numout,*), 'cmoc_zoo: compute zooplankton grazing'

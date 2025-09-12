@@ -12,7 +12,7 @@
     
       <file_group id="1m" output_freq="1mo"  enabled=".TRUE."> <!-- real monthly files -->
 
-        <file id="file32" name_suffix="_btrc_T" description="CMOC sms variables + TOP tracers" >
+        <file id="file32" name_suffix="_btrc_T" description="CanOE sms variables + TOP tracers" >
           <!-- BGCM standard : variables available with TOP activated alone  -->
           <field field_ref="DIC"      level="0" />
           <field field_ref="Alkalini" level="0" />
@@ -64,7 +64,6 @@
           <field field_ref="pCO2"        level="0" />
           <field field_ref="pO2"         level="0" />
 
-
           <!-- CanOE diagnostics -->
                  
           <!-- Primary Production -->       
@@ -91,6 +90,14 @@
 
       
         </file>
+
+        <file id="file34" name_suffix="_cfc_T" description="CFC variables" enabled=".TRUE.">
+          <!-- <field field_ref="Age"     name="Age"     level="0" /> -->
+          <field field_ref="CFC11"   name="CFC11"   level="0" />
+          <field field_ref="CFC12"   name="CFC12"   level="0" />
+          <field field_ref="SF6"     name="SF6"     level="0" />
+        </file>
+
 
       </file_group>
 
