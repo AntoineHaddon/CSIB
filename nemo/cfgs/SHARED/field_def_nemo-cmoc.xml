@@ -64,8 +64,6 @@
        <field id="pCO2"        long_name="pCO2"                                   unit="uatm"                grid_ref="grid_T_2D" />
        <field id="pO2"         long_name="pO2"                                    unit="atm"                 grid_ref="grid_T_2D" />
 
-       <field id="surf_chla"   long_name="surface chl-a external file"            unit="mg Chla/m3"          grid_ref="grid_T_2D" />
-
        <!-- CMOC PP diagnostics -->
        <field id="PPPHY"       long_name="Primary production"                     unit="mol/L/ts"            grid_ref="grid_T_3D" />
        <field id="Mumax"       long_name="Phyto growth rate"                      unit="s^-1"                grid_ref="grid_T_3D" />

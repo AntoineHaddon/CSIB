@@ -22,6 +22,7 @@
     <field_definition src="./field_def_nemo-oce.xml"/>    <!--  NEMO ocean dynamics     -->
     <field_definition src="./field_def_nemo-ice.xml"/>    <!--  NEMO sea-ice model      -->
     <field_definition src="./field_def_nemo-cmoc.xml"/> <!--  NEMO ocean biology       -->
+    <field_definition src="./field_def_nemo-innerttrc.xml"/> <!-- NEMO CFCs-->
     <!-- <field_definition src="./field_def_nemo-canoe.xml"/> <!--  NEMO ocean biology       -->  -->
     <!-- <field_definition src="./field_def_nemo-pisces.xml"/> <!--  NEMO ocean biology      --> -->
 

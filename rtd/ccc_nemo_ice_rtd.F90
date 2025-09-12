@@ -215,7 +215,7 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Non solar heat flux under the ice (total - solar )
       iicenflx= qt_ice_oce - iicesflx
 ! Non solar radiation in ice 
-      aicenflx = aicenflx + hflx_err
+      aicenflx = aicenflx - hflx_snow_ai_cea
 
 ! Hold these for now.
 ! Sublimation over sea-ice (cell average)
