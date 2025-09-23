@@ -59,8 +59,11 @@ CONTAINS
       REWIND(inum)
       
       ! compute the number of year in the file
-      ! file starts in 1931 do jn represent the year in the century
-      jn = 31 
+      !! Note from K. Rutherford - July 17, 2025
+      ! Original NEMO4.2 code assumed that the cfc.dat file starts in 1931, and used jn to represent the year in the century (i..e jn = 30 for year 1930, 31 for 1931, etc.)
+      ! We have made this more generic now so that jn (year index) starts at 1. nyear_beg (start year of cfc.dat; defined in namelist_trc_ref) is then used as the reference 
+      ! in trcsms_cfc.dat instead of year 1900 so jn = 1 will be associated with nyear_beg, jn = 2 is associated with nyear_beg + 1, etc. 
+      jn = 1 ! updated by KR 
       DO 
         READ(inum,'(1x)',END=100) 
         jn = jn + 1
@@ -101,9 +104,9 @@ CONTAINS
       DO jm = 1, iskip        ! Skip over 1st six descriptor lines
          READ(inum,'(1x)')
       END DO
-      ! file starts in 1931 do jn represent the year in the century.jhh
+      ! updated by K. Rutherford: starting jn (year index) set to 1 for more generic starting year of cfc.dat file
       ! Read file till the end
-      jn = 31
+      jn = 1 ! -- updated by KR
       DO 
         READ(inum,*, IOSTAT=io) zyy, p_cfc(jn,1:2,1), p_cfc(jn,1:2,2), p_cfc(jn,1:2,3)
         IF( io < 0 ) exit
@@ -121,7 +124,7 @@ CONTAINS
       IF(lwp) THEN        ! Control print
          WRITE(numout,*)
          WRITE(numout,*) ' Year   c11NH     c11SH     c12NH     c12SH     SF6NH     SF6SH'
-         DO jn = 30, jpyear
+         DO jn = 1, jpyear ! updated by K. Rutherford: starting jn (year index) set to 1 for more generic starting year of cfc.dat file
             WRITE(numout, '( 1I4, 6F10.4)') jn, p_cfc(jn,1:2,1), p_cfc(jn,1:2,2), p_cfc(jn,1:2,3)
          END DO
       ENDIF

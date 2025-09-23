@@ -90,7 +90,7 @@ echo "#################### Start NEMO pre-processing #################"
   elif [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
       # CanTODS setup
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
-      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+      for current_year in `seq $(( 10#$chunk_start_year -1 )) $(( 10#$chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
         [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
@@ -129,14 +129,15 @@ echo "#################### Start NEMO pre-processing #################"
 
   elif [[ $config == "OMIP" ]]; then  # all the other OMIP runmode (e.g. omip1 ) 
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
-      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+      for current_year in `seq $(( 10#$chunk_start_year -1 )) $(( 10#$chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
         [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} - ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
         yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
-        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        fyl=`expr $iaf_year_offset + ${fy} % ${yd}`
+        [ $fyl -le $iaf_year_offset ] && fyl=`expr $fyl + $yd`
         forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
         acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
         acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
@@ -168,14 +169,15 @@ if [[ $config != "AMIP" ]]; then
       acc_cp runoffs.nc    $nemo_runoff_core_monthly na
     fi
     if [[ -n "$nemo_runoff" ]]; then # empty nemo_runoff means yearly files are not used. 
-      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+      for current_year in `seq $(( 10#$chunk_start_year -1 )) $(( 10#$chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
         [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} - ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
         yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
-        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        fyl=`expr $iaf_year_offset + ${fy} % ${yd}`
+        [ $fyl -le $iaf_year_offset ] && fyl=`expr $fyl + $yd`
         forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
         acc_cp runoffs_y${yearc}.nc          ${nemo_runoff}_y${forcing_year}.nc
       done
@@ -324,6 +326,7 @@ if [[ $config != "AMIP" ]]; then
                domain_def_nemo.xml \
                field_def_nemo-ice.xml \
                field_def_nemo-oce.xml \
+               field_def_nemo-innerttrc.xml \
                file_def_nemo-ice.xml \
                file_def_nemo-oce.xml \
                grid_def_nemo.xml \
@@ -336,6 +339,12 @@ if [[ $config != "AMIP" ]]; then
   elif [[ $CanNEMO_CONFIG == *"PISCES" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
   fi
+
+  if [[ $nemo_cfc == "on" ]] ; then
+      acc_cp cfc.dat $nemo_data_cfc
+      xios_files=( "${xios_files[@]}" field_def_nemo-innerttrc.xml )
+  fi
+
 
 else
     echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
@@ -377,6 +386,16 @@ fi  # config != AMIP
   if [[ $nemo_ln_diaptr == "off" ]]; then
     sed -i '/diaptr/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-oce.xml
   fi 
+
+  # disabled the cfc file if nemo_cfc="off"
+  if [[ $nemo_config == *"CANOE" ]] && [[ $nemo_cfc == "off" ]]; then 
+    sed -i '/cfc_T/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-canoe.xml
+  fi 
+
+  if [[$nemo_config == *"CMOC"]] && [[ $nemo_cfc == "off" ]]; then
+    sed -i '/cfc_T/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-cmoc.xml
+  fi
+
   # =====================
   # Set Inherited params
   # =====================
