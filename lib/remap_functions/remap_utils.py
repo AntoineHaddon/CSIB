@@ -285,11 +285,11 @@ def splitCMD(cmd: str) -> List[str]:
     Output:
         Returns string split into a list, preserving quotation marks
     """
-    if "\"" in cmd or "(" in cmd:
+    if "\"" in cmd or "(" in cmd or "'" in cmd:
         # remove leading/trailing spaces
         cmd=cmd.strip(" ")
         # split, preserving brackets and quotation marks
-        nb_brackets=0; nb_quotes=0
+        nb_brackets=0; nb_quotes=0 ; nb_quote=0
         l=[0]
         for iC,cC in enumerate(cmd):
             if cC=="(":
@@ -300,7 +300,11 @@ def splitCMD(cmd: str) -> List[str]:
                 nb_quotes+=1
             elif cC=="\"" and nb_quotes==1:
                 nb_quotes-=1
-            elif cC==" " and nb_brackets==0 and nb_quotes==0:
+            elif cC=="'" and nb_quote==0:
+                nb_quote+=1
+            elif cC=="'" and nb_quote==1:
+                nb_quote-=1
+            elif cC==" " and nb_brackets==0 and nb_quotes==0 and nb_quote==0:
                 l.append(iC)
         l.append(len(cmd))
         qbsplit=[cmd[i:j].strip(" ") for i,j in zip(l,l[1:])]
@@ -331,6 +335,22 @@ def subproc(cmd: Union[str, List[str]]) -> bytes:
         raise RuntimeError(f"\n{cmd}\n\n{sbpr.stdout.decode()}\n{sbpr.stderr.decode()}")
 
     return sbpr.stderr
+
+def subscript(cmd: str) -> bytes:
+    """
+    Create a temporary shell script and run it.
+
+    Input:
+        cmd - string command 
+    """
+
+    with open("tmp.sh","w") as shFile:
+        shFile.write(f"#!/bin/bash\n\nsource ~/.profile\n\n{cmd}")
+    err=subproc("chmod +x tmp.sh")
+    err=subproc("./tmp.sh")          # run temporary shell script
+    err=subproc("rm -f tmp.sh")    # remove temporary shell script
+
+    return
 
 def changeCoords(inFile: str, outFile: str) -> None:
     """
@@ -484,7 +504,10 @@ def his2cmor(var4cmor: str, fYear: int, fOut: str, args: Namespace) -> str:
         # either a grid-specific name, or just generic 'depth'
         err=subproc(f"ncrename -h -d .{lev[ftype[var4cmor]]},lev {cmfile} -O {cmfile}")
         err=subproc(f"ncrename -h -d .depth,lev {cmfile} -O {cmfile}")
-        err=subproc(f"ncrename -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile} -O {cmfile}")
+        try:
+          err=subscript(f"ncrename -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile} -O {cmfile}")
+        except:
+          err=subscript(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile} -O {cmfile}")
         # add gridded lat/lon if necessary
         with xr.open_dataset(cmfile) as cmtmp:
             shp=np.shape(cmtmp.latitude.values)
@@ -520,8 +543,9 @@ def his2cmor(var4cmor: str, fYear: int, fOut: str, args: Namespace) -> str:
                         'lev':{'dims':('lev'),'data':depth,'attrs':{'long_name':"Vertical T levels",'units':'m','positive':"down",'axis':"Z"}}})
             cmtmp2=xr.merge([cmtmp,ij])
             cmtmp2.to_netcdf(f'{cmfile}.ij.tmp.nc')
-            err=subproc(f"ncatted -h -a positive,lev,o,c,down {cmfile}.ij.tmp.nc -O {cmfile}.ij.tmp.nc")
-            err=subproc(f"ncatted -h -a axis,lev,o,c,Z {cmfile}.ij.tmp.nc -O {cmfile}.ij.tmp.nc")
+            if 'zos' not in cmfile:
+              err=subproc(f"ncatted -h -a positive,lev,o,c,down {cmfile}.ij.tmp.nc -O {cmfile}.ij.tmp.nc")
+              err=subproc(f"ncatted -h -a axis,lev,o,c,Z {cmfile}.ij.tmp.nc -O {cmfile}.ij.tmp.nc")
         if reLat:
             # want lat/lon to be gridded, not vectors
             # remove lon & lat from file
@@ -531,7 +555,7 @@ def his2cmor(var4cmor: str, fYear: int, fOut: str, args: Namespace) -> str:
                      'latitude':{'dims':('j','i'),'data':LT,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}}})
             lnlt.to_netcdf(f'{cmfile}.lonlat.tmp.nc')
             err=subproc(f"cdo merge {cmfile}.nolonlat.tmp.nc {cmfile}.lonlat.tmp.nc {cmfile}.gridded.tmp.nc")
-            err=subproc(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile}.gridded.tmp.nc -O {cmfile}.gridded.tmp.nc")
+            err=subscript(f"ncatted -h -a coordinates,{var4cmor},o,c,'latitude longitude' {cmfile}.gridded.tmp.nc -O {cmfile}.gridded.tmp.nc")
             cmfile=[f'{cmfile}.gridded.tmp.nc']
         else:
             cmfile=[f'{cmfile}.ij.tmp.nc']

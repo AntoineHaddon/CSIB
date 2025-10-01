@@ -15,7 +15,7 @@ import sys
 import xarray as xr
 
 # utilities for remapping
-from remap_functions.remap_utils import addCoords, changeCoords, checkMeshFile, cleanTmp, fillMiss2, getZ, intZ, matchFileYear, remap, selBox, selYear, subproc
+from remap_functions.remap_utils import addCoords, changeCoords, checkMeshFile, cleanTmp, fillMiss2, getZ, his2cmor, intZ, matchFileYear, remap, selBox, selYear, subproc
 
 def ic_remap(args: Namespace) -> None:
     """
@@ -53,7 +53,6 @@ def ic_remap(args: Namespace) -> None:
             # find all files that match format in Omon
             # identify file based on desired year
             file,fileDates,_=matchFileYear(startYear,os.path.join(varPath,f'{vV}_Omon_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc'))
-
         if file is not None:
             # extract desired year from file
             if len(file) > 1:

@@ -78,6 +78,7 @@ prs=vars(parser.parse_args())
 
 # read JSON file
 if (prs['json'] is not None) and (prs['json'].lower()!="none") and os.path.isfile(prs['json']):
+    print(f"\nReading options from json file: {prs['json']}")
     with open(prs['json'],'r') as jFile:
         args=json.load(jFile)
     # replace JSON file values with value from command line argument if present
@@ -109,6 +110,7 @@ args=argparse.Namespace(**args)
 start=time.time()
 
 # get necessary info about run
+print('\n')
 if args.type==-1:
     calc_nemo_chunk_dates(args)
 elif args.type==0:
