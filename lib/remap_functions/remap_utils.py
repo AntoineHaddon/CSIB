@@ -482,6 +482,10 @@ def his2cmor(var4cmor: str, fYear: int, fOut: str, args: Namespace) -> str:
     
     # find all files that match format
     flist=np.array(sorted(glob.glob(varPath)))
+    if len(flist)==0 and 'glorys' in args.parent_name.lower():
+      varPath=os.path.join(pPath,f"cmems_mod_glo_*{fYear}-01-01-{fYear}-12-01.nc")
+      print(varPath)
+      flist=np.array(sorted(glob.glob(varPath)))
 
     if len(flist) == 0:
         cmfile=None

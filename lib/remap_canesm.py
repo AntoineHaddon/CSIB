@@ -49,7 +49,7 @@ parser.add_argument("-j","--json",help="Path to JSON file for run-specific optio
 parser.add_argument("-J","--jout",help="Specify path to write a new JSON file with options used to run here. Default: do not write.",default="None")
 
 # additional arguments to overwrite JSON
-parser.add_argument('-y','--years',help='Years to process. It two years passed, processes years in range(year1,year2+1). If not two years, processes as a list.',action='append',type=int)
+parser.add_argument('-y','--years',help='Years to process. If two years passed, processes years in range(year1,year2+1). If not two years, processes as a list.',action='append',type=int)
 parser.add_argument('-a','--iaf_loop_year',help='Reference year for loop if offset for cyclical forcing.')
 parser.add_argument('-A','--iaf_year_offset',help='Year offset if wanting to use cyclical forcing.')
 parser.add_argument('-P','--parent_path',help='Full path to files containing model output from parent run, ending before the ensemble identifier.\ne.g., /fs/site5/eccc/crd/ccrn/model_output/CMIP6/final/CMIP6/CMIP/CCCma/CanESM5')
