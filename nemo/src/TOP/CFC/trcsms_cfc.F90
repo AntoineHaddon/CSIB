@@ -100,6 +100,11 @@ CONTAINS
       ! Temporal interpolation
       ! ----------------------
       iyear_beg = nyear - nyear_beg + 1 ! updated by KRutherford-- calculate referenced to start year of cfc.dat rather than 1900
+      IF(lwp) THEN
+         WRITE(numout,*) ' nyear = ', nyear
+         WRITE(numout,*) ' iyear_beg = ', iyear_beg   
+      ENDIF 
+      
       IF ( nmonth <= 6 ) THEN
          iyear_beg = iyear_beg - 1
          im1       =  6 - nmonth + 1
