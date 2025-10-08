@@ -201,10 +201,8 @@ def bdy_remap(args: Namespace) -> int:
                     ilat=[np.nanmax([0,np.nanmin(ilat)-1]),np.nanmin([np.nanmax(ilat)+1,latLen])]
                 if bW is not None and bE is not None:
                     err=subproc(f"ncks -h -d i,{np.nanmin(ilon)},{np.nanmax(ilon)} -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc")
-                    print(f"ncks -h -d i,{np.nanmin(ilon)},{np.nanmax(ilon)} -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc")
                 else:
                     err=subproc(f"ncks -h -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc")
-                    print(f"ncks -h -d j,{np.nanmin(ilat)}.,{np.nanmax(ilat)}. {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc")
 
                 # subsample file to only include desired years
                 selYear(mnY,mxY,f"{outFile}.{vV}.sliced.tmp.nc", f"{outFile}.{vV}.sliced2.tmp.nc")
@@ -396,7 +394,6 @@ def bdy_slc(args: Namespace) -> int:
                     iMax2=np.nanmin([iMax,np.shape(ccat[vV].values)[3]])
                     jMax2=np.nanmin([jMax,np.shape(ccat[vV].values)[2]])
                 err=subproc(f"ncks -h -d i,{iMin},{iMax2} -d j,{jMin},{jMax2} {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc")
-                print(f"ncks -h -d i,{iMin},{iMax2} -d j,{jMin},{jMax2} {outFile}.{vV}.concat.tmp.nc -O {outFile}.{vV}.sliced.tmp.nc")
 
                 # subsample file to only include desired years
                 selYear(mnY,mxY,f"{outFile}.{vV}.sliced.tmp.nc", f"{outFile}.{vV}.sliced2.tmp.nc")

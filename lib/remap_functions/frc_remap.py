@@ -102,6 +102,80 @@ def frc_slice(args: Namespace) -> Tuple[int, int]:
                 fcount+=1
     return fcount,fexpect
 
+def frc_remap(args: Namespace) -> None:
+    """
+    Remap atmospheric forcing from CanESM grid to desired grid.
+
+    Inputs:
+        args - args passed to remap_canesm.py
+    Output:
+        Writes atmospheric forcing files for NEMO.
+    """
+    print(f'Finding and processing data from {args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}.')
+
+    # get mesh file in correct format and find lat/lon bounds
+    bN,bS=checkMeshFile(args.meshfile)
+
+    if args.outfile is None:
+        outFile=f'VAR_atm_yYYYY'
+    else:
+        outFile=args.outfile
+
+    years=parseArgYears(args)
+
+    # loop through desired years
+    for year in years:
+      # loop through each variable 
+      for vV in ['pr','prsn','rlds','rsds','tas','uas','vas','ps']:
+          varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'{args.mor}/{vV}/gn/v20190429/')
+          # find all files that match format
+          fPattern=os.path.join(varPath,f'{vV}_{args.mor}_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc')
+
+          # identify file based on desired year
+          if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+              fy=year + int(args.iaf_year_offset)
+              yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+              yr=fy-int((year-1)/yd)*yd
+              file=matchFileYear(yr,fPattern)[0]
+          else:
+              # find matching file
+              file=matchFileYear(year,fPattern)[0]
+              yr=year
+          fdates=f'{yr}-{year}'
+          startYear=yr
+
+          if file is None:
+              print(f'No {vV} files found for {year} ({yr}).')
+          else:
+              # get desired time from file
+              # extract desired year from file
+              if len(file) > 1:
+                  # concatenate multiple files
+                  fstr=''
+                  for fle in file:
+                      fstr+=f'{fle} '
+                      print(fle)
+                  print("")
+                  err=subproc(f"ncrcat -h {fstr}-O {outFile}_y{fdates}_{vV}.nc")
+                  selYear(startYear, startYear, f"{outFile}_y{fdates}_{vV}.nc", f"{outFile}_y{year:04}_{vV}.nc")
+                  cleanTmp(f"{outFile}_y{fdates}_{vV}.nc")
+              else:
+                  selYear(startYear, startYear, file[0], f"{outFile}_y{year:04}_{vV}.nc")
+          
+              # subsample srcFile to be within +/- X degrees of southernmost point to speed things up
+              selBox(-180, 180, bS-args.Xdeg, 90, f"{outFile}_y{year:04}_{vV}.nc", f"{outFile}_y{year:04}_{vV}.sliced.tmp.nc")
+          
+              # fill any gaps in the sliced srcFile (two iterations)
+              fillMiss2(f"{outFile}_y{year:04}_{vV}.sliced.tmp.nc", f"{outFile}_y{year:04}_{vV}.filled.tmp.nc")
+  
+              # remap to child grid
+              remap("grd.tmp.nc", f"{outFile}_y{year:04}_{vV}.filled.tmp.nc", f"{outFile.replace('VAR',vV).replace('yYYYY',f'y{year:04}')}.nc")
+              # remove temporary files
+              cleanTmp(f"*.{vV}*.nc")
+
+    # remove intermediate files
+    cleanTmp(f"*.tmp.nc")
+
 def sos_remap(args: Namespace) -> None:
     """
     Remap surface salinity for sssr.
@@ -117,7 +191,7 @@ def sos_remap(args: Namespace) -> None:
     bN,bS=checkMeshFile(args.meshfile)
 
     if args.outfile is None:
-        outFile=f'sss_data_yYYYY'
+        outFile=f'sss_data_yYYYY.nc'
     else:
         outFile=args.outfile
 
@@ -169,9 +243,10 @@ def sos_remap(args: Namespace) -> None:
             fillMiss2(f"{outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.sliced.tmp.nc", f"{outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc")
 
             # remap to child grid
-            remap("grd.tmp.nc", f"{outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc", f"{outFile.replace('VAR',vV).replace('yYYYY',f'y{year:04}')}.nc")
+            remap("grd.tmp.nc", f"{outFile}_y{startYear}{args.ic_ind+1:02}_{vV}.filled.tmp.nc", f"{outFile.replace('VAR',vV).replace('yYYYY',f'y{year:04}')}")
             # remove temporary files
-            cleanTmp(f"*{vV}.nc")
+            cleanTmp(f"{outFile}*_y*_{vV}*nc")
 
     # remove intermediate files
     cleanTmp(f"*.tmp.nc")
+

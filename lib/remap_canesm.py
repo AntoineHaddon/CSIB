@@ -16,6 +16,7 @@ Specific functions include:
                 (i.e., where a child domain is simply a subset of the parent domain)
     bdy_remap - remap parent output onto a child boundary
     frc_slice - slice atmospheric forcing in time (to be used with weight files)
+    frc_remap - remap atmospheric forcing (do not use weight files)
     sos_remap - remap sea-surface salinity for use with ln_ssr != 0
     rvr_remap - at the moment, a very rough river remapping that simply scales
                 total volume to match the parent run
@@ -34,7 +35,7 @@ import time
 
 # import specific remapping functions
 from remap_functions.bdy_remap import bdy_remap, bdy_slc
-from remap_functions.frc_remap import frc_slice, sos_remap
+from remap_functions.frc_remap import frc_slice, frc_remap, sos_remap
 from remap_functions.ic_remap import ic_remap,rs_remap
 from remap_functions.remap_utils import calc_nemo_chunk_dates
 from remap_functions.rvr_remap import rvr_remap
@@ -44,7 +45,7 @@ from remap_functions.rvr_remap import rvr_remap
 parser=argparse.ArgumentParser(description='Remap canesm outputs. Reguires the type of remapping be specified. Other options can either be read from a JSON file or command line. Command line overwrites options read from JSON file.')
 
 # Main arguments for parser
-parser.add_argument("-t","--type",help="Type of files to produce. Either:\n  -1 - nemo configuration info\n  0 - Initial conditions (default)\n  1 - Boundary conditions\n  2 - Atmospheric forcing (does not remap; only gets correct file time)\n  3 - Rivers (currently simple scaling)\n  4 - Surface salinity",type=int)
+parser.add_argument("-t","--type",help="Type of files to produce. Either:\n  -1 - nemo configuration info\n  0 - Initial conditions (default)\n  1 - Boundary conditions\n  11 - simply slice boundaries, do not remap \n 2 - Atmospheric forcing (does not remap; only gets correct file time)\n  22 - Remap atmospheric forcing\n  3 - Rivers (currently simple scaling)\n  4 - Surface salinity",type=int)
 parser.add_argument("-j","--json",help="Path to JSON file for run-specific options. Default: remap_canesm.json",default="remap_canesm.json")
 parser.add_argument("-J","--jout",help="Specify path to write a new JSON file with options used to run here. Default: do not write.",default="None")
 
@@ -136,8 +137,11 @@ elif args.type==4:
     print('Remapping sos.')
     sos_remap(args)
     print('Done remapping sos.')
-elif args.type==10:
+elif args.type==11:
     bdy_slc(args)
     print(f'Done extracting file as boundary input!')
+elif args.type==22:
+    fcount,fexpect=frc_remap(args)
+    print(f'Done finding forcing files!\n({fcount}/{fexpect} found)\n{time.time()-start} s elapsed.')
 else:
-    sys.exit(f'ERROR: type must be -1, 0, 1 [/10], 2, 3, or 4...not {args.type}')
+    sys.exit(f'ERROR: type must be -1, 0, 1 [/10], 2 [/22], 3, or 4...not {args.type}')

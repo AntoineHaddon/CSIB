@@ -376,7 +376,7 @@ def addCoords(varName: str, fName: str) -> None:
         fName - path to file to add coordinate info (file is change in place)
     """
     
-    err=subproc(f"ncatted -h -a coordinates,{varName},o,c,\"nav_lat nav_lon\" {fName} -O {fName}")
+    err=subscript(f"ncatted -h -a coordinates,{varName},o,c,'nav_lat nav_lon' {fName} -O {fName}")
 
     return
 
