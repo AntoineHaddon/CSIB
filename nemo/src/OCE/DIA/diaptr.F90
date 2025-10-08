@@ -430,15 +430,15 @@ CONTAINS
             DEALLOCATE( zmask, zts, sjk, zt_jk, zs_jk )
          ENDIF
 
-         ! i-k sum of j surface area - temperature/salinity product on V grid
+         ! i-k sum of j surface area - temperature/salinity flux on V grid
          IF( iom_use( 'sopstvtr' ) .OR. iom_use( 'sophtvtr' ) ) THEN
             ALLOCATE( zts(A2D(nn_hls),jpk,jpts) )
 
             zts(:,:,:,:) = 0._wp
 
             DO_3D( 1, 1, 1, 0, 1, jpkm1 )
-               zvfc = e1v(ji,jj) * e3v(ji,jj,jk,Kmm)
-               zts(ji,jj,jk,jp_tem) = (ts(ji,jj,jk,jp_tem,Kmm)+ts(ji,jj+1,jk,jp_tem,Kmm)) * 0.5 * zvfc  !Tracers averaged onto V grid
+               zvfc = e1v(ji,jj) * e3v(ji,jj,jk,Kmm) * vv(ji,jj,jk,Kmm)
+               zts(ji,jj,jk,jp_tem) = (ts(ji,jj,jk,jp_tem,Kmm)+ts(ji,jj+1,jk,jp_tem,Kmm)) * 0.5 * zvfc  !Tracers flux on V grid
                zts(ji,jj,jk,jp_sal) = (ts(ji,jj,jk,jp_sal,Kmm)+ts(ji,jj+1,jk,jp_sal,Kmm)) * 0.5 * zvfc
             END_3D
 

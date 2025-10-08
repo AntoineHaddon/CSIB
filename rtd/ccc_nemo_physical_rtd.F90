@@ -267,7 +267,7 @@ PROGRAM nemo_ocean_diag
          iou5 =0
          recn =12.
          nrecon = int(recn + 0.001)
-         Cp   = 4.2e+6  ! J/m3/K
+         Cp = 4.09565652400474e+6 ! J/m3/K  = 3991.86795711963 * 1026
 
 ! ======================================================================
 !  Determine resolution and set parameters
@@ -794,11 +794,11 @@ PROGRAM nemo_ocean_diag
               do i = 1, imt
     ! Global ocean at 20N 
                   arcn = e1v(i, j_20N)*e3v(i, j_20N, k)*v_mask(i, j_20N, k)
-                  arcn = arcn*theta(i, j_20N, k)*t_mask(i, j_20N, k)
+                  arcn = arcn*0.5*(theta(i, j_20N, k) + theta(i, j_20N+1, k))*t_mask(i, j_20N, k)*t_mask(i, j_20N+1, k)
                   h_tran_20N(l) = h_tran_20N(l) + v(i, j_20N, k)*arcn
     ! Global ocean at 20S 
                   arcs = e1v(i, j_20S)*e3v(i, j_20S, k)*v_mask(i, j_20S, k)
-                  arcs = arcs*theta(i, j_20S, k)*t_mask(i, j_20S, k)
+                  arcs = arcs*0.5*(theta(i, j_20S, k) + theta(i, j_20S+1, k))*t_mask(i, j_20S, k)*t_mask(i, j_20S+1, k)
                   h_tran_20S(l) = h_tran_20S(l) + v(i, j_20S, k)*arcs
     ! Atlantic at 20N
                   if (i.ge.i_AN_E.and.i.le.i_AN_W) then
