@@ -191,16 +191,35 @@ def checkMeshFile(meshFile: str) -> Tuple[float, float]:
         bS - southernmost point of grid
     """
     with xr.open_dataset(meshFile) as ds0:   
+        # find the coordinate variables
+        foundLon=False ; foundLat=False
+        for vV in ds0.keys():
+            if not foundLon and (vV=='x' or ('lon' in vV.lower() and 'bound' not in vV.lower() and 'bnd' not in vV.lower())):
+                lon=vV
+                foundLon=True
+            if not foundLat and (vV=='y' or ('lat' in vV.lower() and 'bound' not in vV.lower() and 'bnd' not in vV.lower())):
+                lat=vV
+                foundLat=True
+            if foundLon and foundLat: break
+
+        # Exit with error if not found
+        if not foundLon or not foundLat:
+            sys.exit(f"Could not find coordinates in {ds0.keys()}")
+
+        # get size of coordinate variables
         try:
-            x=len(ds0['x']); y=len(ds0['y'])
+            # coordinates are matrices
+            x=np.shape(ds0[lon].values)[1]; y=len(ds0[lat])
         except:
-            x=np.shape(ds0['nav_lat'].values)[1]; y=len(ds0['nav_lat'])
-        # need some 'data'
+            # if coordinates are vectors
+            x=len(ds0[lon]); y=len(ds0[lat])
+        # make some 'data'
         nav_ones=np.ones((1,y,x))
+        
         # convert to dataset
         msh=xr.Dataset.from_dict(
-            {'nav_lon':{'dims':('y','x'),'data':ds0['nav_lon'].values,'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
-            'nav_lat':{'dims':('y','x'),'data':ds0['nav_lat'].values,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}},
+            {'nav_lon':{'dims':('y','x'),'data':ds0[lon].values,'attrs':{'_CoordinateAxisType':'Lon','units':'degrees_east'}},
+            'nav_lat':{'dims':('y','x'),'data':ds0[lat].values,'attrs':{'_CoordinateAxisType':'Lat','units':'degrees_north'}},
             'nav_ones':{'dims':('time_counter','y','x'),'data':nav_ones,'attrs':{'coordinates':'nav_lat nav_lon'}},
             'time_counter':{'dims':('time_counter'),'data':[0.]}})
         # write to temporary netCDF file
