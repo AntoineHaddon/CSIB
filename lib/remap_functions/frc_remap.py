@@ -102,7 +102,7 @@ def frc_slice(args: Namespace) -> Tuple[int, int]:
                 fcount+=1
     return fcount,fexpect
 
-def frc_remap(args: Namespace) -> None:
+def frc_remap(args: Namespace) -> Tuple[int, int]:
     """
     Remap atmospheric forcing from CanESM grid to desired grid.
 
@@ -123,26 +123,46 @@ def frc_remap(args: Namespace) -> None:
 
     years=parseArgYears(args)
 
+    # variables to remap
+    if args.parent_name=='omip':
+      fVars=['u_10','v_10','ncar_rad','t_10','q_10','ncar_precip_mod','slp']
+    else:
+      fVars=['uas','vas','pr','prsn','rlds','rsds','tas','ps']
+
     # loop through desired years
+    fcount=0
     for year in years:
       # loop through each variable 
-      for vV in ['pr','prsn','rlds','rsds','tas','uas','vas','ps']:
-          varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'{args.mor}/{vV}/gn/v20190429/')
-          # find all files that match format
-          fPattern=os.path.join(varPath,f'{vV}_{args.mor}_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc')
-
-          # identify file based on desired year
-          if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
-              fy=year + int(args.iaf_year_offset)
-              yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
-              yr=fy-int((year-1)/yd)*yd
-              file=matchFileYear(yr,fPattern)[0]
+      for vV in fVars:
+          if args.parent_name=='omip':
+            omip=True
+            if '025' in args.parent_experiment: 
+                file=f"{vV}_omip025_y{year:04}.nc"
+                acFile=f"urdy_eorca025_corev2_{vV}_nomask_y{year:04}.nc"
+            else:
+                file=f"{vV}_omip1_y{year:04}.nc"
+                acFile=f"urdy_eorca1_corev2_{vV}_nomask_js_y{year:04}.nc"
+            subproc(f"access {file} {acFile}")
+            file=[file]
+            startYear=year
           else:
-              # find matching file
-              file=matchFileYear(year,fPattern)[0]
-              yr=year
-          fdates=f'{yr}-{year}'
-          startYear=yr
+            omip=False
+            varPath=os.path.join(args.parent_path,args.parent_experiment,args.parent_ensemble,f'{args.mor}/{vV}/gn/v20190429/')
+            # find all files that match format
+            fPattern=os.path.join(varPath,f'{vV}_{args.mor}_{args.parent_name}_{args.parent_experiment}_{args.parent_ensemble}_gn_*.nc')
+
+            # identify file based on desired year
+            if (args.iaf_year_offset is not None) and (args.iaf_loop_year is not None):
+                fy=year + int(args.iaf_year_offset)
+                yd=int(args.iaf_loop_year)-int(args.iaf_year_offset)
+                yr=fy-int((year-1)/yd)*yd
+                file=matchFileYear(yr,fPattern)[0]
+            else:
+                # find matching file
+                file=matchFileYear(year,fPattern)[0]
+                yr=year
+            fdates=f'{yr}-{year}'
+            startYear=yr
 
           if file is None:
               print(f'No {vV} files found for {year} ({yr}).')
@@ -171,10 +191,16 @@ def frc_remap(args: Namespace) -> None:
               # remap to child grid
               remap("grd.tmp.nc", f"{outFile}_y{year:04}_{vV}.filled.tmp.nc", f"{outFile.replace('VAR',vV).replace('yYYYY',f'y{year:04}')}.nc")
               # remove temporary files
-              cleanTmp(f"*.{vV}*.nc")
+              cleanTmp(f"{outFile}_y{year:04}_{vV}.*nc")
+              fcount+=1
+              
+              if omip:
+                subproc(f"rm -f {file[0]}")
 
     # remove intermediate files
     cleanTmp(f"*.tmp.nc")
+
+    return fcount, len(years)*len(fVars)
 
 def sos_remap(args: Namespace) -> None:
     """
