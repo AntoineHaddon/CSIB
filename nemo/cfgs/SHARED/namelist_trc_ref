@@ -6,7 +6,7 @@
 !-----------------------------------------------------------------------
 &namcfc     !   CFC 
 !-----------------------------------------------------------------------
-   ndate_beg  = 197650101    !  datedeb1 yyyymmdd
+   ndate_beg  = 17650101    !  datedeb1 yyyymmdd
    nyear_res  = 1932      !  iannee1
    !
    ! Formatted file of annual hemisperic CFCs concentration in the atmosphere (ppt)
