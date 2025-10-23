@@ -2,6 +2,7 @@
 
 install_dir=$PWD
 compil_full="false"
+compil_clean="false"
 use_oasis="false"
 oasis="oasis3_mct"
 build_path="./"
@@ -54,6 +55,7 @@ while (($# > 0))
          "--arch_path")  arch_path=$2     ; arch_path_defined="TRUE"; shift ; shift ;;
          "--avail") ls arch/*.fcm | cut -d"-" -f2 | cut -d"." -f1 ; exit ;; 
          "--full")  compil_full="true"  ; shift ;;
+         "--clean")  compil_clean="true"  ; shift ;;
          "--use_oasis")  use_oasis="true" oasis=$2 ; shift ; shift  ;;
          "--build_path")  build_path=$2     ; shift ; shift ;;
          "--build_dir")  build_dir=$2     ; shift ; shift ;;
@@ -292,6 +294,9 @@ if [[ "$compil_full" == "true" ]]
    then
    fcm build --clean --ignore-lock 
    fcm build -f --ignore-lock -j $job
+elif [[ "$compil_clean" == "true" ]]
+   then
+   fcm build --clean --ignore-lock 
 else
   fcm build --ignore-lock -j $job
 fi
