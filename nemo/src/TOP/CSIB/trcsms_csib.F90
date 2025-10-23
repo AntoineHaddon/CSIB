@@ -115,7 +115,7 @@ MODULE trcsms_csib
 
 
    ! model parameters
-   REAL(wp), PUBLIC, SAVE ::   ln_ibgcspinup        ! flag to start ice BGC variables from ocean surface values, for spin-up in case of restart from a run without ice BGC
+   LOGICAL , PUBLIC, SAVE ::   ln_ibgcspinup        ! flag to start ice BGC variables from ocean surface values, for spin-up in case of restart from a run without ice BGC
    REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer (m)
    ! ice diatoms
    REAL(wp), PUBLIC, SAVE ::   qnidiamin            ! Mininum ice diatom N/C (mmolN mmolC-1)
@@ -267,6 +267,7 @@ CONTAINS
          ENDDO ! loop jpj
       ENDDO ! loop jpl ice categories
       
+      IF(lwp) WRITE(numout,*) '    csib:  conversion OK'
       
       ! reset rates: so that they are 0 where there is no ice
       flushrate(:,:,:) = 0._wp
@@ -314,6 +315,7 @@ CONTAINS
       ! Compute friction velocity, for molecular diffusion at sea ice ocean interface
       CALL ice_friction_velocity
       
+      IF(lwp) WRITE(numout,*) '    csib:  reset OK'
       
       
       DO jj = 1, jpj
@@ -650,6 +652,7 @@ CONTAINS
          ENDDO ! loop jpi
       ENDDO ! loop jpj
 
+      IF(lwp) WRITE(numout,*) '    csib:  bgc OK'
 
       ! record sea ice mean temperature for computation of sea ice temperature tendency for melt-off
        DO jj = 1, jpj
@@ -682,6 +685,8 @@ CONTAINS
       DO jn = 1,jp_csib
          icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
       ENDDO
+
+      IF(lwp) WRITE(numout,*) '    csib:  all OK'
 
       IF( ln_timing )   CALL timing_stop('trc_sms_csib')
       !

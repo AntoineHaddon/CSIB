@@ -27,7 +27,7 @@ MODULE trcrst
    
    USE trcsms_csib      ! ice BGC tracers
    USE par_csib      ! ice BGC parameters
-   USE ice , ONLY: a_i  ! for ice BGC tracers
+   USE ice , ONLY: a_i, jpl  ! for ice BGC tracers
 
    IMPLICIT NONE
    PRIVATE
@@ -124,7 +124,7 @@ CONTAINS
       !! ** purpose  :   read passive tracer fields in restart files
       !!----------------------------------------------------------------------
       INTEGER, INTENT( in ) ::   Kbb, Kmm  ! time level indices
-      INTEGER  ::  jn     
+      INTEGER  ::  jn,jl      
 
       !!----------------------------------------------------------------------
       !
@@ -146,11 +146,24 @@ CONTAINS
          END DO
       END IF
 
-      IF ( ln_csib .AND. (.NOT. ln_ibgcspinup) ) THEN ! ice BGC tracers
-         DO jn=1,jp_csib
-            CALL iom_get( numrtr, jpdom_auto, icetrcnm(jn), icetra(:,:,:,jn) )
-            icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
-         ENDDO
+      IF ( ln_csib ) THEN ! ice BGC tracers
+         IF ( ln_ibgcspinup ) THEN ! ice tracers spin up: set to ocean surface BGC
+            DO jl = 1, jpl ! loop ice categories
+               icetra(:,:,jl,jridiac) = tr(:,:,1,jrdia,Kmm) *12._wp ! convert to mass units
+               icetra(:,:,jl,jridian) = icetra(:,:,jl,jridiac) /8._wp ! init at C:N=8
+               icetra(:,:,jl,jridiach) = icetra(:,:,jl,jridiac) /10._wp ! init at C:Chl=10
+               icetra(:,:,jl,jrino3) = tr(:,:,1,jqno3,Kmm)
+               icetra(:,:,jl,jrinh4) = tr(:,:,1,jrnh4,Kmm)  
+            ENDDO          
+            DO jn=1,jp_csib
+               icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
+            ENDDO
+         ELSE ! ice tracer read from file
+            DO jn=1,jp_csib
+               CALL iom_get( numrtr, jpdom_auto, icetrcnm(jn), icetra(:,:,:,jn) )
+               icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
+            ENDDO
+         ENDIF
       ENDIF
       !
       IF(.NOT.lrxios) CALL iom_delay_rst( 'READ', 'TOP', numrtr )   ! read only TOP delayed global communication variables
