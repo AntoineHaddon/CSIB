@@ -23,7 +23,8 @@ MODULE par_csib
    INTEGER, PUBLIC      ::    jrino3=4                   ! Ice nitrate
    INTEGER, PUBLIC      ::    jrinh4=5                   ! Ice ammonium
    
-   CHARACTER(len=lca), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   icetrcnm   !: tracer names (used for restart input and output. can't init here because if restart then ice model executed first and needs to read restart files. So init is in function trcini_csib.f90/trc_ini_csibnames.) 
+   ! tracer names (used for restart input and output). 
+   CHARACTER(len=lca), PUBLIC, SAVE, DIMENSION(5) ::   icetrcnm  = (/ 'icediac','icedian','icediach','iceno3','icenh4'  /)
    
 
    !!======================================================================

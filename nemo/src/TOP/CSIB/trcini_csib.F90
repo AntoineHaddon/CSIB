@@ -23,7 +23,6 @@ MODULE trcini_csib
    PRIVATE
 
    PUBLIC   trc_ini_csib         ! called by trcini.F90 module
-   PUBLIC   trc_ini_csibnames   
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -55,7 +54,6 @@ CONTAINS
 
       
       IF( .NOT. ln_rsttr ) THEN
-         CALL trc_ini_csibnames() ! if restart this is done by the sea ice model
          
          icetra(:,:,:,:) = 0._wp
          
@@ -134,23 +132,6 @@ CONTAINS
 
    END SUBROUTINE trc_ini_csib
 
-
-   SUBROUTINE trc_ini_csibnames()
-      ! allocate and initiate array of ice tracer variables
-      ! called if no restart by trc_ini_csib 
-      ! or if restart called by sea ice model in icedyn_adv_pra/adv_pra_rst when reading advection moments
-
-      INTEGER :: trc_sms_csib_allocnames = 0
-      ALLOCATE( icetrcnm(jp_csib) ,    STAT=trc_sms_csib_allocnames)
-      IF( trc_sms_csib_allocnames /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_allocnames : failed to allocate arrays' )
-
-      icetrcnm(jridiac) = 'icediac'
-      icetrcnm(jridian) = 'icedian'
-      icetrcnm(jridiach) = 'icediach'
-      icetrcnm(jrino3) = 'iceno3'
-      icetrcnm(jrinh4) = 'icenh4'
-
-   END SUBROUTINE trc_ini_csibnames
 
    !!======================================================================
 END MODULE trcini_csib
