@@ -15,8 +15,6 @@ MODULE ice1D
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
 
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
-
    IMPLICIT NONE
    PRIVATE
 
@@ -217,12 +215,13 @@ CONTAINS
          &      sfx_bri_1d    (jpij) , sfx_bog_1d (jpij) , sfx_bom_1d (jpij) , sfx_sum_1d (jpij),  &
          &      sfx_sni_1d    (jpij) , sfx_opw_1d (jpij) , sfx_res_1d (jpij) , sfx_sub_1d (jpij),  &
          &      sfx_lam_1d    (jpij) , sfx_dyn_1d(jpij)  , STAT=ierr(ii) )
-      IF( ln_csib ) THEN
+      
+      ! Diagnostics for CSIB
          ii = ii + 1
          ALLOCATE(dh_bom_cat_1d  (jpij) , dh_sum_cat_1d(jpij) , da_lam_cat_1d(jpij) , dh_snw_sum_cat_1d(jpij), & 
             &     dh_mpdrn_cat_1d(jpij) , dh_bog_cat_1d(jpij) ,  da_lag_cat_2d(jpij,jpl) , &
             &     STAT=ierr(ii))
-      ENDIF
+
       !
       ii = ii + 1
       ALLOCATE( t_su_1d (jpij) , t_si_1d (jpij) , a_i_1d    (jpij) , a_ib_1d (jpij) ,                   &

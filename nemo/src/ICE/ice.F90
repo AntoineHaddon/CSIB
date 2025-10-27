@@ -13,8 +13,6 @@ MODULE ice
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
 
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
-
    IMPLICIT NONE
    PRIVATE
 
@@ -502,12 +500,11 @@ CONTAINS
          &      hfx_opw    (jpi,jpj) , hfx_thd   (jpi,jpj) , hfx_dyn(jpi,jpj) , hfx_spr(jpi,jpj) ,     &
          &      hfx_err_dif(jpi,jpj) , wfx_err_sub(jpi,jpj)                   , STAT=ierr(ii) )
 
-      IF ( ln_csib ) THEN
-         ii = ii + 1
-         ALLOCATE(dh_bom_cat    (jpi,jpj,jpl) , dh_sum_cat  (jpi,jpj,jpl) , da_lam_cat(jpi,jpj,jpl) , &
-            &     dh_snw_sum_cat(jpi,jpj,jpl) , dh_mpdrn_cat(jpi,jpj,jpl) , dh_bog_cat(jpi,jpj,jpl) , & 
-            &     da_lag_cat    (jpi,jpj,jpl) , STAT=ierr(ii) )
-      ENDIF
+      ! Diagnostics for CSIB
+      ii = ii + 1
+      ALLOCATE(dh_bom_cat    (jpi,jpj,jpl) , dh_sum_cat  (jpi,jpj,jpl) , da_lam_cat(jpi,jpj,jpl) , &
+         &     dh_snw_sum_cat(jpi,jpj,jpl) , dh_mpdrn_cat(jpi,jpj,jpl) , dh_bog_cat(jpi,jpj,jpl) , & 
+         &     da_lag_cat    (jpi,jpj,jpl) , STAT=ierr(ii) )
 
       ! * Ice global state variables
       ii = ii + 1
