@@ -1,0 +1,29 @@
+##########################################################################
+##  XIOS2.5 include directories and linking libraries for parallel I/O  ##
+##                                  (CCCma)                             ##
+##                                                                      ##
+##         Forwarded to compiler invocation via compiler drivers        ##
+##                                                                      ##
+##                           D. Yang, May/2022                          ##
+##########################################################################
+#
+NETCDF_INCDIR="$(nf-config --fflags)"
+NETCDF_LIB="$(nf-config --flibs)"
+NETCDF_LIB=""
+
+MPI_INCDIR=""
+MPI_LIBDIR=""
+MPI_LIB=""
+
+HDF5_INCDIR=""
+HDF5_LIBDIR=""
+HDF5_LIB=""
+
+BOOST_INCDIR=""
+BOOST_LIBDIR=""
+BOOST_LIB=""
+
+OASIS_INCDIR=""
+OASIS_LIBDIR=""
+OASIS_LIB=""
+
