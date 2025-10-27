@@ -50,8 +50,8 @@
 
 %CPP	             cpp
 %FC                  mpif90 
-# %FCFLAGS             -i4 -r8 -O3 -xHost -fno-alias -qmkl -threads
-%FCFLAGS            -i4 -r8 -O3 -fp-model strict -ftrapuv -fpe-all0 -ftz -init=arrays,snan,huge
+%FCFLAGS             -i4 -r8 -O3 -xHost -fno-alias -qmkl -threads
+# %FCFLAGS             -i4 -r8 -g -xHost -fno-alias -threads
 %FFLAGS              %FCFLAGS
 %LD                  %FC
 %LDFLAGS             
