@@ -563,7 +563,7 @@ CONTAINS
          ELSE
             ! temperature read into file is ABSOLUTE temperature (that's the case for ECMWF products for example...)
             IF((kt==nit000).AND.lwp) WRITE(numout,*) ' *** sbc_blk() => air temperature converted from ABSOLUTE to POTENTIAL!'
-            zpre(:,:)         = pres_temp( q_air_zt(:,:), sf(jp_slp)%fnow(:,:,1), rn_zu, pta=sf(jp_tair)%fnow(:,:,1) )
+            zpre(:,:)         = pres_temp( q_air_zt(:,:), sf(jp_slp)%fnow(:,:,1), rn_zqt, pta=sf(jp_tair)%fnow(:,:,1) )
             theta_air_zt(:,:) = theta_exner( sf(jp_tair)%fnow(:,:,1), zpre(:,:) )
          ENDIF
          !
@@ -1199,13 +1199,8 @@ CONTAINS
 
             ! Latent Heat
             zztmp1 = zzblk * rLsub * Ce_ice(ji,jj)
-            qla_ice(ji,jj,jl) = MAX( zztmp1 * (zsq - q_zu_i(ji,jj)) , 0._wp )   ! #LB: only sublimation (and not condensation) ???
-            IF(qla_ice(ji,jj,jl)>0._wp) dqla_ice(ji,jj,jl) = zztmp1*dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
-            !                                                                                       !#LB: dq_sat_dt_ice() in "sbc_phy.F90"
-            !#LB: without this unjustified "condensation sensure":
-            !qla_ice( ji,jj,jl) = zztmp1 * (zsq - q_zu_i(ji,jj))
-            !dqla_ice(ji,jj,jl) = zztmp1 * dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
-
+            qla_ice( ji,jj,jl) = zztmp1 * (zsq - q_zu_i(ji,jj))
+            dqla_ice(ji,jj,jl) = zztmp1 * dq_sat_dt_ice(zst, pslp(ji,jj)) ! ==> Qlat sensitivity  (dQlat/dT)
 
             ! ----------------------------!
             !     III    Total FLUXES     !

@@ -13,7 +13,9 @@ nemo/mk/cpp_tools.fcm
 
 # ignore everything in the build directories except Makefiles and environment files
 diag/build/*
+!diag/build/README
 rtd/build/*
+!rtd/build/README
 !diag/build/Makefile
 !diag/build/compile.*
 !rtd/build/Makefile
@@ -21,4 +23,5 @@ rtd/build/*
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
 !nemo/TOOLS/REBUILD_NEMO/src/build/compile.*
 
-nemo/ARCH/arch-imsi.fcm
+nemo/arch/arch-nemo-imsi.fcm
+nemo/xios-2.6/arch/arch-xios-imsi.fcm

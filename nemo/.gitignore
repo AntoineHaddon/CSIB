@@ -14,6 +14,7 @@ cfgs/*/BLD
 cfgs/*/WORK
 cfgs/*/EXP00
 tools/REBUILD_NEMO/src/build/*
+!tools/REBUILD_NEMO/src/build/README
 tools/*/*.exe
 !tools/REBUILD_NEMO/src/build/Makefile
 cfgs/work_cfgs.txt
@@ -44,10 +45,11 @@ xios-2.6/etc/
 xios-2.6/fcm_env.ksh
 xios-2.6/fcm_env.sh
 xios-2.6/flags/
-#xios-2.6/inc/
-#xios-2.6/lib/
+xios-2.6/inc/
+xios-2.6/lib/
 xios-2.6/obj/
 xios-2.6/ppsrc/
+xios-2.6/fcm.bld.lock
 
 *.mod
 mk/cpp_tools.fcm

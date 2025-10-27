@@ -9,7 +9,7 @@ set -e
 #                     srcpath=SRCPATH \
 #                     nemo_arch=NEMO_ARCH \
 #                     util_arch=MAKE_TEMPLATE \
-#                     [refcfg=cfgdir] \
+#                     refcfg=cfgdir \
 #                     [add_key=keys] \
 #                     [del_key=keys]
 #          Quantities in square brackets are optional
@@ -25,7 +25,8 @@ set -e
 #   -h                  ...show this usage message
 #   -x                  ...run this script with 'set -x'
 #   -s [move|copy|link] ...after compiling, defines how the executables are stored (default is link)
-#   -f                  ...force a "clean" compile
+#   -r                  ...remove compilation objects
+#   -f                  ...force a "full" compile
 #
 # Variable definitions:
 #   srcpath=srcpath     ...location of the NEMO source code.
@@ -88,8 +89,9 @@ storage_method="link"   # Define how the execs will be stored (copy|link|move)
 storage_loc=$(pwd -P)      # tells build-nemo where to store executables
 comp_np=12              # Number of processors to use during nemo compilation
 xios_comp_np=12          # Number of processors to use during xios compilation
-debug=0                 # Set debug to 0 (turned off, regular optimizations used)
-clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
+xios_mode=""            # xios compilation mode (--debug, --dev, --prod)
+full_compile=0         # force build-nemo to make complete compilation on the diag/rtds and the temp NEMO comp dirs
+clean_compile=0         # make build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs (no compilation)
 CWD=$(pwd)
 
 printf "\n\n ------------------- \n"
@@ -100,14 +102,15 @@ printf " ------------------- \n"
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts p:j:s:hxdf opt; do
+while getopts p:j:s:hxdrf opt; do
     case $opt in
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
         p) storage_loc="$OPTARG" ;;
         s) storage_method="$OPTARG" ;;
         h) usage ; exit 0 ;;
-        f) clean_compile=1 ;;
+        r) clean_compile=1 ;;
+        f) full_compile=1 ;;
         ?) usage ; exit 1 ;;
     esac
 done
@@ -120,10 +123,11 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-                xios_comp)  xios_comp="$val"   ;;       # compile xios (=1) or not (=0)
+                xios_server)  xios_server="$val"   ;;       # compile xios (=1) or not (=0)
 		        xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
         		xios_arch)  xios_arch="$val"  ;;        # xios arch name
         		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
+                xios_mode)  xios_mode="$val"  ;;        # xios compilation mode (--debug, --dev, --prod)
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        CanNEMO_CONFIG="$val" ;;       # name of subdir in which config lives
@@ -147,7 +151,7 @@ done
 [[ -z "$storage_loc" ]]             && bail "-p must be followed by a directory in which to store the execs! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$CanNEMO_CONFIG" ]]          && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$CanNEMO_CONFIG" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch" ]]               && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 
@@ -169,7 +173,6 @@ esac
 #========================
 # Set inherited variables
 #========================
-
 xiosdir=xios-2.6
 cfgdir=cfgs
 xios_exec=xios_server.exe
@@ -199,7 +202,7 @@ target_diag_execs=$(echo $target_diag_execs | sed "s#[^ ]*#${nemo_diag_build_dir
 target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&#g")
 target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
-if [[ $xios_comp -eq 1 ]]; then  
+if [[ $xios_server -eq 1 ]]; then  
     model_execs="$target_xios_exec $target_model_exec"
 else
     model_execs=" $target_model_exec"
@@ -207,13 +210,6 @@ fi
 
 # all non-model executables get saved without renamining, store in list
 non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
-
-# When debugging is requested, use the debug arch and update the name of the executable
-if (( debug == 1 )); then
-  xios_debug="--debug"
-  nemo_arch="$nemo_arch-debug"
-  nemo_exec="$nemo_exec-debug"
-fi
 
 # set the working directory if it hasn't been set
 if [[ -z "$WRK_DIR" ]]; then
@@ -243,24 +239,20 @@ echo "Compiling in:  ${nemo_xios_build_dir}"
 cd ${nemo_xios_build_dir}
 
 # build command line args into a bash array
-ARGS=( --job $xios_comp_np --arch $xios_arch )
-[[ -n $xios_full ]] && ARGS+=( $xios_full )
-[[ -n $xios_debug ]] && ARGS+=( $xios_debug )
-[[ -n $xios_dev ]] && ARGS+=( $xios_dev )
+ARGS=( --job $xios_comp_np --arch $xios_arch $xios_mode )
 [[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
+[[ $clean_compile -eq 1 ]] && ARGS+=( --clean )
+[[ $full_compile -eq 1 ]] && ARGS+=( --full )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
-# compile only if doesn't exist or clean_compile
-if ls ${storage_loc}/$xios_exec 1> /dev/null 2>&1 && [[ "$clean_compile" -ne 1 ]]; then
+# compile only if doesn't exist or full_compile
+if ls ${storage_loc}/$xios_exec 1> /dev/null 2>&1 && [[ "$clean_compile" -ne 1 ]] && [[ "$full_compile" -ne 1 ]]; then
 echo 'Skip make_xios...'
 else 
-    if [[ $xios_comp -eq 1 ]]; then  
-        echo 'make_xios '"${ARGS[@]}"
-        ./make_xios "${ARGS[@]}"
-    else
-        echo 'No need to compile XIOS'
-    fi
+    echo 'make_xios '"${ARGS[@]}"
+    ./make_xios "${ARGS[@]}"
 fi
+
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
@@ -270,41 +262,20 @@ cd $nemo_model_build_dir
 echo "NEMO arch file = $nemo_arch"
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
-ARGS=( -j $comp_np -m $nemo_arch -n $CanNEMO_CONFIG )
-[[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
+ARGS=( -j $comp_np -m $nemo_arch -n $CanNEMO_CONFIG -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
 
-# clean temporary dirs if this is a "clean" compile
-if (( clean_compile == 1 )); then
-    ./makenemo "${ARGS[@]}" clean 
-fi
-
 # Create model executable
 echo 'makenemo '"${ARGS[@]}"
-./makenemo "${ARGS[@]}"
-
-# reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
-# files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
-files_to_reset="${cfgdir}/${CanNEMO_CONFIG}/cpp_${CanNEMO_CONFIG}.fcm"
-files_to_reset=
-
-# log cpp_${nemo_config}.fcm
-echo "${files_to_reset}:"
-cat $files_to_reset
-
-for f in $files_to_reset; do
-    is_diff=0
-
-    # check if the file has been changed
-    git diff -s --exit-code $f || is_diff=1
-
-    # reset if changed
-    if (( is_diff == 1 )); then
-        echo "Resetting $f to HEAD"
-        git checkout HEAD $f
-    fi
-done
+if (( full_compile == 1 )); then #full compilation (clean+compile) 
+    ./makenemo -r $CanNEMO_CONFIG clean
+    ./makenemo "${ARGS[@]}"
+elif (( clean_compile == 1 )); then #Clean compilation
+    ./makenemo -r $CanNEMO_CONFIG clean
+else #normal compilation
+    ./makenemo "${ARGS[@]}"
+fi
 
 #-------------------------------
 # compile exec's using makefiles
@@ -321,14 +292,23 @@ for build_dir in $make_build_dirs; do
     ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
 
     # compile
-    if (( clean_compile == 1 )); then
+    if (( full_compile == 1 )); then
         make clean
+        make COMPILER_TEMPLATE=$nemo_util_arch_file_basename
+        [[ -n "$build_dir" ]] && make
+    elif (( clean_compile == 1 )); then #Clean compilation
+        make clean
+    else
+        make COMPILER_TEMPLATE=$nemo_util_arch_file_basename
+        [[ -n "$build_dir" ]] && make
     fi
-    make COMPILER_TEMPLATE=$nemo_util_arch_file_basename
-    [[ -n "$build_dir" ]] && make
 done
 
 
+if (( clean_compile == 1 )); then #Clean compilation
+    echo  "Compilation objects cleaned"
+    exit 0
+fi
 #---------------------------------
 # confirm that compilation worked
 #---------------------------------

@@ -39,7 +39,7 @@
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_Dt      = 2700.     !  time step for the dynamics and tracer
+   rn_Dt      = 3600.     !  time step for the dynamics and tracer
    ln_meshmask = .false.   !  =T create a mesh file
 /
 !-----------------------------------------------------------------------
@@ -127,6 +127,7 @@
 !-----------------------------------------------------------------------
    !                    !  bulk algorithm :
    ln_NCAR    = .true.     ! "NCAR"      algorithm   (Large and Yeager 2008)
+   rn_zqt       = 10.     !  Air temperature & humidity reference height (m)
 
    cn_dir = './'  !  root directory for the bulk data location
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
@@ -205,8 +206,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
-   ln_rnf_depth = .true.    !  read in depth information for runoff
-   ln_rnf_mouth = .false.   !  specific treatment at rivers mouths
+   ln_rnf_depth = .true.   !  read in depth information for runoff
+   ln_rnf_mouth = .false.    !  specific treatment at rivers mouths
 
    cn_dir = './'  !  root directory for the location of the runoff files
    !___________!_____________!___________________!___________!_____________!_________!___________!__________!__________!_______________!

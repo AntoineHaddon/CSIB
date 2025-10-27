@@ -39,7 +39,6 @@
 
           <!-- PAR that we want to use in CanOE or CMOC production (1 or 3 bands) -->
 
-          <field field_ref="tmask"    name="tmask"     level="0" />
           <field field_ref="closea"   name="closea"    level="0" />
                                           
          <!-- 2D fields here -->
@@ -88,6 +87,13 @@
           <!-- <field field_ref="Age"     level="0" /> -->
 
           
+        </file>
+
+        <file id="file34" name_suffix="_cfc_T" description="CFC variables" enabled=".TRUE.">
+          <!-- <field field_ref="Age"     name="Age"     level="0" /> -->
+          <field field_ref="CFC11"   name="CFC11"   level="0" />
+          <field field_ref="CFC12"   name="CFC12"   level="0" />
+          <field field_ref="SF6"     name="SF6"     level="0" />
         </file>
 
       </file_group>

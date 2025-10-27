@@ -7,13 +7,13 @@ CanNEMO is a component of [CanESM](https://gitlab.com/cccma/canesm).
 
 There are four directories at the top level of the repo:
 
- - bin : scripts for compiling code, and setting up runs on the ECCC HPCs.
+ - {bin/,lib/} : scripts for compiling code, and setting up runs on the ECCC HPCs.
 
- - lib : the `xnemo` module used for building CCCma jobstrings.
+ - rtd/ : Run time diagnostic code.
 
- - rtd : Run time diagnostic code.
+ - diag/: CMIP6 diagnostics calculations.
 
- - nemo: The "actual" NEMO source code. Under nemo/CONFIG there are
+ - nemo/: The "actual" NEMO source code. Under nemo/CONFIG there are
          several directories beginning with "CCC_", and these house
          the official CCCma configurations of the model.
 

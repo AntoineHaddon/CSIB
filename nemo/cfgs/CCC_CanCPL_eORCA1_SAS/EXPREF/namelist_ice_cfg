@@ -22,7 +22,7 @@
 &nampar         !   Generic parameters
 !------------------------------------------------------------------------------
    jpl              =   1             !  number of ice  categories
-   nlay_i           =   1             !  number of ice  layers
+   nlay_i           =   5             !  number of ice  layers
    nlay_s           =   1             !  number of snw  layers
    cn_icerst_in     = "restart_ice"   !  suffix of ice restart name (input)
    cn_icerst_out    = "restart_ice"   !  suffix of ice restart name (output)
@@ -42,7 +42,7 @@
 !------------------------------------------------------------------------------
 &namsbc         !   Ice surface boundary conditions
 !------------------------------------------------------------------------------
-      nn_flxdist       =   2           !  Redistribute heat flux over ice categories
+      nn_flxdist       =   -1         !  Redistribute heat flux over ice categories
                                       !     =-1  Do nothing (needs N(cat) fluxes)
                                       !     = 0  Average N(cat) fluxes then apply the average over the N(cat) ice
                                       !     = 1  Average N(cat) fluxes then redistribute over the N(cat) ice using T-ice and albedo sensitivity

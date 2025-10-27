@@ -360,7 +360,6 @@ PROGRAM nemo_ocean_diag
              endif 
 
     !        DIC, TA, PH, O2 
-             print*, dicz, dvol
              dicvol(l)   = dicvol(l) + dicz*dvol  
              talvol(l) = talvol(l) + talz*dvol  
              oxyvol(l) = oxyvol(l) + oxyz*dvol  
@@ -387,7 +386,6 @@ PROGRAM nemo_ocean_diag
           toc(l) = dicvol(l)  +  pocvol(l) + phyvol(l) + zoovol(l)                                         
     !     convert from mmol C to Pg C      
           toc(l) = toc(l) * 12.0e-18
-          print*,'toc', toc(l)
           ton(l) = no3vol(l) + 16./106. * ( phyvol(l) + zoovol(l)  + pocvol(l) )                                            
     !     convert to Pg      
           ton(l) = ton(l) * 14.007e-18

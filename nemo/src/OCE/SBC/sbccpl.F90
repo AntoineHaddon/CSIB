@@ -266,6 +266,7 @@ CONTAINS
       !
       INTEGER ::   jn          ! dummy loop index
       INTEGER ::   ios, inum   ! Local integer
+      INTEGER, DIMENSION(jpsnd) :: send_order
       REAL(wp), DIMENSION(jpi,jpj) ::   zacs, zaos
       !!
       NAMELIST/namsbc_cpl/  nn_cplmodel  , ln_usecplmask, nn_cats_cpl , ln_scale_ice_flux,             &
@@ -1131,7 +1132,13 @@ CONTAINS
       ! ================================ !
       !   initialisation of the coupler  !
       ! ================================ !
-      CALL cpl_define(jprcv, jpsnd, nn_cplmodel)
+      send_order = (/ jps_toce, jps_tice, jps_tmix, jps_ttilyr, jps_albice, jps_albmix, jps_fice,&
+                      jps_fice1, jps_fice2, jps_hice, jps_hsnw, jps_a_p, jps_ht_p, jps_kice,     &
+                      jps_co2, jps_ocx1, jps_ocy1, jps_ocz1, jps_ivx1, jps_ivy1, jps_ivz1,       &
+                      jps_ocxw, jps_ocyw, jps_ficet, jps_wlev, jps_ssh, jps_soce, jps_e3t1st,    &
+                      jps_fraqsr, jps_qsroce, jps_qnsoce, jps_oemp, jps_sflx, jps_otx1, jps_oty1,&
+                      jps_rnf, jps_taum, jps_sstfrz /)
+      CALL cpl_define(jprcv, jpsnd, nn_cplmodel, send_order)
 
       IF(ln_usecplmask) THEN
          xcplmask(:,:,:) = 0.
@@ -2619,7 +2626,7 @@ CONTAINS
          CASE( 'weighted ice' )
             SELECT CASE( sn_snd_cond%clcat )
             CASE( 'yes' )
-	       ztmp3(:,:,1:jpl) =  cnd_ice(:,:,1:jpl) * a_i(:,:,1:jpl)
+               ztmp3(:,:,1:jpl) =  cnd_ice(:,:,1:jpl) * a_i(:,:,1:jpl)
             CASE( 'no' )
                ztmp3(:,:,:) = 0.0
                DO jl=1,jpl

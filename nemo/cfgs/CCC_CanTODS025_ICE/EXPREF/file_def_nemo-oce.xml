@@ -10,7 +10,7 @@
 
     <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
 
-      <file_group id="5d" output_freq="5d" enabled=".TRUE."> <!-- real monthly files -->
+      <file_group id="1m" output_freq="1mo"  enabled=".TRUE."> <!-- real monthly files -->
       
         <file id="file10" name_suffix="_scalar" description="ocean scalar variables">
           <field field_ref="voltot"           name="volo"          level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
