@@ -51,6 +51,7 @@ CONTAINS
       CALL iom_put( 'PHY2N_os'         , tr(:,:,1,jrdn,Kmm) )
       CALL iom_put( 'PHY2CHL_os'       , tr(:,:,1,jrdch,Kmm) )
       CALL iom_put( 'GOC_os'           , tr(:,:,1,jrgoc,Kmm) )
+      CALL iom_put( 'DIC_os'           , tr(:,:,1,jqdic,Kmm)*1.e06_wp )
 
       ! ! sea ice ocean exchanges
       CALL iom_put( 'flushrate'        , flushrate(:,:,:) )
@@ -103,6 +104,9 @@ CONTAINS
       CALL iom_put( 'mortquad_dia'     , mortquad_dia(:,:,:) )
       CALL iom_put( 'remin_dia'        , remin_dia(:,:,:) )
       CALL iom_put( 'nitri'            , nitri(:,:,:) )
+      
+      ! diagnostics
+      CALL iom_put( 'icenpp'           , phot_dia(:,:,:) - etares*diaupn(:,:,:) )
 
 
    END SUBROUTINE trc_wri_csib

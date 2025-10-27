@@ -85,7 +85,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_dia        !  Diatoms uptake rate from bottom ice growth per ice category (mg C/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup_dia        !  Diatoms uptake rate from lateral ice growth  per ice category (mg C/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nxsicedia        !  N excess export per ice category (mg N/m3/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: cxsicedia        !  C excess export per ice category (mg N/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: cxsicedia        !  C excess export per ice category (mg C/m3/s)
    
    
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_no3        !  Loss rate of ice no3 from flushing per ice category (mmol/m3/s)
@@ -624,6 +624,9 @@ CONTAINS
                   cxsicedia(ji,jj,jl) = (1.0_wp - MIN(qnidia(ji,jj,jl)*rr_c2n, 1.0_wp)) * ztotexp_icediac
                   ! total C export potentially reduced if excess C
                   tr(ji,jj,1,jrgoc,Krhs) = tr(ji,jj,1,jrgoc,Krhs) + zscale * z_ia * MIN(qnidia(ji,jj,jl)*rr_c2n, 1.0_wp) * ztotexp_icediac /mmc
+
+               ! Ocean surface DIC
+                  tr(ji,jj,1,jqdic,Krhs) = tr(ji,jj,1,jqdic, Krhs) + zscale * z_ia * cxsicedia(ji,jj,jl)/mmc *1.E-6 ! C excess from export directly remineralized
 
                ! Ocean surface NO3 
                   tr(ji,jj,1,jqno3,Krhs) = tr(ji,jj,1,jqno3,Krhs) + zscale * (   &
