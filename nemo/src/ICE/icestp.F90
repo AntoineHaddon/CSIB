@@ -65,8 +65,8 @@ MODULE icestp
    USE iceitd         ! sea-ice: remapping thickness distribution
    USE icealb         ! sea-ice: albedo
 
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
-
+   USE par_csib      ! sea ice biogeochemistry model CSIB parameters
+   USE trcnam_csib   ! to read ice BGC namelist
    !
    USE bdy_oce , ONLY : ln_bdy   ! flag for bdy
    USE bdyice         ! unstructured open boundary data for sea-ice
@@ -245,6 +245,7 @@ CONTAINS
       IF(lwm) CALL ctl_opn( numoni , 'output.namelist.ice', 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, 1 )
       !
       CALL par_init                ! set some ice run parameters
+      CALL trc_nam_csib            ! read ice BGC namelist (need to do it here during init of ice model to read ice BGC moments in restart file)
       !
 #if defined key_agrif
       CALL Agrif_Declare_Var_ice  !  "      "   "   "      "  Sea ice

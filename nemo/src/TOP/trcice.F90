@@ -17,6 +17,7 @@ MODULE trcice
    USE trcice_cfc     ! CFC      initialisation
    USE trcice_canoe   ! CANOE    initialisation
    USE trcice_cmoc    ! CMOC     initialisation
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
    USE trcice_csib    ! CSIB     initialisation
    USE trcice_pisces  ! PISCES   initialisation
    USE trcice_c14     ! C14 bomb initialisation

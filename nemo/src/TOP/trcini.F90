@@ -16,6 +16,7 @@ MODULE trcini
    !!   top_alloc :   allocate the TOP arrays
    !!----------------------------------------------------------------------
    USE par_trc         ! need jptra, number of passive tracers
+   USE par_csib        ! sea ice biogeochemistry model CSIB parameters
    USE oce_trc         ! shared variables between ocean and passive tracers
    USE trc             ! passive tracers common variables
    USE trcnam          ! Namelist read

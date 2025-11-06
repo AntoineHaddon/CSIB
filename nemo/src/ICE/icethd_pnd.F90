@@ -27,7 +27,7 @@ MODULE icethd_pnd
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE timing         ! Timing
 
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
 
    IMPLICIT NONE
    PRIVATE

@@ -24,7 +24,7 @@ MODULE icethd_dh
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
 
    IMPLICIT NONE
    PRIVATE

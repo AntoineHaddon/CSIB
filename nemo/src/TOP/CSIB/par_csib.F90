@@ -14,6 +14,10 @@ MODULE par_csib
 
    IMPLICIT NONE
    
+   LOGICAL , PUBLIC, SAVE ::   ln_csib              ! CSIB flag 
+   LOGICAL , PUBLIC, SAVE ::   ln_ibgcspinup        ! flag to start ice BGC variables from ocean surface values, for spin-up in case of restart from a run without ice BGC
+
+
    INTEGER, PUBLIC      ::    jp_csib =5                 ! number of ice tracers in CSIB model
    
    ! Indices of tracers

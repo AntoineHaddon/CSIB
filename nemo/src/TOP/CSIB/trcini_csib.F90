@@ -49,8 +49,7 @@ CONTAINS
       ! Allocate sms_CSIB arrays
       IF( trc_sms_csib_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_csib: unable to allocate CSIB arrays' )
       
-      ! read namelist
-      CALL trc_nam_csib
+      ! CALL trc_nam_csib ! read namelist -> done during ice model init (icestp.F90/ice_init)
 
       
       IF( .NOT. ln_rsttr ) THEN

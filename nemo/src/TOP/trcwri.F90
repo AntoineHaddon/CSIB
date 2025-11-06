@@ -18,6 +18,7 @@ MODULE trcwri
    USE dianam      ! Output file name
    USE trcwri_pisces
    USE trcwri_canoe 
+   USE par_csib ! sea ice biogeochemistry model CSIB parameters
    USE trcwri_csib
    USE trcwri_cmoc 
    USE trcwri_cfc

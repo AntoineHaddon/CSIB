@@ -21,9 +21,7 @@ MODULE icedyn_adv_pra
    USE sbc_oce , ONLY : nn_fsbc   ! frequency of sea-ice call
    USE icevar         ! sea-ice: operations
    !
-   USE par_trc , ONLY : ln_csib   ! use of sea ice biogeochemistry model CSIB
-   USE par_csib ! sea ice biogeochemistry model CSIB parameters
-   USE trcsms_csib , ONLY : ln_ibgcspinup ! in case of ice BGC spin up
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
    !
    USE in_out_manager ! I/O manager
    USE iom            ! I/O manager library

@@ -13,6 +13,7 @@ MODULE trcnam_csib
    USE trc             ! TOP variables
 
    USE trcsms_csib
+   USE par_csib
 
    IMPLICIT NONE
    PRIVATE
@@ -42,7 +43,8 @@ CONTAINS
       INTEGER ::   numonpbcsib      = -1          !! Logical unit for the above ref/cfg namelists output
 
       !!----------------------------------------------------------------------
-      NAMELIST/namicedia/ ln_ibgcspinup, z_ia, qnidiamin, qnmax_fct, qnmax_pow, qchidiaref, alrefidia, pcrefidia, betaidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
+      NAMELIST/namcsib/ ln_csib,ln_ibgcspinup
+      NAMELIST/namicedia/ z_ia, qnidiamin, qnmax_fct, qnmax_pow, qchidiaref, alrefidia, pcrefidia, betaidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
       NAMELIST/namicenit/ f_rm, r_ni, c_di, c_nu
       NAMELIST/namicedic/ sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
       
@@ -57,34 +59,42 @@ CONTAINS
       
       ! read ref namelists
 
+      ! Namelist namcsib in reference namelist
+      REWIND( numnatp_refcsib )              
+      READ  ( numnatp_refcsib, namcsib, IOSTAT = ios, ERR = 901)
+      901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedia in reference namelist_csib' )
       ! Namelist namicedia in reference namelist
       REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namicedia, IOSTAT = ios, ERR = 901)
-      901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedia in reference namelist_csib' )
+      READ  ( numnatp_refcsib, namicedia, IOSTAT = ios, ERR = 902)
+      902   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedia in reference namelist_csib' )
       ! Namelist namicenit in reference namelist
       REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namicenit, IOSTAT = ios, ERR = 902)
-      902   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicenit in reference namelist_csib' )
+      READ  ( numnatp_refcsib, namicenit, IOSTAT = ios, ERR = 903)
+      903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicenit in reference namelist_csib' )
       ! Namelist namicedic in reference namelist
       REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namicedic, IOSTAT = ios, ERR = 903)
-      903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedic in reference namelist_csib' )
+      READ  ( numnatp_refcsib, namicedic, IOSTAT = ios, ERR = 904)
+      904   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedic in reference namelist_csib' )
 
 
       ! read cfg namelists
 
+      ! Namelist namcsib in configuration
+      REWIND( numnatp_cfgcsib )
+      READ  ( numnatp_cfgcsib, namcsib, IOSTAT = ios, ERR = 905 )
+      905   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcsib in configuration namelist_csib' )
       ! Namelist namicedia in configuration
       REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namicedia, IOSTAT = ios, ERR = 904 )
-      904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicedia in configuration namelist_csib' )
+      READ  ( numnatp_cfgcsib, namicedia, IOSTAT = ios, ERR = 905 )
+      906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicedia in configuration namelist_csib' )
        ! Namelist namicenit in configuration
       REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namicenit, IOSTAT = ios, ERR = 905 )
-      905   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicenit in configuration namelist_csib' )
+      READ  ( numnatp_cfgcsib, namicenit, IOSTAT = ios, ERR = 906 )
+      907   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicenit in configuration namelist_csib' )
        ! Namelist namicedic in configuration
       REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namicedic, IOSTAT = ios, ERR = 906 )
-      906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicedic in configuration namelist_csib' )
+      READ  ( numnatp_cfgcsib, namicedic, IOSTAT = ios, ERR = 907 )
+      908   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicedic in configuration namelist_csib' )
       
       
 
@@ -92,8 +102,11 @@ CONTAINS
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Parameters for CSIB'
          WRITE(numout,*) ' '
+         WRITE(numout,*) ' General parameters'
+         WRITE(numout,*) ' ln_csib = ', ln_csib
+         WRITE(numout,*) ' ln_ibgcspinup = ', ln_ibgcspinup
+         WRITE(numout,*) ' '
          WRITE(numout,*) ' Bottom diatoms'
-         WRITE(numout,*) ' ln_ibgcspinup =',ln_ibgcspinup 
          WRITE(numout,*) ' z_ia =',z_ia 
          WRITE(numout,*) ' qnidiamin =',qnidiamin 
          WRITE(numout,*) ' qnmax_fct =', qnmax_fct 
@@ -148,6 +161,7 @@ CONTAINS
 
       ! output namelists
       IF(lwm) CALL ctl_opn( numonpbcsib     , 'output.namelist.csib' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
+      IF(lwm) WRITE( numonpbcsib, namcsib )
       IF(lwm) WRITE( numonpbcsib, namicedia )
       IF(lwm) WRITE( numonpbcsib, namicenit )
       IF(lwm) WRITE( numonpbcsib, namicedic )

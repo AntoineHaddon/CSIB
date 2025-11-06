@@ -140,7 +140,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER ::   ios, ierr, icfc, nb_bgcms       ! Local integer
       !!
-      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_csib, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14,   &
+      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14,   &
          &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia, ln_trcbc,ln_trcais, &
          &            jp_canoe, canoe_tracer, jp_cmoc, cmoc_tracer
       !!---------------------------------------------------------------------
@@ -222,7 +222,6 @@ CONTAINS
          WRITE(numout,*) '      Total number of shared BGC tracers           jp_bgc        = ', jp_bgc
          WRITE(numout,*) '      Simulating CANOE  model                      ln_canoe      = ', ln_canoe 
          WRITE(numout,*) '      Simulating CMOC   model                      ln_cmoc       = ', ln_cmoc  
-         WRITE(numout,*) '      Simulating CSIB   model                      ln_csib       = ', ln_csib  
          WRITE(numout,*) '      Total number of added CanOE tracers          jp_canoe      = ', jp_canoe
          WRITE(numout,*) '      Total number of added CMOC tracers           jp_cmoc       = ', jp_cmoc
          WRITE(numout,*) '      Simulating PISCES model                      ln_pisces     = ', ln_pisces

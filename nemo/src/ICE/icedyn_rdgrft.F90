@@ -30,9 +30,8 @@ MODULE icedyn_rdgrft
    USE lbclnk         ! lateral boundary conditions (or mpp links)
    USE timing         ! Timing
 
-   USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
    USE trcsms_csib , ONLY : icetra_gca, icetragca_2d     ! ice BGC variables
-   USE par_csib ! sea ice biogeochemistry model CSIB parameters
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
 
 
    IMPLICIT NONE

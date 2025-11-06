@@ -17,7 +17,7 @@ MODULE icethd_da
    USE phycst         ! physical constants (ocean directory)
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamic 1D variables
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
 
    !
    USE in_out_manager ! I/O manager

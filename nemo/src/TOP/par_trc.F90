@@ -38,7 +38,6 @@ MODULE par_trc
 
    LOGICAL, PUBLIC             :: ln_canoe        !: CANOE  flag 
    LOGICAL, PUBLIC             :: ln_cmoc         !: CMOC   flag 
-   LOGICAL, PUBLIC             :: ln_csib         !: CSIB flag 
    LOGICAL, PUBLIC             :: ln_pisces       !: PISCES flag 
    LOGICAL, PUBLIC             :: ln_age          !: AGE flag 
    LOGICAL, PUBLIC             :: ln_cfc11        !: CFC11 flag 

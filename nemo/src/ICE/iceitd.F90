@@ -30,8 +30,7 @@ MODULE iceitd
    USE prtctl         ! Print control
    USE timing         ! Timing
 
-   USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
-   USE par_csib ! sea ice biogeochemistry model CSIB parameters
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
    USE trcsms_csib , ONLY : icetra_gca, icetragca_2d    ! ice BGC variables
 
    IMPLICIT NONE

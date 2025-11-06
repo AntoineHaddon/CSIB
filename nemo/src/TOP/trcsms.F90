@@ -17,6 +17,7 @@ MODULE trcsms
 
    USE trcsms_canoe       ! CANOE  biogeo-model
    USE trcsms_cmoc        ! CMOC   biogeo-model
+   USE par_csib           ! sea ice biogeochemistry model CSIB parameters
    USE trcsms_csib        ! CSIB  tracers
    USE trcsms_pisces      ! PISCES biogeo-model
    USE trcsms_cfc         ! CFC 11 &/or 12

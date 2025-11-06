@@ -34,7 +34,7 @@ MODULE icethd
    USE icevar         ! sea-ice: operations
    USE icectl         ! sea-ice: control print
 
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
 
    !
    USE in_out_manager ! I/O manager
