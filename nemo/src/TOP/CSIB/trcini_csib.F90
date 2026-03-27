@@ -113,6 +113,7 @@ CONTAINS
       phot_dia(:,:,:) = 0._wp
       lim_PAR(:,:,:) = 0._wp
       lim_nut(:,:,:) = 0._wp
+      lim_ice(:,:,:) = 0._wp
       diaupn(:,:,:) = 0._wp
       chlsyn(:,:,:) = 0._wp
       mortlin_dia(:,:,:) = 0._wp

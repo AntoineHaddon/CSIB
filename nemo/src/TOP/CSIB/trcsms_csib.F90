@@ -26,6 +26,8 @@ MODULE trcsms_csib
    USE par_canoe        ! indices of CanOE model variables, e.g. jrdia: diatoms
    USE sms_canoe , ONLY : rr_c2n ! redfield ratio
 
+   USE lbclnk         ! lateral boundary conditions (or mpp links)
+
    IMPLICIT NONE
    PRIVATE
 
@@ -88,8 +90,8 @@ MODULE trcsms_csib
    
    
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_no3        !  Loss rate of ice no3 from flushing per ice category (mmol/m3/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: slough_no3       !  Loss rate of ice no3 from sloughing per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_nh4        !  Loss rate of ice nh4 from flushing per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: slough_no3       !  Loss rate of ice no3 from sloughing per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: slough_nh4       !  Loss rate of ice nh4 from sloughing per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_no3      !  Loss rate from lateral melt per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_nh4      !  Loss rate from lateral melt per ice category (mmol/m3/s)
@@ -105,6 +107,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: phot_dia         !  Diatoms growth rate per ice category (mg C/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lim_PAR          !  Diatoms light limitation factor per ice category (-)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lim_nut          !  Diatoms nutrients limitation factor per ice category (-)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lim_ice          !  Ice growth limitation factor per ice category (-)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: diaupn           !  N uptake by ice diatoms per ice category (mg N/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: chlsyn           !  Ice diatoms Chl synthesis rate per ice category (mg Chl/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: mortlin_dia      !  Linear mortality rate of ice diatoms per ice category (mg C/m3/s)
@@ -117,14 +120,15 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer (m)
    ! ice diatoms
    REAL(wp), PUBLIC, SAVE ::   qnidiamin            ! Mininum ice diatom N/C (mmolN mmolC-1)
-   REAL(wp), PUBLIC, SAVE ::   qnmax_fct            ! Factor for Max ice diatom N/C as function of C:Chl (-)
-   REAL(wp), PUBLIC, SAVE ::   qnmax_pow            ! Power exponent for Max ice diatom N/C as function of C:Chl (-)
+   REAL(wp), PUBLIC, SAVE ::   cn_fct               ! Factor for target ice diatom N/C as function of C:Chl (-)
+   REAL(wp), PUBLIC, SAVE ::   cn_pow               ! Power exponent for target ice diatom N/C as function of C:Chl (-)
    REAL(wp), PUBLIC, SAVE ::   qchidiaref           ! Reference ice diatom Chl:C for uptake from ice growth (gChl gC-1)
    REAL(wp), PUBLIC, SAVE ::   ear=4498._wp         ! activation energy / R gas constant (deg K)
    REAL(wp), PUBLIC, SAVE ::   tempref=298.15_wp    ! Reference temperature for photosynthesis (deg K)
    REAL(wp), PUBLIC, SAVE ::   alrefidia            ! Reference initial slope of photosynthesis-irradiance curve (gC gChl-1 (W m-2)-1 d-1)) 
    REAL(wp), PUBLIC, SAVE ::   pcrefidia            ! Reference photosynthesis rate (d-1) / sec per day 
    REAL(wp), PUBLIC, SAVE ::   betaidia             ! photo-inhibition for ice diatoms (gC gChl-1 (W m-2)-1 d-1)) / sec per day 
+   REAL(wp), PUBLIC, SAVE ::   cigr                 ! Critical ice growth rate for ice algal limitation  (m d-1) / sec per day 
    REAL(wp), PUBLIC, SAVE ::   vnref                ! Reference N uptake rate (gN gC d-1) / sec per day
    REAL(wp), PUBLIC, SAVE ::   knh4                 ! NH4 limitation half saturation constant (mmol N m-3)
    REAL(wp), PUBLIC, SAVE ::   kno3                 ! NO3 limitation half saturation constant (mmol N m-3)
@@ -190,6 +194,8 @@ CONTAINS
       REAL(wp) :: zln2 = 0.693147_wp   ! natural log ln(2)
       REAL(wp) :: zsigup_tot           ! total water uptake from sea ice growth per ice area
       REAL(wp) :: ztemp                ! Temperature factor
+      REAL(wp) :: zcnredfield=5.6      ! Redfield C:N ratio (g g-1)
+      REAL(wp) :: zcn                  ! Target C:N  (g g-1)
       REAL(wp) :: zpcmaxidia           ! temp variable for photosynthesis
       REAL(wp) :: zalphaidia           ! temp variable for photosynthesis
       REAL(wp) :: znut                 ! N switch
@@ -198,6 +204,7 @@ CONTAINS
       REAL(wp) :: zsimt                ! mean sea ice temperature
       REAL(wp) :: zsti                 ! sea ice temperature coeffecient for melt-off
       REAL(wp) :: if_dti_higher        ! sea ice temperature change switch for melt-off
+      REAL(wp) :: zno3Old, znh4Old     ! for ice-ocean diffusion 
       REAL(wp) :: zphyn2c              ! phytoplankton N:C
       REAL(wp) :: ztotexp_icediac      ! total expected C export
 
@@ -296,6 +303,7 @@ CONTAINS
       phot_dia(:,:,:) = 0._wp
       lim_PAR(:,:,:) = 0._wp
       lim_nut(:,:,:) = 0._wp
+      lim_ice(:,:,:) = 0._wp
       diaupn(:,:,:) = 0._wp
       chlsyn(:,:,:) = 0._wp
       mortlin_dia(:,:,:) = 0._wp
@@ -335,12 +343,18 @@ CONTAINS
 
                   ! flushing of ice tracers: flushrate / skeletal layer height * ice tracers concentration * flushing fraction (-)
                   flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jridiac) * f_flsh  ! ice diatoms   
+                  flush_no3(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra_gca(ji,jj,jl,jrino3)  ! ice no3   
+                  flush_nh4(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra_gca(ji,jj,jl,jrinh4)  ! ice nh4 
 
                   ! sloughing of ice tracers: bottom ice melt rate / skeletal layer height * ice tracers concentration * flushing fraction (-)
                   slough_dia(ji,jj,jl) = dh_bom_cat(ji,jj,jl) * rhoi / rhow /z_ia  * icetra(ji,jj,jl,jridiac) * f_slgh ! ice diatoms   
+                  slough_no3(ji,jj,jl) = dh_bom_cat(ji,jj,jl) * rhoi / rhow /z_ia  * icetra(ji,jj,jl,jrino3) ! ice no3   
+                  slough_nh4(ji,jj,jl) = dh_bom_cat(ji,jj,jl) * rhoi / rhow /z_ia  * icetra(ji,jj,jl,jrinh4) ! ice nh4   
  
                   ! loss of ice tracers from lateral melt : fraction of ice concentration lost (1/s) * ice tracers concentration (mg/m3)
                   lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jridiac)   ! ice diatoms
+                  lamloss_no3(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra_gca(ji,jj,jl,jrino3)   ! ice no3
+                  lamloss_nh4(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra_gca(ji,jj,jl,jrinh4)   ! ice nh4
 
                   ! loss of ice tracers from melt-off : melt-off coeff ((C mg m-3)-1) * ice temp rate (C s-1) * ice temp change switch (-) * ice temp coeff (-) * biomass^2 ((mg m-3)2)
                   zsimt = SUM(t_i(ji,jj,:,jl)) / nlay_i                                                     ! mean sea ice temperature (deg K)
@@ -380,8 +394,10 @@ CONTAINS
                   
                ! Biogeochemical processes
                   
-                  ! Optimal C:N dependent on C:Chl
-                  qnidiamax(ji,jj,jl) = min(0.1509_wp, max(0.05_wp, qnmax_fct * qchidia(ji,jj,jl)**qnmax_pow ))
+                  ! Target C:N dependent on C:Chl 
+                  zcn = (cn_fct * (1._wp/(qchidia(ji,jj,jl)+rtrn))**cn_pow + zcnredfield)/2._wp
+                  ! Convert to optimal N:C, bounded by Redfield and C:N=20
+                  qnidiamax(ji,jj,jl) = MIN(1.0_wp/zcnredfield, MAX(0.05_wp, 1._wp/zcn ))
                   ! N limitation factor (for photosynthesis) (-)
                   lim_nut(ji,jj,jl) = MIN( MAX(0._wp, (qnidia(ji,jj,jl) - qnidiamin) / (qnidiamax(ji,jj,jl) - qnidiamin) ) , 1._wp)
 
@@ -392,11 +408,15 @@ CONTAINS
                   ! qtr_ice_bot: shortwave radiation transmitted through ice (W/m2)
                   zpcmaxidia = pcrefidia * ztemp * lim_nut(ji,jj,jl) / (qchidia(ji,jj,jl) + rtrn)
                   zalphaidia = alrefidia * qchidia(ji,jj,jl)
-                  lim_PAR(ji,jj,jl) = (1._wp - exp(-zalphaidia/(zpcmaxidia+rtrn) * qtr_ice_bot(ji,jj,jl) ) ) &
-                                    & * exp(-betaidia/(zpcmaxidia+rtrn) * qtr_ice_bot(ji,jj,jl) )   ! inhibition at high light
+                  lim_PAR(ji,jj,jl) = (1._wp - EXP(-zalphaidia/(zpcmaxidia+rtrn) * qtr_ice_bot(ji,jj,jl) ) ) &
+                                    & * EXP(-betaidia/(zpcmaxidia+rtrn) * qtr_ice_bot(ji,jj,jl) )   ! inhibition at high light
                   
-                  ! Photosynthesis rate (mg C s-1)
-                  phot_dia(ji,jj,jl) = pcrefidia * ztemp * lim_nut(ji,jj,jl) * lim_PAR(ji,jj,jl) * icetra(ji,jj,jl,jridiac)
+                  ! Ice growth limitation
+                  ! lim_ice(ji,jj,jl) = MAX(0._wp, 1._wp - dh_bog_cat(ji,jj,jl)/cigr)
+                  lim_ice(ji,jj,jl) = MAX( 0._wp , SIGN(1._wp,  1._wp - dh_bog_cat(ji,jj,jl)/cigr ) )
+                  
+                  ! Photosynthesis rate (mg C m-3 s-1)
+                  phot_dia(ji,jj,jl) = pcrefidia * ztemp * lim_nut(ji,jj,jl) * lim_PAR(ji,jj,jl) * lim_ice(ji,jj,jl) * icetra(ji,jj,jl,jridiac)
                   
                   ! N uptake switch (-)
                   znut = ( MIN( MAX(0._wp, (qnidiamax(ji,jj,jl) - qnidia(ji,jj,jl)) / (qnidiamax(ji,jj,jl) - qnidiamin) ), 1._wp) )**0.05_wp
@@ -405,7 +425,7 @@ CONTAINS
                   zlim_nh4 = icetra(ji,jj,jl,jrinh4) / (icetra(ji,jj,jl,jrinh4) + knh4)
                   zlim_no3 = icetra(ji,jj,jl,jrino3) / (icetra(ji,jj,jl,jrino3) + kno3)
 
-                  ! N uptake by ice diatoms (mg N s-1)
+                  ! N uptake by ice diatoms (mg N m-3 s-1)
                   diaupn(ji,jj,jl) = vnref * ztemp * znut * (zlim_nh4 + (1._wp - zlim_nh4) * zlim_no3) * icetra(ji,jj,jl,jridiac)
 
                   ! Chl synthesis rate (mg Chl m-3 s-1)
@@ -481,6 +501,9 @@ CONTAINS
                   icetra(ji,jj,jl,jrino3) = icetra(ji,jj,jl,jrino3) + rn_Dt * (        &
                               &        + bogup_no3(ji,jj,jl)                           & ! Uptake from bottom ice growth
                               &        + lagup_no3(ji,jj,jl)                           & ! Uptake from lateral ice growth
+                              &        - flush_no3(ji,jj,jl)                           & ! Loss from flushing 
+                              &        - slough_no3(ji,jj,jl)                          & ! Loss from sloughing 
+                              &        - lamloss_no3(ji,jj,jl)                         & ! Loss from lateral melting of ice
                               &        - diaupn(ji,jj,jl)/mmn * (1._wp - zlim_nh4) * zlim_no3 / (zlim_nh4 + (1._wp - zlim_nh4) * zlim_no3 +rtrn)   & ! uptake by ice diatoms
                               &        + nitri(ji,jj,jl)                               & ! nitrification     
                               )
@@ -492,6 +515,9 @@ CONTAINS
                   icetra(ji,jj,jl,jrinh4) = icetra(ji,jj,jl,jrinh4) + rn_Dt * (        &
                               &        + bogup_nh4(ji,jj,jl)                           & ! Uptake from bottom ice growth
                               &        + lagup_nh4(ji,jj,jl)                           & ! Uptake from lateral ice growth
+                              &        - flush_nh4(ji,jj,jl)                           & ! Loss from flushing 
+                              &        - slough_nh4(ji,jj,jl)                          & ! Loss from sloughing 
+                              &        - lamloss_nh4(ji,jj,jl)                         & ! Loss from lateral melting of ice
                               &        - diaupn(ji,jj,jl)/mmn * zlim_nh4 / (zlim_nh4 + (1._wp - zlim_nh4) * zlim_no3 +rtrn)    & ! uptake by ice diatoms
                               &        - nitri(ji,jj,jl)                               & ! nitrification                
                               &        + remin_dia(ji,jj,jl)                           & ! remineraliztion                
@@ -506,16 +532,17 @@ CONTAINS
                   zdtDif = rn_Dt * c_di / c_nu * abs(fric_vel(ji,jj)) / z_ia
                   zscale = a_i(ji,jj,jl) * z_ia / e3t_0(ji,jj,1)
                   ! NO3
+                  zno3Old=icetra(ji,jj,jl,jrino3)
                   icetra(ji,jj,jl,jrino3) = ( (1._wp+zdtDif*zscale)*icetra(ji,jj,jl,jrino3) + zdtDif*tr(ji,jj,1,jqno3,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
-                  tr(ji,jj,1,jqno3,Kmm) = ( zdtDif*zscale*icetra(ji,jj,jl,jrino3) + (1._wp+zdtDif)*tr(ji,jj,1,jqno3,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
+                  tr(ji,jj,1,jqno3,Kmm) = ( zdtDif*zscale*zno3Old + (1._wp+zdtDif)*tr(ji,jj,1,jqno3,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
                   ! NH4
+                  znh4Old=icetra(ji,jj,jl,jrinh4)
                   icetra(ji,jj,jl,jrinh4) = ( (1._wp+zdtDif*zscale)*icetra(ji,jj,jl,jrinh4) + zdtDif*tr(ji,jj,1,jrnh4,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
-                  tr(ji,jj,1,jrnh4,Kmm) = ( zdtDif*zscale*icetra(ji,jj,jl,jrinh4) + (1._wp+zdtDif)*tr(ji,jj,1,jrnh4,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
+                  tr(ji,jj,1,jrnh4,Kmm) = ( zdtDif*zscale*znh4Old + (1._wp+zdtDif)*tr(ji,jj,1,jrnh4,Kmm) ) / ( 1._wp + zdtDif*(1._wp+zscale) )
 
-                  ! Molecular diffusion flux, for ouput 
-                  ! D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
-                  moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - icetra(ji,jj,jl,jrino3) ) /z_ia
-                  moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icetra(ji,jj,jl,jrinh4) ) /z_ia
+                  ! Diffusion flux, for ouput, as change in ice No3/h4 before and after diffusion flux
+                  moldif_no3(ji,jj,jl) = (icetra(ji,jj,jl,jrino3) - zno3Old) /rn_Dt
+                  moldif_nh4(ji,jj,jl) = (icetra(ji,jj,jl,jrinh4) - znh4Old) /rn_Dt
 
 
 
@@ -608,6 +635,9 @@ CONTAINS
                   tr(ji,jj,1,jqno3,Krhs) = tr(ji,jj,1,jqno3,Krhs) + zscale * (   &
                   &        - bogup_no3(ji,jj,jl) * z_ia                          & ! Uptake from bottom ice growth
                   &        - lagup(ji,jj,jl) * tr(ji,jj,1,jqno3,Kbb)             & ! Uptake from lateral ice growth
+                  &        + flush_no3(ji,jj,jl) * z_ia                          & ! Input from flushing 
+                  &        + slough_no3(ji,jj,jl) * z_ia                         & ! Input from sloughing 
+                  &        + lamloss_no3(ji,jj,jl) * z_ia                        & ! Input from lateral melting of ice
                   )
 
                ! Ocean surface NH4 
@@ -615,6 +645,9 @@ CONTAINS
                   &        + nxsicedia(ji,jj,jl) * z_ia /mmn                     & ! N excess from export directly remineralized
                   &        - bogup_nh4(ji,jj,jl) * z_ia                          & ! Uptake from bottom ice growth
                   &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrnh4,Kbb)             & ! Uptake from lateral ice growth
+                  &        + flush_nh4(ji,jj,jl) * z_ia                          & ! Input from flushing 
+                  &        + slough_nh4(ji,jj,jl) * z_ia                         & ! Input from sloughing 
+                  &        + lamloss_nh4(ji,jj,jl) * z_ia                        & ! Input from lateral melting of ice
                   )
 
                   
@@ -634,6 +667,11 @@ CONTAINS
          ENDDO
       ENDDO
 
+      
+      ! Lateral boundary conditions between halos, don't think it is needed (done in ice tracer advection for main ice variables)
+      CALL lbc_lnk( 'trc_sms_csib', qchidia(:,:,:), 'T',  1._wp)
+      CALL lbc_lnk( 'trc_sms_csib', qnidia(:,:,:) , 'T',  1._wp)
+
       ! Conversion from intensive/equivalent to extensive/global variables
       DO jn = 1,jp_csib
          icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
@@ -649,7 +687,7 @@ CONTAINS
       !!-----------------------------------------------------------------------
       !!                   ***  ROUTINE ice_friction_velocity ***
       !!
-      !! ** Purpose :   compute friction velocity, for molecular diffusion at sea ice- ocean interface
+      !! ** Purpose :   compute friction velocity, for molecular diffusion at sea ice-ocean interface
       !!                code adapted from ICE/icesbc.F90/ice_flx_other
       !!
       !! ** Inputs  :   u_ice, v_ice, ssu_m, ssv_m
@@ -690,7 +728,7 @@ CONTAINS
          &     lagup_dia (jpi,jpj,jpl) , lagup_no3  (jpi,jpj,jpl) , lagup_nh4   (jpi,jpj,jpl) , &
          &     nxsicedia (jpi,jpj,jpl) , cxsicedia  (jpi,jpj,jpl) ,                             &
          &     phot_dia  (jpi,jpj,jpl) , mortlin_dia(jpi,jpj,jpl) , mortquad_dia(jpi,jpj,jpl) , &
-         &     lim_PAR   (jpi,jpj,jpl) , lim_nut    (jpi,jpj,jpl) ,                             &
+         &     lim_PAR   (jpi,jpj,jpl) , lim_nut    (jpi,jpj,jpl) , lim_ice     (jpi,jpj,jpl) , &
          &     diaupn    (jpi,jpj,jpl) , chlsyn     (jpi,jpj,jpl) ,                             &
          &     remin_dia (jpi,jpj,jpl) , nitri      (jpi,jpj,jpl) ,                             &
          &     flush_no3 (jpi,jpj,jpl) , lamloss_no3(jpi,jpj,jpl) , moldif_no3  (jpi,jpj,jpl) , slough_no3  (jpi,jpj,jpl) , &

@@ -44,7 +44,7 @@ CONTAINS
 
       !!----------------------------------------------------------------------
       NAMELIST/namcsib/ ln_csib,ln_ibgcspinup
-      NAMELIST/namicedia/ z_ia, qnidiamin, qnmax_fct, qnmax_pow, qchidiaref, alrefidia, pcrefidia, betaidia, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
+      NAMELIST/namicedia/ z_ia, qnidiamin, cn_fct, cn_pow, qchidiaref, alrefidia, pcrefidia, betaidia, cigr, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
       NAMELIST/namicenit/ f_rm, r_ni, c_di, c_nu
       NAMELIST/namicedic/ sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
       
@@ -109,12 +109,13 @@ CONTAINS
          WRITE(numout,*) ' Bottom diatoms'
          WRITE(numout,*) ' z_ia =',z_ia 
          WRITE(numout,*) ' qnidiamin =',qnidiamin 
-         WRITE(numout,*) ' qnmax_fct =', qnmax_fct 
-         WRITE(numout,*) ' qnmax_pow =', qnmax_pow 
+         WRITE(numout,*) ' cn_fct =', cn_fct 
+         WRITE(numout,*) ' cn_pow =', cn_pow 
          WRITE(numout,*) ' qchidiaref =',qchidiaref 
          WRITE(numout,*) ' alrefidia =',alrefidia
          WRITE(numout,*) ' pcrefidia =',pcrefidia
          WRITE(numout,*) ' betaidia =',betaidia
+         WRITE(numout,*) ' cigr =',cigr
          WRITE(numout,*) ' vnref =',vnref
          WRITE(numout,*) ' knh4 =',knh4
          WRITE(numout,*) ' kno3 =',kno3
@@ -151,6 +152,7 @@ CONTAINS
       alrefidia = alrefidia / 86400._wp 
       pcrefidia = pcrefidia / 86400._wp
       betaidia = betaidia / 86400._wp
+      cigr = cigr / 86400._wp
       vnref = vnref / 86400._wp
       r_m1 = r_m1 / 86400._wp
       r_m2 = r_m2 / 86400._wp
