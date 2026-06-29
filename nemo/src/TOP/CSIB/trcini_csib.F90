@@ -19,6 +19,9 @@ MODULE trcini_csib
    USE dom_oce, ONLY: glamt, gphit               ! latitude/longitude for funky initiation
    USE ice , ONLY: a_i, jpl, t_i, nlay_i
    
+   USE in_out_manager ! I/O manager
+   USE iom            ! I/O manager library
+
    IMPLICIT NONE
    PRIVATE
 
@@ -31,7 +34,7 @@ MODULE trcini_csib
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_csib( Kmm )
+   SUBROUTINE trc_ini_csib
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_csib  ***  
       !!
@@ -39,9 +42,10 @@ CONTAINS
       !!
       !! ** Method  : - Read the csib namelist and check the parameter values
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   Kmm         ! time level indices
       INTEGER  ::   ji, jj, jl,jn          ! dummy loop indices
-      
+      REAL(wp), DIMENSION(jpi,jpj,jpl) ::   z3d   ! 3D workspace
+      CHARACTER(len=25) ::   znam
+
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_ini_csib:'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
@@ -49,12 +53,29 @@ CONTAINS
       ! Allocate sms_CSIB arrays
       IF( trc_sms_csib_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_csib: unable to allocate CSIB arrays' )
       
-      ! CALL trc_nam_csib ! read namelist -> done during ice model init (icestp.F90/ice_init)
+      CALL trc_nam_csib ! read namelist 
 
-      
-      IF( .NOT. ln_rsttr ) THEN
+      IF(lwp) WRITE(numout,*) '  Init of sea ice BGC variables'
+      IF(lwp) WRITE(numout,*) 
+      icetra(:,:,:,:) = 0._wp
+
+      IF( ln_rstart ) THEN ! if restart 
+
+         IF( iom_varid( numrir, icetrcnm(1), ldstop = .FALSE. ) > 0 ) THEN ! check that ice restart file has CSIB variables
+            IF(lwp) WRITE(numout,*) '  read sea ice tracer variables (CSIB) from ice restart file'
+            DO jn = 1,jp_csib
+               znam = icetrcnm(jn)
+               CALL iom_get( numrir, jpdom_auto, znam , z3d ) ; icetra(:,:,:,jn) = z3d(:,:,:)
+            ENDDO
+         ELSE ! restart but no CSIB variables in ice restart
+            IF(lwp) WRITE(numout,*) '  no sea ice tracers (CSIB) in ice restart file - set equal to ocean surface '
+            ln_ibgcspinup=.true. ! Init is done in trcsms_csib because CanOE init is done after CSIB init
+         ENDIF
          
-         icetra(:,:,:,:) = 0._wp
+      ELSE ! Full model spin up
+         
+         IF(lwp) WRITE(numout,*) '  Full model spin up - set equal to ocean surface '
+         ln_ibgcspinup=.true. ! Init is done in trcsms_csib because CanOE init is done after CSIB init
          
          ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icetra(:,:,3,jridia)=1._wp
@@ -66,14 +87,13 @@ CONTAINS
          ! WHERE( gphit(:,:)>70._wp .AND. gphit(:,:)<75._wp .AND. glamt(:,:)>-160._wp .AND. glamt(:,:)<-130._wp )  
          !    icenh4(:,:,2)=1._wp
          ! END WHERE
-         
-         
-         DO jn = 1,jp_csib
-            icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
-         ENDDO
-         
+            
       ENDIF
       
+      DO jn = 1,jp_csib
+         icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
+      ENDDO
+            
       ! initialize ratios, fluxes and process rates
       qnidia(:,:,:) = 0._wp
       qchidia(:,:,:) = 0._wp
@@ -129,6 +149,10 @@ CONTAINS
             ENDDO
          ENDDO
       ENDDO
+
+      IF(lwp) WRITE(numout,*) ' CSIB init done '
+      IF(lwp) WRITE(numout,*)
+
 
    END SUBROUTINE trc_ini_csib
 

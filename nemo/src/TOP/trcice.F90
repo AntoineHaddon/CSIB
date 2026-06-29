@@ -17,8 +17,6 @@ MODULE trcice
    USE trcice_cfc     ! CFC      initialisation
    USE trcice_canoe   ! CANOE    initialisation
    USE trcice_cmoc    ! CMOC     initialisation
-   USE par_csib       ! sea ice biogeochemistry model CSIB parameters
-   USE trcice_csib    ! CSIB     initialisation
    USE trcice_pisces  ! PISCES   initialisation
    USE trcice_c14     ! C14 bomb initialisation
    USE trcice_age     ! AGE      initialisation
@@ -59,7 +57,6 @@ CONTAINS
       IF ( nn_ice_tr == 1 ) THEN
          IF( ln_canoe   )    CALL trc_ice_ini_canoe        ! CANOE   bio-model
          IF( ln_cmoc    )    CALL trc_ice_ini_cmoc         ! CMOC    bio-model
-         IF( ln_csib    )    CALL trc_ice_ini_csib         ! CSIB    tracers
          IF( ln_pisces  )    CALL trc_ice_ini_pisces       ! PISCES  bio-model
          IF( ll_cfc     )    CALL trc_ice_ini_cfc          ! CFC     tracers
          IF( ln_c14     )    CALL trc_ice_ini_c14          ! C14     tracer

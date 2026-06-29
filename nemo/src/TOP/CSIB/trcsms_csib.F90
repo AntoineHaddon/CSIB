@@ -215,6 +215,16 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
 
+      IF (kt == 1) THEN ! Check that CanOE is active
+         IF (.NOT.  ln_canoe) THEN 
+            IF(lwp) WRITE(numout,*)
+            IF(lwp) WRITE(numout,*) 'CSIB on but not CanOE - deactivating CSIB'
+            IF(lwp) WRITE(numout,*) 
+            ln_csib=.false.
+            RETURN
+         ENDIF
+      ENDIF
+
       ! Initiation from ocean surface concentrations 
       ! done here and not in trcini_csib because CanOE initiation can sometimes occurs after
       IF ( (kt == 1) .AND. ((.NOT. ln_rsttr) .OR. ln_ibgcspinup) ) THEN

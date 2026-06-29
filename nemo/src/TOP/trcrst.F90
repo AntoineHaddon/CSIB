@@ -25,10 +25,6 @@ MODULE trcrst
    USE daymod
    USE lib_mpp
    
-   USE trcsms_csib      ! ice BGC tracers
-   USE par_csib      ! ice BGC parameters
-   USE ice , ONLY: a_i, jpl  ! for ice BGC tracers
-
    IMPLICIT NONE
    PRIVATE
 
@@ -146,26 +142,6 @@ CONTAINS
          END DO
       END IF
 
-      IF ( ln_csib ) THEN ! ice BGC tracers
-         IF ( ln_ibgcspinup ) THEN ! ice tracers spin up: set to ocean surface BGC
-            DO jl = 1, jpl ! loop ice categories
-               icetra(:,:,jl,jridiac) = tr(:,:,1,jrdia,Kmm) *12._wp ! convert to mass units
-               icetra(:,:,jl,jridian) = icetra(:,:,jl,jridiac) /8._wp ! init at C:N=8
-               icetra(:,:,jl,jridiach) = icetra(:,:,jl,jridiac) /10._wp ! init at C:Chl=10
-               icetra(:,:,jl,jrino3) = tr(:,:,1,jqno3,Kmm)
-               icetra(:,:,jl,jrinh4) = tr(:,:,1,jrnh4,Kmm)  
-            ENDDO          
-            DO jn=1,jp_csib
-               icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
-            ENDDO
-         ELSE ! ice tracer read from file
-            DO jn=1,jp_csib
-               CALL iom_get( numrtr, jpdom_auto, icetrcnm(jn), icetra(:,:,:,jn) )
-               icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
-            ENDDO
-         ENDIF
-      ENDIF
-      !
       IF(.NOT.lrxios) CALL iom_delay_rst( 'READ', 'TOP', numrtr )   ! read only TOP delayed global communication variables
    END SUBROUTINE trc_rst_read
 
@@ -192,12 +168,6 @@ CONTAINS
          CALL iom_rstput( kt, nitrst, numrtw, 'TRB'//ctrcnm(jn), tr(:,:,:,jn,Kbb) )
       END DO
       
-      IF ( ln_csib ) THEN ! ice BC tracers
-         DO jn=1, jp_csib
-            CALL iom_rstput( kt, nitrst, numrtw, icetrcnm(jn), icetra(:,:,:,jn) )
-         ENDDO
-      ENDIF
-
       IF( .NOT. lwxios ) CALL iom_delay_rst( 'WRITE', 'TOP', numrtw )   ! save only TOP delayed global communication variables
     
       IF( kt == nitrst ) THEN

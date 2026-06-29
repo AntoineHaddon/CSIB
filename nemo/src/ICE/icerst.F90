@@ -23,6 +23,10 @@ MODULE icerst
    USE eosbn2  , ONLY : l_useCT, eos_pt_from_ct     ! SAS ss[st]_m init
    USE iceistate      ! sea-ice: initial state
    USE icectl         ! sea-ice: control
+
+   USE trcsms_csib   ! for writing of sea ice biogeochemistry model CSIB
+   USE par_csib      ! sea ice biogeochemistry model CSIB parameters
+
    !
    USE in_out_manager ! I/O manager
    USE iom            ! I/O manager library
@@ -119,7 +123,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt     ! number of iteration
       !!
-      INTEGER ::   jk    ! dummy loop indices
+      INTEGER ::   jk,jn    ! dummy loop indices
       INTEGER ::   iter
       CHARACTER(len=25) ::   znam
       CHARACTER(len=2)  ::   zchar, zchar1
@@ -174,6 +178,12 @@ CONTAINS
          CALL iom_rstput( iter, nitrst, numriw, 't1_ice' , t1_ice )
       ENDIF
       !
+      IF ( ln_csib ) THEN ! ice BC tracers
+         IF(lwp) WRITE(numout,*) ' Writing CSIB variables in ice restart file'
+         DO jn=1, jp_csib
+            CALL iom_rstput(iter, nitrst, numriw, icetrcnm(jn), icetra(:,:,:,jn) )
+         ENDDO
+      ENDIF
 
       ! close restart file
       ! ------------------

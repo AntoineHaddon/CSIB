@@ -1094,9 +1094,8 @@ CONTAINS
             ENDIF
 
             IF ( ln_csib ) THEN ! ice BGC 
-               IF ( ln_ibgcspinup ) THEN ! start ice BGC from rest in case of restart from a run without ice BGC
-                  sxicetra = 0._wp   ;   syicetra = 0._wp   ;   sxxicetra = 0._wp   ;   syyicetra = 0._wp   ;   sxyicetra = 0._wp
-               ELSE ! read momments for ice BGC from ice restart file
+               IF( iom_varid( numrir, 'sx'//icetrcnm(1), ldstop = .FALSE. ) > 0 ) THEN
+                  IF(lwp) WRITE(numout,*) 'read moments for sea ice tracers (CSIB) from ice restart file'
                   DO jn = 1,jp_csib
                      znam = 'sx'//icetrcnm(jn)
                      CALL iom_get( numrir, jpdom_auto, znam , z3d , psgn = -1._wp ) ; sxicetra(:,:,:,jn) = z3d(:,:,:)
@@ -1109,6 +1108,9 @@ CONTAINS
                      znam = 'sxy'//icetrcnm(jn)
                      CALL iom_get( numrir, jpdom_auto, znam, z3d ) ; sxyicetra(:,:,:,jn) = z3d(:,:,:)
                   ENDDO
+               ELSE 
+                  IF(lwp) WRITE(numout,*) 'no sea ice tracers (CSIB) in ice restart file - set moments for ice tracers to 0'
+                  sxicetra = 0._wp   ;   syicetra = 0._wp   ;   sxxicetra = 0._wp   ;   syyicetra = 0._wp   ;   sxyicetra = 0._wp
                ENDIF
             ENDIF
             !

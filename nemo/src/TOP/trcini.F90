@@ -16,7 +16,6 @@ MODULE trcini
    !!   top_alloc :   allocate the TOP arrays
    !!----------------------------------------------------------------------
    USE par_trc         ! need jptra, number of passive tracers
-   USE par_csib        ! sea ice biogeochemistry model CSIB parameters
    USE oce_trc         ! shared variables between ocean and passive tracers
    USE trc             ! passive tracers common variables
    USE trcnam          ! Namelist read
@@ -147,7 +146,6 @@ CONTAINS
       USE trcini_pisces  ! PISCES   initialisation
       USE trcini_canoe   ! CANOE    initialisation
       USE trcini_cmoc    ! CMOC     initialisation
-      USE trcini_csib    ! CSIB   initialisation
       USE trcini_cfc     ! CFC      initialisation
       USE trcini_c14     ! C14  initialisation
       USE trcini_age     ! age initialisation
@@ -215,7 +213,6 @@ CONTAINS
       !    
       IF( ln_canoe       )   CALL trc_ini_canoe ( Kmm )     !  CANOE  model
       IF( ln_cmoc        )   CALL trc_ini_cmoc  ( Kmm )     !  CMOC   model
-      IF( ln_csib        )   CALL trc_ini_csib  ( Kmm )     !  CSIB model
       IF( ln_pisces      )   CALL trc_ini_pisces( Kmm )     !  PISCES model
       IF( ln_my_trc      )   CALL trc_ini_my_trc( Kmm )     !  MY_TRC model
       IF( ll_cfc         )   CALL trc_ini_cfc   ( Kmm )     !  CFC's

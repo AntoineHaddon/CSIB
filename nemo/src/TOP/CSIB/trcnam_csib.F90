@@ -36,67 +36,20 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       !
-      CHARACTER(LEN=20)::   clname
       INTEGER ::   ios       ! Local integer
-      INTEGER ::   numnatp_refcsib = -1           !! Logical unit for the ref namelist for the parameters of the CSIB model
-      INTEGER ::   numnatp_cfgcsib = -1           !! Logical unit for the cfg namelist for the parameters of the CSIB model
-      INTEGER ::   numonpbcsib      = -1          !! Logical unit for the above ref/cfg namelists output
 
       !!----------------------------------------------------------------------
-      NAMELIST/namcsib/ ln_csib,ln_ibgcspinup
-      NAMELIST/namicedia/ z_ia, qnidiamin, cn_fct, cn_pow, qchidiaref, alrefidia, pcrefidia, betaidia, cigr, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo
-      NAMELIST/namicenit/ f_rm, r_ni, c_di, c_nu
-      NAMELIST/namicedic/ sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
+      NAMELIST/namicetra/ ln_csib, z_ia, qnidiamin, cn_fct, cn_pow, qchidiaref, alrefidia, pcrefidia, betaidia, cigr, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo, f_rm, r_ni, c_di, c_nu, sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt
       
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_nam_csib : read CSIB namelists'
-      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~'
+      IF(lwp) WRITE(numout,*) '  trc_nam_csib : read icetra namelist in ice namelist file for CSIB2'
+      IF(lwp) WRITE(numout,*) 
      
-      ! open namelists
-      clname = 'namelist_csib'
-      CALL ctl_opn( numnatp_refcsib, TRIM( clname )//'_ref', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-      CALL ctl_opn( numnatp_cfgcsib, TRIM( clname )//'_cfg', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-      
-      ! read ref namelists
-
-      ! Namelist namcsib in reference namelist
-      REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namcsib, IOSTAT = ios, ERR = 901)
-      901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedia in reference namelist_csib' )
-      ! Namelist namicedia in reference namelist
-      REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namicedia, IOSTAT = ios, ERR = 902)
-      902   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedia in reference namelist_csib' )
-      ! Namelist namicenit in reference namelist
-      REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namicenit, IOSTAT = ios, ERR = 903)
-      903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicenit in reference namelist_csib' )
-      ! Namelist namicedic in reference namelist
-      REWIND( numnatp_refcsib )              
-      READ  ( numnatp_refcsib, namicedic, IOSTAT = ios, ERR = 904)
-      904   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicedic in reference namelist_csib' )
-
-
-      ! read cfg namelists
-
-      ! Namelist namcsib in configuration
-      REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namcsib, IOSTAT = ios, ERR = 905 )
-      905   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcsib in configuration namelist_csib' )
-      ! Namelist namicedia in configuration
-      REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namicedia, IOSTAT = ios, ERR = 905 )
-      906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicedia in configuration namelist_csib' )
-       ! Namelist namicenit in configuration
-      REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namicenit, IOSTAT = ios, ERR = 906 )
-      907   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicenit in configuration namelist_csib' )
-       ! Namelist namicedic in configuration
-      REWIND( numnatp_cfgcsib )
-      READ  ( numnatp_cfgcsib, namicedic, IOSTAT = ios, ERR = 907 )
-      908   IF( ios >  0 )   CALL ctl_nam ( ios , 'namicedic in configuration namelist_csib' )
-      
-      
+      READ  ( numnam_ice_ref, namicetra, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namicetra in reference namelist' )
+      READ  ( numnam_ice_cfg, namicetra, IOSTAT = ios, ERR = 902 )
+902   IF( ios > 0 )   CALL ctl_nam ( ios , 'namicetra in configuration namelist' )
+      IF(lwm) WRITE( numoni, namicetra )
 
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' '
@@ -104,7 +57,6 @@ CONTAINS
          WRITE(numout,*) ' '
          WRITE(numout,*) ' General parameters'
          WRITE(numout,*) ' ln_csib = ', ln_csib
-         WRITE(numout,*) ' ln_ibgcspinup = ', ln_ibgcspinup
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Bottom diatoms'
          WRITE(numout,*) ' z_ia =',z_ia 
@@ -144,8 +96,6 @@ CONTAINS
          WRITE(numout,*) ' icetalref =',icetalref
          WRITE(numout,*) ' f_dicsw =',f_dicsw
          WRITE(numout,*) ' f_dicsw_melt =',f_dicsw_melt
-
-
       ENDIF
 
       ! convert time unit from /day to /sec
@@ -160,13 +110,6 @@ CONTAINS
       dt_mo = dt_mo / 86400._wp
       ! convert temperature units
       t_mo = t_mo + 273.15_wp
-
-      ! output namelists
-      IF(lwm) CALL ctl_opn( numonpbcsib     , 'output.namelist.csib' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-      IF(lwm) WRITE( numonpbcsib, namcsib )
-      IF(lwm) WRITE( numonpbcsib, namicedia )
-      IF(lwm) WRITE( numonpbcsib, namicenit )
-      IF(lwm) WRITE( numonpbcsib, namicedic )
 
       
    END SUBROUTINE trc_nam_csib
