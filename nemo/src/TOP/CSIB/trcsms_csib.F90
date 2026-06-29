@@ -87,8 +87,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup_dia        !  Diatoms uptake rate from lateral ice growth  per ice category (mg C/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nxsicedia        !  N excess export per ice category (mg N/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: cxsicedia        !  C excess export per ice category (mg C/m3/s)
-   
-   
+      
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_no3        !  Loss rate of ice no3 from flushing per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_nh4        !  Loss rate of ice nh4 from flushing per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: slough_no3       !  Loss rate of ice no3 from sloughing per ice category (mmol/m3/s)
@@ -114,7 +113,6 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: mortquad_dia     !  Quadratic mortality rate of ice diatoms per ice category (mg C/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: remin_dia        !  N remineralization rate in ice per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nitri            !  Nitrification rate in ice per ice category (mmol/m3/s)
-
 
    ! model parameters
    REAL(wp), PUBLIC, SAVE ::   z_ia                 ! height of skeletal layer (m)
@@ -216,14 +214,9 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_csib:  CSIB model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
-      ! IF(lwp) WRITE(numout,*) ' time step kt ', kt
-      ! IF(lwp) WRITE(numout,*) ' rDt_trc ', rDt_trc
-      ! IF(lwp) WRITE(numout,*) ' rn_Dt ', rn_Dt
-      ! IF(lwp) WRITE(numout,*) ' nsec_day ', nsec_day
-      ! IF(lwp) WRITE(numout,*)
-      ! IF(lwp) WRITE(numout,*)
 
-      ! Initiation from ocean surface concentrations (need to do it here and not in trcini_csib because CanOE initiation occurs after?)
+      ! Initiation from ocean surface concentrations 
+      ! done here and not in trcini_csib because CanOE initiation can sometimes occurs after
       IF ( (kt == 1) .AND. ((.NOT. ln_rsttr) .OR. ln_ibgcspinup) ) THEN
          IF(lwp) WRITE(numout,*) 'Init from ocean surface'
          DO jl = 1, jpl ! loop ice categories
@@ -244,7 +237,9 @@ CONTAINS
          ENDDO
       END IF
 
-      ! Conversion from global (extensive used by ice transport model) to equivalent (intensive, used by bgc model) variables
+      ! Conversion from extensive (grid cell average, used by ice transport model) to intensive (in situ concentrations, used by bgc model) variables
+      ! grid cell average = in situ concentration * sea ice concentration
+      ! Similar to conversion from "global" to "equivalent" varaibles by sea ice model SI3
       ! and set to 0 if low ice concentration 
       DO jl = 1, jpl ! loop ice categories
          DO jj = 1, jpj
@@ -343,8 +338,8 @@ CONTAINS
 
                   ! flushing of ice tracers: flushrate / skeletal layer height * ice tracers concentration * flushing fraction (-)
                   flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jridiac) * f_flsh  ! ice diatoms   
-                  flush_no3(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra_gca(ji,jj,jl,jrino3)  ! ice no3   
-                  flush_nh4(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra_gca(ji,jj,jl,jrinh4)  ! ice nh4 
+                  flush_no3(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jrino3)  ! ice no3   
+                  flush_nh4(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icetra(ji,jj,jl,jrinh4)  ! ice nh4 
 
                   ! sloughing of ice tracers: bottom ice melt rate / skeletal layer height * ice tracers concentration * flushing fraction (-)
                   slough_dia(ji,jj,jl) = dh_bom_cat(ji,jj,jl) * rhoi / rhow /z_ia  * icetra(ji,jj,jl,jridiac) * f_slgh ! ice diatoms   
@@ -353,8 +348,8 @@ CONTAINS
  
                   ! loss of ice tracers from lateral melt : fraction of ice concentration lost (1/s) * ice tracers concentration (mg/m3)
                   lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jridiac)   ! ice diatoms
-                  lamloss_no3(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra_gca(ji,jj,jl,jrino3)   ! ice no3
-                  lamloss_nh4(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra_gca(ji,jj,jl,jrinh4)   ! ice nh4
+                  lamloss_no3(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jrino3)   ! ice no3
+                  lamloss_nh4(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jrinh4)   ! ice nh4
 
                   ! loss of ice tracers from melt-off : melt-off coeff ((C mg m-3)-1) * ice temp rate (C s-1) * ice temp change switch (-) * ice temp coeff (-) * biomass^2 ((mg m-3)2)
                   zsimt = SUM(t_i(ji,jj,:,jl)) / nlay_i                                                     ! mean sea ice temperature (deg K)
@@ -667,12 +662,7 @@ CONTAINS
          ENDDO
       ENDDO
 
-      
-      ! Lateral boundary conditions between halos, don't think it is needed (done in ice tracer advection for main ice variables)
-      CALL lbc_lnk( 'trc_sms_csib', qchidia(:,:,:), 'T',  1._wp)
-      CALL lbc_lnk( 'trc_sms_csib', qnidia(:,:,:) , 'T',  1._wp)
-
-      ! Conversion from intensive/equivalent to extensive/global variables
+      ! Conversion from intensive/equivalent to extensive/global variables for advection by sea ice model
       DO jn = 1,jp_csib
          icetra_gca(:,:,:,jn) = icetra(:,:,:,jn) * a_i(:,:,:)
       ENDDO

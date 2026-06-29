@@ -92,8 +92,6 @@ CONTAINS
       
 
       ! ! BGC process
-      CALL iom_put( 'qnidia'           , qnidia(:,:,:) )
-      CALL iom_put( 'qchidia'          , qchidia(:,:,:) )
       CALL iom_put( 'phot_dia'         , phot_dia(:,:,:) )
       CALL iom_put( 'lim_PAR'          , lim_PAR(:,:,:) )
       CALL iom_put( 'lim_nut'          , lim_nut(:,:,:) )
@@ -108,6 +106,9 @@ CONTAINS
       
       ! diagnostics
       CALL iom_put( 'icenpp'           , phot_dia(:,:,:) - etares*diaupn(:,:,:) )
+      CALL iom_put( 'qchidia'          , qchidia(:,:,:) )
+      CALL iom_put( 'qnidia'           , qnidia(:,:,:) )
+      CALL iom_put( 'qnidiamax'        , qnidiamax(:,:,:) )
 
 
    END SUBROUTINE trc_wri_csib
