@@ -25,6 +25,10 @@ MODULE trcopt_canbgc
    USE trcsrc_canbgc     ! access to surface chlorophyll array from external file
    
    USE trc_closea_canbgc ! bgc-specific closea mask
+   
+   USE sbc_ice          ! qsr_oce
+   USE ice              ! ice variables for under-ice light
+   USE trcsms_csib      ! ice BGC for ice algal shading
 
    IMPLICIT NONE
    PRIVATE
@@ -85,12 +89,12 @@ CONTAINS
       ! see trcsms_pisces s/routine for reference, look for jnt and p4z_bio call
       ! no need right now, later maybe?
       !
-      INTEGER  ::   ji, jj, jk
+      INTEGER  ::   ji, jj, jk, jl
       INTEGER  ::   irgb
       REAL(wp) ::   zchl
       REAL(wp) ::   zc0 , zc1 , zc2, zc3, z1_dep
       REAL(wp), DIMENSION(jpi,jpj    ) :: zdepmoy, zetmp1, zetmp2
-      REAL(wp), DIMENSION(jpi,jpj    ) :: zqsr100, zqsr_corr
+      REAL(wp), DIMENSION(jpi,jpj    ) :: zqsr100, zqsr_corr,zqsr_ui, ztoticechl
       REAL(wp), DIMENSION(jpi,jpj,jpk) :: zpar, ze0, ze1, ze2, ze3, zchl3d
       ! O Riche Sept 13th 2022
       ! add an intermediate/working array to track total chla
@@ -214,7 +218,7 @@ CONTAINS
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
          !
-         zqsr_corr(:,:) = max(0.,qsr(:,:))
+         zqsr_corr(:,:) = max(0.,qsr(:,:)) 
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 ) 
          !
@@ -224,12 +228,31 @@ CONTAINS
          !
       ELSE
          !
-         zqsr_corr(:,:) = max(0.,qsr(:,:))
+         zqsr_corr(:,:) = max(0., ( 1._wp - at_i(:,:) ) * qsr_oce(:,:)) 
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
          !
          DO jk = 1, nksr      
             etotb (:,:,jk) = ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
+         END DO
+         !
+         ! under-ice light
+         if (.not. ln_csib) then
+            ! no sea ice BGC
+            zqsr_ui = SUM( qtr_ice_bot * a_i, dim=3 )
+         else  
+            ! under-ice light with ice algal attenuation
+            ! ice chl attenuation coef from Smith et al. 1988 = 0.035 (mg Chl m-3)-1 m-1
+            zqsr_ui = 0._wp
+            do jl = 1, jpl ! loop ice categories
+               zqsr_ui(:,:) = zqsr_ui(:,:) +  qtr_ice_bot(:,:,jl) * a_i(:,:,jl) * exp( -0.035_wp * icetra(:,:,jl,jridiach) * z_ia)
+            enddo
+         endif
+         ! sea ice filters non PAR light and shortwave at bottom of sea ice is PAR 
+         ! so need to cancel the multiplication by parlux that is done in trc_opt_par (Fraction of shortwave as PAR)
+         CALL trc_opt_par( kt, Kmm, zqsr_ui /parlux , ze1, ze2, ze3 ) 
+         DO jk = 1, nksr      
+            etotb (:,:,jk) = etotb (:,:,jk) + ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
          END DO
          !
          etotb     (:,:,:) =  etotb(:,:,:) * tmask_bgc_closea(:,:,:)
