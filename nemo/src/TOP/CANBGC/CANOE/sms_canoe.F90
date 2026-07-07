@@ -44,5 +44,15 @@ MODULE sms_canoe
    ! Nitrogen fixation and denitrification
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zn2fix
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
+
+   ! Variables needed for dmsoce
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing1   !: microzooplankton grazing
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing2   !: mesozooplankton grazing on phytoplankton
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing3   !: mesozooplankton grazing on microzooplankton
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn    !: nanophytoplankton mortality
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpd    !: diatoms mortality
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zprocn     !: primary production by nanophyto
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zprocd     !: primary production by diatom
+
    
 END MODULE sms_canoe

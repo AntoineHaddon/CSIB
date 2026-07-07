@@ -70,7 +70,7 @@ MODULE canoenzd
    REAL(wp), PUBLIC :: kdca   = 0.0074_wp   !: dissolution rate of CaCO3
    REAL(wp), PUBLIC :: nca    = 1._wp       !: order of dissolution reaction (not used)
 
-   !REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
+   !REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr  ! set in 
 
 #  include "vectopt_loop_substitute.h90"
 
@@ -97,7 +97,7 @@ CONTAINS
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_meso')
       !
-      !grazing2(:,:,:) = 0.  !: grazing set to zero
+      grazing2(:,:,:) = 0.  !: grazing set to zero
       !grazing3(:,:,:) = 0.  !: grazing set to zero
 
       DO jk = 1, jpkm1
@@ -163,7 +163,7 @@ CONTAINS
                tr(ji,jj,jk,jrgoc, Krhs) = tr(ji,jj,jk,jrgoc, Krhs) + (1.-lambda2)*(grazz+grazp)
 
 ! I am excluding cxs from grazing diagnostics (represent zooplankton gains rather than phytoplankton losses)
-               !grazing2(ji,jj,jk) = grazp
+               grazing2(ji,jj,jk) = grazp
                !grazing3(ji,jj,jk) = grazz
 
             END DO
@@ -210,7 +210,7 @@ CONTAINS
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_mzoo')
       !
-      !grazing1(:,:,:) = 0.  !: grazing set to zero
+      grazing1(:,:,:) = 0.  !: grazing set to zero
 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -258,7 +258,7 @@ CONTAINS
                R = MAX(zsr1*Tf*tr(ji,jj,jk,jrzoo,Kbb)*xstepb-cxs,0.)
 
                ! Grazing by microzooplankton
-               !grazing1(ji,jj,jk) = grazp
+               grazing1(ji,jj,jk) = grazp
 
                !  Update of the TRA arrays
                !  ------------------------
@@ -314,11 +314,12 @@ CONTAINS
       REAL(wp) :: cxs,nxs1,nxs2,fexs1,fexs2
       REAL(wp) :: csw1,csw2
       REAL(wp) :: zrfact2
-      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn
+      !t REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prodcal
       CHARACTER (len=25) :: charout
 
-      ALLOCATE( zmortpn(  jpi, jpj, jpk ), prodcal(  jpi, jpj, jpk ) )
+      !t ALLOCATE( zmortpn(  jpi, jpj, jpk ), prodcal(  jpi, jpj, jpk ) )
+      ALLOCATE( prodcal(  jpi, jpj, jpk ) )
       zmortpn(:,:,:) = 0._wp
 
       !!---------------------------------------------------------------------
@@ -405,7 +406,8 @@ CONTAINS
          ENDIF
       ENDIF
 !      !
-      DEALLOCATE( zmortpn, prodcal )
+      !t DEALLOCATE( zmortpn, prodcal )
+      DEALLOCATE( prodcal )
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('nano')")
@@ -433,10 +435,10 @@ CONTAINS
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n,thetac
       REAL(wp) :: cxs,nxs1,nxs2,fexs1,fexs2
       REAL(wp) :: csw1,csw2
-      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpd
+      !t REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpd
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
-      ALLOCATE( zmortpd(  jpi, jpj, jpk ) )
+      !t ALLOCATE( zmortpd(  jpi, jpj, jpk ) )
       zmortpd(:,:,:) = 0._wp
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_mort2')
@@ -507,7 +509,7 @@ CONTAINS
          END DO
       END DO
       !
-      DEALLOCATE( zmortpd )
+      !t DEALLOCATE( zmortpd )
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('diat')")
@@ -800,10 +802,16 @@ CONTAINS
       ! ALLOCATE here the arrays specific to CANOE
       ! ALLOCATE( tab(...) , STAT=trc_sms_canoe_alloc )
       !
-      ALLOCATE( denitr(  jpi, jpj, jpk ) , STAT=canoe_nzd_alloc )
-      IF( canoe_nzd_alloc /= 0 ) CALL ctl_stop( 'STOP', 'canoe_nzd_alloc : failed to allocate denitr array' )
+      !t ALLOCATE( denitr(  jpi, jpj, jpk ) , STAT=canoe_nzd_alloc )
+      !t IF( canoe_nzd_alloc /= 0 ) CALL ctl_stop( 'STOP', 'eanoe_nzd_alloc : failed to allocate denitr array' )
+
+      canoe_nzd_alloc = 0
+      ALLOCATE(  denitr(  jpi, jpj, jpk ), grazing1(jpi,jpj,jpk) , grazing2(jpi,jpj,jpk),   &
+         & zmortpn(jpi,jpj,jpk) , zmortpd(jpi,jpj,jpk), &
+         & STAT=canoe_nzd_alloc)
+      IF( canoe_nzd_alloc /= 0 ) CALL ctl_stop( 'STOP', 'canoe_nzd_alloc : failed to allocate arrays' )
+
 
    END FUNCTION canoe_nzd_alloc
 
 END MODULE canoenzd
-

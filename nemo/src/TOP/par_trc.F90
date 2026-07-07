@@ -25,18 +25,20 @@ MODULE par_trc
 
    INTEGER, PUBLIC             :: jp_canoe        !: number of passive tracers in CANOE  model
    INTEGER, PUBLIC             :: jp_cmoc         !: number of passive tracers in CMOC   model
+   INTEGER, PUBLIC             :: jp_dmsoce       !: number of passive tracers in ocean DMS model
 
    INTEGER, PUBLIC             :: jptra           !: Total number of passive tracers
    INTEGER, PUBLIC             :: jp_pisces       !: number of passive tracers in PISCES model
    INTEGER, PUBLIC             :: jp_cfc          !: number of CFC passive tracers 
    INTEGER, PUBLIC             :: jp_my_trc       !: number of passive tracers in MY_TRC model
    INTEGER, PUBLIC             :: jp_bgc          !: number of passive tracers for the BGC model
-
+   
    INTEGER, PUBLIC             :: jp_dia3d        !: number of 3D diagnostic variables
    INTEGER, PUBLIC             :: jp_dia2d        !: number of 2D diagnostic variables
-
+   
    LOGICAL, PUBLIC             :: ln_canoe        !: CANOE  flag 
    LOGICAL, PUBLIC             :: ln_cmoc         !: CMOC   flag 
+   LOGICAL, PUBLIC             :: ln_dmsoce       !: DMS flag
    LOGICAL, PUBLIC             :: ln_pisces       !: PISCES flag 
    LOGICAL, PUBLIC             :: ln_age          !: AGE flag 
    LOGICAL, PUBLIC             :: ln_cfc11        !: CFC11 flag 

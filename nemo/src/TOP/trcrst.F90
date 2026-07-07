@@ -25,6 +25,8 @@ MODULE trcrst
    USE daymod
    USE lib_mpp
    
+   USE par_dms
+
    IMPLICIT NONE
    PRIVATE
 

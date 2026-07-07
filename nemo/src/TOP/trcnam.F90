@@ -34,6 +34,7 @@ MODULE trcnam
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer  !: type of tracer for saving if not key_xios
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: canoe_tracer 
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: cmoc_tracer 
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: dmsoce_tracer 
    TYPE(DIAG),    DIMENSION(jpmaxdia), PUBLIC  :: sn_dia     !: type of diagnostics
 
    !!----------------------------------------------------------------------
@@ -140,19 +141,21 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER ::   ios, ierr, icfc, nb_bgcms       ! Local integer
       !!
-      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14,   &
+      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_dmsoce, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14,   &
          &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia, ln_trcbc,ln_trcais, &
-         &            jp_canoe, canoe_tracer, jp_cmoc, cmoc_tracer
+         &            jp_canoe, canoe_tracer, jp_cmoc, cmoc_tracer, jp_dmsoce, dmsoce_tracer
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
       !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  ! ais !
       jp_bgc = 0
       jp_canoe    =  0    
       jp_cmoc     =  0    
+      jp_dmsoce   =  0
       sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false. , .false. )
       sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
       canoe_tracer= PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false., .false. )
       cmoc_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false., .false. )
+      dmsoce_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false., .false. )
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'trc_nam_trc : read the passive tracer namelists'
@@ -183,6 +186,11 @@ CONTAINS
       IF( ln_cmoc   )  THEN
           jptra  = jp_bgc + jp_cmoc
       ENDIF
+
+      if (ln_dmsoce) THEN
+         jptra  = jp_bgc + jp_canoe + jp_dmsoce
+      ENDIF     
+
       !
       IF( ln_pisces )  THEN !! double check that changes in TOP still accomodate the useage of PISCES ! OR Jan 19th 2023 
          jp_pisces = jp_bgc
@@ -222,6 +230,7 @@ CONTAINS
          WRITE(numout,*) '      Total number of shared BGC tracers           jp_bgc        = ', jp_bgc
          WRITE(numout,*) '      Simulating CANOE  model                      ln_canoe      = ', ln_canoe 
          WRITE(numout,*) '      Simulating CMOC   model                      ln_cmoc       = ', ln_cmoc  
+         WRITE(numout,*) '      Simulating Ocean DMS model                   ln_dmsoce     = ', ln_dmsoce  
          WRITE(numout,*) '      Total number of added CanOE tracers          jp_canoe      = ', jp_canoe
          WRITE(numout,*) '      Total number of added CMOC tracers           jp_cmoc       = ', jp_cmoc
          WRITE(numout,*) '      Simulating PISCES model                      ln_pisces     = ', ln_pisces

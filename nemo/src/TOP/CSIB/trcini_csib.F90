@@ -3,8 +3,7 @@ MODULE trcini_csib
    !!                         ***  MODULE trcini_csib  ***
    !! TOP :   initialisation of the CSIB tracers
    !!======================================================================
-   !! History :        !  2007  (C. Ethe, G. Madec) Original code
-   !!                  !  2016  (C. Ethe, T. Lovato) Revised architecture
+   !! History :      !  2025 (A. Haddon) Original code
    !!----------------------------------------------------------------------
    !! trc_ini_csib   : CSIB model initialisation
    !!----------------------------------------------------------------------
@@ -49,14 +48,20 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_ini_csib:'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
+            
+      CALL trc_nam_csib ! read namelist 
+      
+      ! Set number of tracers
+      IF (ln_dmsice) THEN
+         jp_csib=7
+      ELSE
+         jp_csib=5
+      END IF
       
       ! Allocate sms_CSIB arrays
       IF( trc_sms_csib_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_csib: unable to allocate CSIB arrays' )
-      
-      CALL trc_nam_csib ! read namelist 
 
-      IF(lwp) WRITE(numout,*) '  Init of sea ice BGC variables'
-      IF(lwp) WRITE(numout,*) 
+      ! Init of sea ice BGC variables
       icetra(:,:,:,:) = 0._wp
 
       IF( ln_rstart ) THEN ! if restart 
@@ -140,7 +145,7 @@ CONTAINS
       mortquad_dia(:,:,:) = 0._wp
       remin_dia(:,:,:) = 0._wp
       nitri(:,:,:) = 0._wp
-      
+
       ! init sea ice temp at previous time step with current temp: used for sea ice temp change, init at 0 can cause large derivative
        DO jj = 1, jpj
          DO ji = 1, jpi
@@ -150,9 +155,27 @@ CONTAINS
          ENDDO
       ENDDO
 
-      IF(lwp) WRITE(numout,*) ' CSIB init done '
-      IF(lwp) WRITE(numout,*)
+      IF (ln_dmsice) THEN
+         flush_dmspd(:,:,:) = 0._wp
+         slough_dmspd(:,:,:) = 0._wp
+         lamloss_dmspd(:,:,:) = 0._wp
+         lagup_dmspd(:,:,:) = 0._wp
+         bogup_dmspd(:,:,:) = 0._wp
+         bogup_dmspd(:,:,:) = 0._wp
+         lagup_dmspd(:,:,:) = 0._wp
+         
+         flush_dms(:,:,:)   =0._wp
+         slough_dms(:,:,:) = 0._wp
+         lamloss_dms(:,:,:) = 0._wp
+         lagup_dms(:,:,:) = 0._wp
+         bogup_dms(:,:,:) = 0._wp
+         bogup_dms(:,:,:) = 0._wp
+         lagup_dms(:,:,:) = 0._wp
 
+         dmsp_exud(:,:,:) = 0._wp
+         dmsp_lysis(:,:,:) = 0._wp
+         dms_phot(:,:,:) = 0._wp
+      ENDIF
 
    END SUBROUTINE trc_ini_csib
 

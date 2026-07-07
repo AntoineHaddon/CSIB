@@ -82,9 +82,9 @@ MODULE canoeprod
    REAL(wp), SAVE, PUBLIC ::  concfediaz = 100._wp           !: DNF iron concentration dependence parameter
    INTEGER, SAVE, PUBLIC ::   jk_max_dnf = 25                !: layer index for max depth of nitrogen fixation
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prmax    !: optimal production = f(temperature)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotad   !: proxy of N quota in diatomee
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prmax    !: optimal production = f(temperature)  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotad   !: proxy of N quota in diatomee  
    
    REAL(wp) :: tpp                    !: Total primary production
 
@@ -124,7 +124,8 @@ CONTAINS
       CHARACTER (len=25) :: charout
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprdia, zprbio, zprdch, zprnch, zysopt   
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprocn, zprocd, zpronn, zprond
+      !t REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprocn, zprocd, zpronn, zprond
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::  zpronn, zprond
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('canoe_prod')
@@ -144,7 +145,7 @@ CONTAINS
       ALLOCATE( zprorca( jpi, jpj, jpk ),  zprorcad( jpi, jpj, jpk ) )
       ALLOCATE( zprofed( jpi, jpj, jpk ),  zprofen(  jpi, jpj, jpk ) )
       ALLOCATE( zpronew( jpi, jpj, jpk ),  zpronewd( jpi, jpj, jpk ) )
-      ALLOCATE( zprocn(  jpi, jpj, jpk ),  zprocd(   jpi, jpj, jpk ) )
+      !t ALLOCATE( zprocn(  jpi, jpj, jpk ),  zprocd(   jpi, jpj, jpk ) )
       ALLOCATE( zpronn(  jpi, jpj, jpk ),  zprond(   jpi, jpj, jpk ) ) 
       !
       zprorca (:,:,:) = 0._wp
@@ -215,6 +216,8 @@ CONTAINS
 ! calculate excess intracellular C for exhudation
                       xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
+
+
 
                       zprocn(ji,jj,jk) = (PCphot-eta*VCN)*tr(ji,jj,jk,jrphy, Kbb)*xstepb-kexh*xsphsyn*xstepb ! C production rate (in molar units)
                       zpronn(ji,jj,jk) = VCN/QN*tr(ji,jj,jk,jrnn, Kbb)*xstepb                                ! N uptake rate
@@ -337,7 +340,8 @@ CONTAINS
      !
      DEALLOCATE( zprdia,  zprbio,   zprdch,  zprnch,  zysopt            ) 
      DEALLOCATE( zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd )
-     DEALLOCATE( zprocn,  zprocd,   zpronn,  zprond                     ) 
+     !t DEALLOCATE( zprocn,  zprocd,   zpronn,  zprond                     ) 
+     DEALLOCATE( zpronn,  zprond                     ) 
      !
      IF( ln_timing )  CALL timing_stop('canoe_prod')
      !
@@ -413,6 +417,11 @@ CONTAINS
       ALLOCATE( zprochln(jpi,jpj,jpk) , zprochld(jpi,jpj,jpk) , STAT=ierr )
       !
       IF( ierr /= 0 ) CALL ctl_stop( 'STOP', 'canoe_prod_init : failed to allocate zprochl* arrays' )
+
+      !t Allocate zprocn,zprocd for dmsoce
+      ALLOCATE( zprocn(jpi,jpj,jpk) , zprocd(jpi,jpj,jpk) , STAT=ierr )
+      IF( ierr /= 0 ) CALL ctl_stop( 'STOP', 'canoe_prod_init : failed to allocate zproc* arrays' )
+
       !
    END SUBROUTINE canoe_prod_init
 

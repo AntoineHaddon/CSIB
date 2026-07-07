@@ -146,6 +146,7 @@ CONTAINS
       USE trcini_pisces  ! PISCES   initialisation
       USE trcini_canoe   ! CANOE    initialisation
       USE trcini_cmoc    ! CMOC     initialisation
+      USE trcini_dms     ! DMS   initialisation
       USE trcini_cfc     ! CFC      initialisation
       USE trcini_c14     ! C14  initialisation
       USE trcini_age     ! age initialisation
@@ -193,6 +194,19 @@ CONTAINS
         END DO
       END IF
       !      
+      IF (ln_dmsoce) THEN
+        DO jp = 1, jp_dmsoce
+           jn = jp + jp_bgc + jp_canoe
+           ctrcnm    (jn) = TRIM( dmsoce_tracer(jp)%clsname )
+           ctrcln    (jn) = TRIM( dmsoce_tracer(jp)%cllname )
+           ctrcun    (jn) = TRIM( dmsoce_tracer(jp)%clunit  )
+           ln_trc_ini(jn) =       dmsoce_tracer(jp)%llinit
+           ln_trc_sbc(jn) =       dmsoce_tracer(jp)%llsbc
+           ln_trc_cbc(jn) =       dmsoce_tracer(jp)%llcbc
+           ln_trc_obc(jn) =       dmsoce_tracer(jp)%llobc
+        END DO
+      END IF
+
       DO jn = 1, jp_dia3d +jp_dia2d
          cdianm    (jn) = TRIM( sn_dia(jn)%sname )
          cdialn    (jn) = TRIM( sn_dia(jn)%lname )
@@ -213,6 +227,7 @@ CONTAINS
       !    
       IF( ln_canoe       )   CALL trc_ini_canoe ( Kmm )     !  CANOE  model
       IF( ln_cmoc        )   CALL trc_ini_cmoc  ( Kmm )     !  CMOC   model
+      IF( ln_dmsoce      )   CALL trc_ini_dms   ( Kmm )      !  DMS model
       IF( ln_pisces      )   CALL trc_ini_pisces( Kmm )     !  PISCES model
       IF( ln_my_trc      )   CALL trc_ini_my_trc( Kmm )     !  MY_TRC model
       IF( ll_cfc         )   CALL trc_ini_cfc   ( Kmm )     !  CFC's

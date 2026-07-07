@@ -28,6 +28,7 @@ MODULE trcopt_canbgc
    
    USE sbc_ice          ! qsr_oce
    USE ice              ! ice variables for under-ice light
+   USE par_csib
    USE trcsms_csib      ! ice BGC for ice algal shading
 
    IMPLICIT NONE

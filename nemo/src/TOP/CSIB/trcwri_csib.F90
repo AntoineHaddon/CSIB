@@ -5,12 +5,13 @@ MODULE trcwri_csib
    !!======================================================================
 #if defined key_top && defined key_xios
    !!----------------------------------------------------------------------
-   !! History :      !  2007  (C. Ethe, G. Madec)  Original code
-   !!                !  2016  (C. Ethe, T. Lovato) Revised architecture
+   !! History :      !  2025 (A. Haddon) Original code
    !!----------------------------------------------------------------------
    USE par_trc         ! passive tracers common variables
    USE trc         ! passive tracers common variables 
    USE iom         ! I/O manager
+
+   USE par_csib  
    USE trcsms_csib  !CSIB variables
    USE ice              ! ice variables
 
@@ -35,13 +36,22 @@ CONTAINS
       INTEGER, INTENT(in)  :: Kmm   ! time level indices
       ! CHARACTER (len=20)   :: cltra
       INTEGER              :: jn
+      REAL(wp), DIMENSION(jpi,jpj) ::   z1_at_i
       !!---------------------------------------------------------------------
  
+      ! 1 / sea ice concentration ; to compute average over sea ice thickness categories
+      WHERE( at_i(:,:) > 1.e-4_wp )   ;   z1_at_i(:,:) = 1._wp / at_i(:,:)
+      ELSEWHERE                       ;   z1_at_i(:,:) = 0._wp
+      END WHERE
+
       ! write the tracer concentrations in the file
       ! ---------------------------------------
       DO jn=1,jp_csib
-         CALL iom_put( icetrcnm(jn)               , icetra(:,:,:,jn) )
-         CALL iom_put( TRIM(icetrcnm(jn))//'_gca'       , icetra_gca(:,:,:,jn) )
+         CALL iom_put( TRIM(icetrcnm(jn))//'_cat'        , icetra(:,:,:,jn) )
+         CALL iom_put( TRIM(icetrcnm(jn))//'_gca'  , icetra_gca(:,:,:,jn) )
+
+         ! average over sea ice thickness categories
+         CALL iom_put( icetrcnm(jn)                , SUM( icetra_gca(:,:,:,jn) , dim=3 ) * z1_at_i(:,:)  )
       ENDDO
 
       ! ! ocean surface BGC
@@ -105,11 +115,19 @@ CONTAINS
       CALL iom_put( 'nitri'            , nitri(:,:,:) )
       
       ! diagnostics
-      CALL iom_put( 'icenpp'           , phot_dia(:,:,:) - etares*diaupn(:,:,:) )
+      CALL iom_put( 'icenpp_cat'       , phot_dia(:,:,:) - etares*diaupn(:,:,:) )
+      CALL iom_put( 'icenpp'           , SUM( phot_dia(:,:,:) - etares*diaupn(:,:,:) , dim=3 ) * z1_at_i(:,:)  )
       CALL iom_put( 'qchidia'          , qchidia(:,:,:) )
       CALL iom_put( 'qnidia'           , qnidia(:,:,:) )
       CALL iom_put( 'qnidiamax'        , qnidiamax(:,:,:) )
 
+      IF (ln_dmsice) THEN
+         CALL iom_put( "icedmspdrls"      , flush_dmspd(:,:,:) + slough_dmspd(:,:,:) + lamloss_dmspd(:,:,:))
+         CALL iom_put( "icedmsrls"        , flush_dms(:,:,:) + slough_dms(:,:,:) + lamloss_dms(:,:,:))
+         CALL iom_put( "dmsp_exud"        , dmsp_exud(:,:,:) )
+         CALL iom_put( "dmsp_lysis"       , dmsp_lysis(:,:,:) )
+         CALL iom_put( "dms_phot"         , dms_phot(:,:,:) )
+      ENDIF
 
    END SUBROUTINE trc_wri_csib
 
