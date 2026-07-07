@@ -1,3 +1,8 @@
+Forked repository of [CanNEMO] (https://gitlab.science.gc.ca/CCCma/CanNEMO) for the development of 
+- Canadian Sea Ice Biogeochemistry (CSIB) version 2, see CSIB.md
+- an ocean and sea ice DMS model, see DMS.md 
+
+
 ## CanNEMO
 
 The development of NEMO at CCCma, including ocean physics, biogeochemistry and sea-ice as well as associated scripts and code for running the model. 
