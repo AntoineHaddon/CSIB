@@ -53,9 +53,14 @@ CONTAINS
       READ  ( numnam_ice_cfg, namicetra, IOSTAT = ios, ERR = 902 )
 902   IF( ios > 0 )   CALL ctl_nam ( ios , 'namicetra in configuration namelist' )
       
+      IF(.NOT. ln_csib) THEN 
+         IF(lwm) WRITE(numout,*) 'CSIB not active'
+         RETURN
+      END IF
+
       IF(lwm) WRITE( numoni, namicetra )
 
-      IF(lwp) THEN                         ! control print
+      IF(lwp) THEN
          WRITE(numout,*) ' '
          WRITE(numout,*) 'Parameters for CSIB'
          WRITE(numout,*) ' '

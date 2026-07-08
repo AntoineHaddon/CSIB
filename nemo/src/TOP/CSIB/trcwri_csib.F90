@@ -78,7 +78,7 @@ CONTAINS
       CALL iom_put( 'flush_dia'        , flush_dia(:,:,:) )
       CALL iom_put( 'slough_dia'       , slough_dia(:,:,:) )
       CALL iom_put( 'lamloss_dia'      , lamloss_dia(:,:,:) )
-      CALL iom_put( 'meltoff_dia'      , meltoff_dia(:,:,:) )
+      CALL iom_put( 'heatexp_dia'      , heatexp_dia(:,:,:) )
       CALL iom_put( 'dt_i'             , dt_i(:,:,:) )
       CALL iom_put( 'bogup_dia'        , bogup_dia(:,:,:) )
       CALL iom_put( 'lagup_dia'        , lagup_dia(:,:,:) )

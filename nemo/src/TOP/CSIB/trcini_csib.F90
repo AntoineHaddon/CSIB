@@ -51,6 +51,12 @@ CONTAINS
             
       CALL trc_nam_csib ! read namelist 
       
+      IF (.NOT. ln_csib) THEN 
+         ! CSIB off, exiting routine to avoid allocating varaibles or reading restart files
+         ! only know now because flag is in sea ice namelist, read by trc_nam_csib
+         RETURN
+      END IF
+
       ! Set number of tracers
       IF (ln_dmsice) THEN
          jp_csib=7
@@ -113,7 +119,7 @@ CONTAINS
       lamloss_dia(:,:,:) = 0._wp
       t_i_b(:,:,:) = 0._wp
       dt_i(:,:,:) = 0._wp
-      meltoff_dia(:,:,:) = 0._wp
+      heatexp_dia(:,:,:) = 0._wp
       bogup_dia(:,:,:) = 0._wp
       lagup_dia(:,:,:) = 0._wp
       nxsicedia(:,:,:) = 0._wp

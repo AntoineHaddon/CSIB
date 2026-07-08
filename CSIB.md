@@ -99,9 +99,9 @@ In `namelist_ice_ref`:
         f_p2            = 0.1            ! Seeding fraction (-)
         f_flsh          = 0.8            ! Flushing fraction (-)
         f_slgh          = 0.8            ! Sloughing fraction (-)
-        dt_mo           = 0.15           ! Melt-off sea ice warming threshold (deg C d-1)
-        t_mo            = -5.0           ! Melt-off sea ice temp trheshold (deg C)
-        d_mo            = 0.0006         ! Melt-off coeffecient ((deg C mg m-3)-1)
+        dt_mo           = 0.15           ! Heating export sea ice warming threshold (deg C d-1)
+        t_mo            = -5.0           ! Heating export sea ice temp trheshold (deg C)
+        d_mo            = 0.0006         ! Heating export coeffecient ((deg C mg m-3)-1)
     ! Ice nitrogen
         f_rm            = 0.3            ! Remineralization fraction (-)
         r_ni            = 0.01           ! Nitrification rate (d-1 W m-2)  
@@ -114,7 +114,7 @@ In `namelist_ice_ref`:
         f_dicsw         = 0.99           ! fraction of DIC rejected into seawater during growth (-)
         f_dicsw_melt    = 0.975          ! fraction of DIC rejected into seawater during melt (-)
     ! Ice DMS
-        ln_dmsice       = .false.        ! Run with ice dms
+        ln_dmsice       = .false.        ! Run with ice dms - requires ocean DMS (ln_dmsoce in TOP namelist + parameters in CanOE namelists)
         q_pi            = 4.             ! intracellular DMSPp-to-Carbon ratio (umol S:mmol C)
         f_zi            = 0.3            ! sloppy feeding fraction (-)
         f_ei            = 0.05           ! exudation fraction (-)
@@ -160,7 +160,7 @@ For file `field_def_nemo-canoe.xml`
        <field id="flush_dia"    long_name="Ice diatoms flushrate"                       unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />
        <field id="slough_dia"   long_name="Ice diatoms sloughing rate"                  unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />
        <field id="lamloss_dia"  long_name="Ice diatoms loss from lateral melt"          unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />
-       <field id="meltoff_dia"  long_name="Ice diatoms loss from melt-off"              unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />
+       <field id="heatexp_dia"  long_name="Ice diatoms loss from heating export"        unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />
        <field id="dt_i"         long_name="Sea ice temperature tendency"                unit="deg C s-1"            grid_ref="grid_T_ncatice" />
        <field id="bogup_dia"    long_name="Ice diatoms uptake from ice bottom growth"   unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />
        <field id="lagup_dia"    long_name="Ice diatoms uptake from ice latteral growth" unit="mg m-3 s-1"           grid_ref="grid_T_ncatice" />

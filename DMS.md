@@ -7,6 +7,17 @@ Ocean DMS is implemented as a TOP module, with main code in folder TOP/DMS.
 Sea ice DMS is added as a sea ice tracer like the other variables of CSIB. See CSIB.md for calling sequence and files modified.
 
 
+## References
+
+DMS model implemented here in NEMO4.2 is the same as the one developed and implemented in NEMO3.4-LIM2 by Hakase Hayashida et al.
+
+- https://doi.org/10.5194/bg-14-3129-2017 : DMS model developement and evaluation in 1D model framework - Includes appendix with DMS model description
+- https://doi.org/10.5194/gmd-12-1965-2019 : Implementation of DMS (and sea ice BGC) in 3D model in NEMO3.4 with LIM2
+- https://doi.org/10.1029/2019GB006456 : analysis of DMS in 3D model for historical period (1980-2014) - Includes appendix with DMS model description
+- https://doi.org/10.1525/elementa.2024.00090 : analysis of DMS in 3D model for futur period (2015-2085)
+
+
+
 ## Calling sequence of ocean DMS
 
 Init in `trc_ini`
@@ -30,7 +41,7 @@ Transport done by TOP (like CanOE variables) `trc_trp`
 TOP files modified 
 - `par_trc.F90` declares DMS flag and number of tracers 
 - `trcini.F90` stores DMS tracers info into arrays and calls `trc_ini_dms`
-- `trcnam.F90` reads DMS tracers info and flag from TOP namelist, sets total number of tracers to account for dms tracers
+- `trcnam.F90` reads DMS tracers info and flag from TOP namelist, sets total number of tracers to account for dms tracers. If DMS is on checks that CanOE is also active.
 - `trcrst.F90` add a check for DMS variables in restart file, in case of restart from a simulation without DMS
 - `trcsbc` check for each variable that it is in restart (was only done for first)
 - `trcsms.F90` calls `trc_sms_dms`
@@ -52,6 +63,7 @@ CanOE files modified
 - trc_ini : csib ini moved to SI3
 - trcice: not needed
 - DMS/trcnam_dms: DMS parameters in CanOE namelist
+- trcnam :if DMS is on checks that CanOE is also active
 - ice DMS 
     - parameters in CSIB namelist in sea ice model namelist
     - didn't include DMSP(D) molecular diffusion as it wasn't in previous model version
@@ -67,6 +79,29 @@ CanOE files modified
 
 
 ## Parameters
+
+In `namelist_top_ref`:
+
+    &namtrc          !   tracers definition
+    !-----------------------------------------------------------------------
+    [...]
+    ln_dmsoce     =  .false.     !  Run DMS model 
+    [...]
+    
+In `namelist_top_cfg`:
+
+    !-----------------------------------------------------------------------
+    &namtrc          !   tracers definition
+    !-----------------------------------------------------------------------
+    [...]
+    !_____________!___________!_________________________________________!____________!________________!
+    !  DMS ocean -specific tracers
+    !_____________!___________!_________________________________________!____________!________________!
+    !             !    name   !           title of the field            !   units    ! init from file !
+    jp_dmsoce = 2
+    dmsoce_tracer(1)  = 'dmspd  ' , 'Dissolved dimethylsulfoniopropionate   ',  'nmol S L-1',  .false.
+    dmsoce_tracer(2)  = 'dms    ' , 'Dimethylsulfide                        ',  'nmol S L-1',  .false.
+
 
 In `namelist_canoe_ref`:
 

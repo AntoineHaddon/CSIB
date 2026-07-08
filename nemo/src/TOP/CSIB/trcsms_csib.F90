@@ -82,7 +82,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_dia        !  Loss rate of ice algae from flushing per ice category (mg C m-3 s-1)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: slough_dia       !  Loss rate of ice algae from sloughing per ice category (mg C m-3 s-1)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_dia      !  Loss rate from lateral melt per ice category (mg C m-3 s-1)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: meltoff_dia      !  Loss rate from melt-off per ice category (mg C m-3 s-1)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: heatexp_dia      !  Loss rate from heating export per ice category (mg C m-3 s-1)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: t_i_b            !  Mean sea ice temperature at previous time step (deg K)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dt_i             !  Mean sea ice temperature change (C s-1)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_dia        !  Ice algae uptake rate from bottom ice growth per ice category (mg C m-3 s-1)
@@ -128,9 +128,9 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nitri            !  Nitrification rate in ice per ice category (mmol m-3 s-1)
    
    
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dmsp_exud        ! DMPSd production from exudation
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dmsp_lysis       ! DMSPd production from lysis
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dms_phot         ! DMS photolysis
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dmsp_exud        ! DMPSd production from exudation (umolS m-3 s-1)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dmsp_lysis       ! DMSPd production from lysis (umolS m-3 s-1)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: dms_phot         ! DMS photolysis (umolS m-3 s-1)
 
  
 
@@ -159,9 +159,9 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE ::   f_p2                 ! Seeding fraction (-)
    REAL(wp), PUBLIC, SAVE ::   f_flsh               ! Flushing fraction (-)
    REAL(wp), PUBLIC, SAVE ::   f_slgh               ! Sloughing fraction (-)
-   REAL(wp), PUBLIC, SAVE ::   dt_mo                ! Melt-off sea ice warming threshold (deg C d-1)(converted to s-1)
-   REAL(wp), PUBLIC, SAVE ::   t_mo                 ! Melt-off sea ice temp trheshold (deg C) + 273.15 = (deg K)
-   REAL(wp), PUBLIC, SAVE ::   d_mo                 ! Melt-off coeffecient ((deg C mg m-3)-1)
+   REAL(wp), PUBLIC, SAVE ::   dt_mo                ! Heating export sea ice warming threshold (deg C d-1)(converted to s-1)
+   REAL(wp), PUBLIC, SAVE ::   t_mo                 ! Heating export sea ice temp trheshold (deg C) + 273.15 = (deg K)
+   REAL(wp), PUBLIC, SAVE ::   d_mo                 ! Heating export coeffecient ((deg C mg m-3)-1)
    ! ice N
    REAL(wp), PUBLIC, SAVE ::   f_rm                 ! Remineralization fraction (-)
    REAL(wp), PUBLIC, SAVE ::   r_ni                 ! Nitrification rate (d-1 W m-2)  (converted to s-1)
@@ -224,8 +224,8 @@ CONTAINS
       REAL(wp) :: zlim_nh4, zlim_no3   ! NH4 and NO3 limitation factors
       REAL(wp) :: zrhoch               ! for Chl synthesis
       REAL(wp) :: zsimt                ! mean sea ice temperature
-      REAL(wp) :: zsti                 ! sea ice temperature coeffecient for melt-off
-      REAL(wp) :: if_dti_higher        ! sea ice temperature change switch for melt-off
+      REAL(wp) :: zsti                 ! sea ice temperature coeffecient for heating export
+      REAL(wp) :: if_dti_higher        ! sea ice temperature change switch for heating export
       REAL(wp) :: zno3Old, znh4Old     ! for ice-ocean diffusion 
       REAL(wp) :: zphyn2c              ! phytoplankton N:C
       REAL(wp) :: ztotexp_icediac      ! total expected C export
@@ -240,25 +240,27 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
 
-      IF (kt == 1) THEN ! Check that CanOE is active (done here and not in init because CSIB init is in sea ice model init which is before CanOE init)
+      IF (kt == nittrc000) THEN ! first iteration of run
+         ! Check that CanOE is active (done here because CSIB init is in sea ice model init which is before CanOE init)
          IF (.NOT.  ln_canoe) THEN 
             IF(lwp) WRITE(numout,*)
-            IF(lwp) WRITE(numout,*) 'CSIB on but not CanOE - deactivating CSIB'
+            IF(lwp) WRITE(numout,*) 'CSIB on (ln_csib=true in sea ice namelist) but CanOE off (ln_canoe=false in TOP namelist) - deactivating CSIB'
             IF(lwp) WRITE(numout,*) 
             ln_csib=.false.
             RETURN
          ENDIF
+         ! For sea ice DMS check that ocean DMS is active
          IF (ln_dmsice .AND. .NOT.ln_dmsoce) THEN
             IF(lwp) WRITE(numout,*)
-            IF(lwp) WRITE(numout,*) 'Sea ice DMS on but ocean DMS off - deactivating sea ice DMS'
+            IF(lwp) WRITE(numout,*) 'Sea ice DMS on (ln_dmsice=true in sea ice namelist) but ocean DMS off (ln_dmsoce=true in TOP namelist) - deactivating sea ice DMS'
             IF(lwp) WRITE(numout,*) 
             ln_dmsice=.false.
-      ENDIF
+            jp_csib=5
+         ENDIF
       ENDIF
 
-      ! Initiation from ocean surface concentrations 
-      ! done here and not in trcini_csib because CanOE initiation occurs after
-      IF ( (kt == 1) .AND. ((.NOT. ln_rsttr) .OR. ln_ibgcspinup) ) THEN
+      ! Initiation from ocean surface concentrations (done here because CSIB init is in sea ice model init which is before CanOE init)
+      IF ( (kt == nittrc000) .AND. ((.NOT. ln_rsttr) .OR. ln_ibgcspinup) ) THEN
          IF(lwp) WRITE(numout,*) '     Init CSIB from ocean surface'
          DO jl = 1, jpl ! loop ice categories
             DO jj = 1, jpj
@@ -266,7 +268,7 @@ CONTAINS
                   IF( a_i(ji,jj,jl) > zsicmin ) THEN ! if ice
                      icetra(ji,jj,jl,jridiac) = tr(ji,jj,1,jrdia,Kmm) *mmc ! convert to mass units
                      icetra(ji,jj,jl,jridian) = icetra(ji,jj,jl,jridiac) /8._wp ! init at C:N=8
-                     icetra(ji,jj,jl,jridiach) = icetra(ji,jj,jl,jridiac) /10._wp ! init at C:Chl=10
+                     icetra(ji,jj,jl,jridiach) = icetra(ji,jj,jl,jridiac) /20._wp ! init at C:Chl=20
                      icetra(ji,jj,jl,jrino3) = tr(ji,jj,1,jqno3,Kmm)
                      icetra(ji,jj,jl,jrinh4) = tr(ji,jj,1,jrnh4,Kmm)
                      IF (ln_dmsice) THEN
@@ -325,7 +327,7 @@ CONTAINS
       slough_dia(:,:,:) = 0._wp
       lamloss_dia(:,:,:) = 0._wp
       dt_i(:,:,:) = 0._wp
-      meltoff_dia(:,:,:) = 0._wp
+      heatexp_dia(:,:,:) = 0._wp
       bogup_dia(:,:,:) = 0._wp
       lagup_dia(:,:,:) = 0._wp
       nxsicedia(:,:,:) = 0._wp
@@ -420,12 +422,12 @@ CONTAINS
                   lamloss_no3(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jrino3)   ! ice no3
                   lamloss_nh4(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icetra(ji,jj,jl,jrinh4)   ! ice nh4
 
-                  ! loss of ice tracers from melt-off : melt-off coeff ((C mg m-3)-1) * ice temp rate (C s-1) * ice temp change switch (-) * ice temp coeff (-) * biomass^2 ((mg m-3)2)
+                  ! loss of ice tracers from heating export : heating export coeff ((C mg m-3)-1) * ice temp rate (C s-1) * ice temp change switch (-) * ice temp coeff (-) * biomass^2 ((mg m-3)2)
                   zsimt = SUM(t_i(ji,jj,:,jl)) / nlay_i                                                     ! mean sea ice temperature (deg K)
                   dt_i(ji,jj,jl) = (zsimt - t_i_b(ji,jj,jl) ) / rn_Dt                                       ! mean sea ice temperature change (deg C s-1)
                   if_dti_higher = MAX( 0._wp , SIGN(1._wp, dt_i(ji,jj,jl) - dt_mo) )                        ! ice temp change switch (-)
                   zsti = MIN(1._wp, MAX(0._wp, ( (zsimt - t_mo) / (-1.8_wp+273.15_wp - t_mo) ))**0.2_wp )   ! ice temp coeff (-)
-                  meltoff_dia(ji,jj,jl) = d_mo * dt_i(ji,jj,jl) * if_dti_higher * zsti * icetra(ji,jj,jl,jridiac)**2._wp
+                  heatexp_dia(ji,jj,jl) = d_mo * dt_i(ji,jj,jl) * if_dti_higher * zsti * icetra(ji,jj,jl,jridiac)**2._wp
 
                   IF (ln_dmsice) THEN
                     ! flushrate / skeletal layer height * ice tracers concentration ( m s-1 /m * umolS m-3 = umolS m-3 s-1)
@@ -538,7 +540,7 @@ CONTAINS
                               &        - flush_dia(ji,jj,jl)                           & ! loss from flushing 
                               &        - slough_dia(ji,jj,jl)                          & ! loss from sloughing 
                               &        - lamloss_dia(ji,jj,jl)                         & ! loss from lateral melting of ice
-                              &        - meltoff_dia(ji,jj,jl)                         & ! loss from melt-off
+                              &        - heatexp_dia(ji,jj,jl)                         & ! loss from heating export
                               &        + bogup_dia(ji,jj,jl)                           & ! Uptake from bottom ice growth
                               &        + lagup_dia(ji,jj,jl)                           & ! Uptake from lateral ice growth
                               &        + phot_dia(ji,jj,jl)                            & ! Photosynthesis
@@ -557,7 +559,7 @@ CONTAINS
                               &    - flush_dia(ji,jj,jl) * qnidia(ji,jj,jl)                  & ! loss from flushing 
                               &    - slough_dia(ji,jj,jl) * qnidia(ji,jj,jl)                 & ! loss from sloughing 
                               &    - lamloss_dia(ji,jj,jl) * qnidia(ji,jj,jl)                & ! loss from lateral melting of ice 
-                              &    - meltoff_dia(ji,jj,jl) * qnidia(ji,jj,jl)                & ! loss from melt-off
+                              &    - heatexp_dia(ji,jj,jl) * qnidia(ji,jj,jl)                & ! loss from heating export
                               &    + bogup_dia(ji,jj,jl) * zphyn2c                           & ! Uptake from bottom ice growth
                               &    + lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdia,Kbb)*zphyn2c *mmn - icetra(ji,jj,jl,jridian) * da_lag_cat(ji,jj,jl)   & ! Uptake from lateral ice growth
                               &    + diaupn(ji,jj,jl)                                        & ! NO3+NH4 uptake
@@ -573,7 +575,7 @@ CONTAINS
                               &    - flush_dia(ji,jj,jl) * qchidia(ji,jj,jl)                 & ! loss from flushing
                               &    - slough_dia(ji,jj,jl) * qchidia(ji,jj,jl)                & ! loss from sloughing
                               &    - lamloss_dia(ji,jj,jl) * qchidia(ji,jj,jl)               & ! loss from lateral melting of ice 
-                              &    - meltoff_dia(ji,jj,jl) * qchidia(ji,jj,jl)               & ! loss from melt-off
+                              &    - heatexp_dia(ji,jj,jl) * qchidia(ji,jj,jl)               & ! loss from heating export
                               &    + bogup_dia(ji,jj,jl) * qchidiaref                        & ! Uptake from bottom ice growth 
                               &    + lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdia,Kbb) * qchidiaref - icetra(ji,jj,jl,jridiach) * da_lag_cat(ji,jj,jl)   & ! Uptake from lateral ice growth
                               &    + chlsyn(ji,jj,jl)                                        & ! Chl synthesis
@@ -728,7 +730,7 @@ CONTAINS
                   &        + f_p2 * flush_dia(ji,jj,jl) * z_ia                    & ! flushing of ice algae
                   &        + f_p2 * slough_dia(ji,jj,jl) * z_ia                   & ! sloughing of ice algae
                   &        + f_p2 * lamloss_dia(ji,jj,jl) * z_ia                  & ! ice algae from lateral melting of ice
-                  &        + f_p2 * meltoff_dia(ji,jj,jl) * z_ia                  & ! ice algae from melt-off
+                  &        + f_p2 * heatexp_dia(ji,jj,jl) * z_ia                  & ! ice algae from heating export
                   &        - bogup_dia(ji,jj,jl) * z_ia                           & ! Uptake from bottom ice growth
                   &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kbb)*mmc          & ! Uptake from lateral ice growth
                   ) /mmc ! convert to mmol
@@ -739,7 +741,7 @@ CONTAINS
                   &        + f_p2 * flush_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia         & ! flushing of ice algae 
                   &        + f_p2 * slough_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia        & ! sloughing of ice algae 
                   &        + f_p2 * lamloss_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia       & ! ice algae from lateral melting of ice
-                  &        + f_p2 * meltoff_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia       & ! ice algae from melt-off
+                  &        + f_p2 * heatexp_dia(ji,jj,jl) * qnidia(ji,jj,jl) * z_ia       & ! ice algae from heating export
                   &        - bogup_dia(ji,jj,jl) * zphyn2c * z_ia                         & ! Uptake from bottom ice growth
                   &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kbb)*mmc * zphyn2c        & ! Uptake from lateral ice growth
                   ) /mmn ! convert to mmol
@@ -750,7 +752,7 @@ CONTAINS
                   &        + f_p2 * flush_dia(ji,jj,jl) * qchidia(ji,jj,jl) * z_ia     & ! flushing of ice algae 
                   &        + f_p2 * slough_dia(ji,jj,jl) * qchidia(ji,jj,jl) * z_ia    & ! sloughing of ice algae 
                   &        + f_p2 * lamloss_dia(ji,jj,jl) * qchidia(ji,jj,jl) * z_ia   & ! ice algae from lateral melting of ice
-                  &        + f_p2 * meltoff_dia(ji,jj,jl) * qchidia(ji,jj,jl) * z_ia   & ! ice algae from melt-off
+                  &        + f_p2 * heatexp_dia(ji,jj,jl) * qchidia(ji,jj,jl) * z_ia   & ! ice algae from heating export
                   &        - bogup(ji,jj,jl) * tr(ji,jj,1,jrdch,Kbb)                   & ! Uptake from bottom ice growth
                   &        - lagup(ji,jj,jl) * tr(ji,jj,1,jrdch,Kbb)                   & ! Uptake from lateral ice growth
                   )
@@ -759,7 +761,7 @@ CONTAINS
                   ztotexp_icediac = (1.0_wp - f_p2) * flush_dia(ji,jj,jl)                  & ! flushing of ice algae
                   &               + (1.0_wp - f_p2) * slough_dia(ji,jj,jl)                 & ! sloughing of ice algae
                   &               + (1.0_wp - f_p2) * lamloss_dia(ji,jj,jl)                & ! ice algae from lateral melting of ice
-                  &               + (1.0_wp - f_p2) * meltoff_dia(ji,jj,jl)                & ! ice algae from melt-off
+                  &               + (1.0_wp - f_p2) * heatexp_dia(ji,jj,jl)                & ! ice algae from heating export
                   &               + (1.0_wp - f_rm) * mortlin_dia(ji,jj,jl)                & ! linear mortality 
                   &               + mortquad_dia(ji,jj,jl)                                   ! quadratic mortality 
                   ! C or N excess export
@@ -822,7 +824,7 @@ CONTAINS
          ENDDO ! loop jpi
       ENDDO ! loop jpj
 
-      ! record sea ice mean temperature for computation of sea ice temperature tendency for melt-off
+      ! record sea ice mean temperature for computation of sea ice temperature tendency for heating export
        DO jj = 1, jpj
          DO ji = 1, jpi
             DO jl = 1, jpl 
@@ -881,7 +883,7 @@ CONTAINS
          &     qnidia(jpi,jpj,jpl), qchidia(jpi,jpj,jpl), qnidiamax(jpi,jpj,jpl),  &
       ! sources and sinks
          &     flushrate (jpi,jpj,jpl) , flush_dia  (jpi,jpj,jpl) , lamloss_dia (jpi,jpj,jpl) , & 
-         &     slough_dia(jpi,jpj,jpl) , meltoff_dia(jpi,jpj,jpl) ,                             &
+         &     slough_dia(jpi,jpj,jpl) , heatexp_dia(jpi,jpj,jpl) ,                             &
          &     t_i_b     (jpi,jpj,jpl) , dt_i       (jpi,jpj,jpl) ,                             &
          &     bogup     (jpi,jpj,jpl) , bogup_dia  (jpi,jpj,jpl) , lagup       (jpi,jpj,jpl) , &
          &     lagup_dia (jpi,jpj,jpl) , lagup_no3  (jpi,jpj,jpl) , lagup_nh4   (jpi,jpj,jpl) , &

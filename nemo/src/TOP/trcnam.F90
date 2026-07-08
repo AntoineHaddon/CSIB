@@ -187,8 +187,15 @@ CONTAINS
           jptra  = jp_bgc + jp_cmoc
       ENDIF
 
-      if (ln_dmsoce) THEN
-         jptra  = jp_bgc + jp_canoe + jp_dmsoce
+      IF (ln_dmsoce) THEN
+         IF (.NOT. ln_canoe) THEN
+            IF(lwp) WRITE(numout,*)
+            IF(lwp) WRITE(numout,*) 'Ocean DMS active (ln_dmsoce=true) but CanOE off (ln_canoe=false) - deactivating ocean DMS'
+            IF(lwp) WRITE(numout,*) 
+            ln_dmsoce=.false.
+         ELSE
+            jptra  = jp_bgc + jp_canoe + jp_dmsoce
+         ENDIF
       ENDIF     
 
       !
