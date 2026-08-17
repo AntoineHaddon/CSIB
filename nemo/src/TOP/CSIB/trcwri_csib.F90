@@ -116,7 +116,7 @@ CONTAINS
       
       ! diagnostics
       CALL iom_put( 'icenpp_cat'       , phot_dia(:,:,:) - etares*diaupn(:,:,:) )
-      CALL iom_put( 'icenpp'           , SUM( phot_dia(:,:,:) - etares*diaupn(:,:,:) , dim=3 ) * z1_at_i(:,:)  )
+      CALL iom_put( 'icenpp'           , SUM( (phot_dia(:,:,:) - etares*diaupn(:,:,:)) *a_i(:,:,:) , dim=3 ) * z1_at_i(:,:)  )
       CALL iom_put( 'qchidia'          , qchidia(:,:,:) )
       CALL iom_put( 'qnidia'           , qnidia(:,:,:) )
       CALL iom_put( 'qnidiamax'        , qnidiamax(:,:,:) )
