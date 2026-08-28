@@ -141,6 +141,7 @@ CONTAINS
       
       fric_vel(:,:) = 0._wp
       
+      par_bi_cat(:,:,:) = 0._wp
       phot_dia(:,:,:) = 0._wp
       lim_PAR(:,:,:) = 0._wp
       lim_nut(:,:,:) = 0._wp

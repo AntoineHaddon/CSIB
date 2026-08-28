@@ -21,6 +21,7 @@ MODULE trcsms_csib
    USE sbc_oce , ONLY : ssu_m, ssv_m         ! sea surface velocity, for computation of friction velocity
    USE sbc_oce , ONLY : tprecip, sprecip     ! total and solid precipitation
    USE sbc_oce , ONLY : sst_m                ! sea surface temperature (Celsius)
+   USE sbc_ice , ONLY : qsr_ice              ! solar heat flux over ice (W m-2)
    USE zdfmxl  , ONLY : nmln                 ! level of mixed layer depth for dic/tak fluxes
 
    USE par_csib
@@ -116,6 +117,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: moldif_no3       !  Molecular diffusion rate at ice ocean interface for NO3 per ice category (mmol m-3 s-1)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: moldif_nh4       !  Molecular diffusion rate at ice ocean interface for NH4 per ice category (mmol m-3 s-1)
    
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: par_bi_cat       !  Bottom ice PAR per ice category - recomputed here (W m-2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: phot_dia         !  Ice algae growth rate per ice category (mg C m-3 s-1)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lim_PAR          !  Ice algae light limitation factor per ice category (-)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lim_nut          !  Ice algae nutrients limitation factor per ice category (-)
@@ -183,6 +185,17 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, SAVE :: k_freei                ! free lyase rate constant (d-1) (converted to s-1)
    REAL(wp), PUBLIC, SAVE :: k_photoi               ! photlysis rate constant (d-1) (converted to s-1)
    REAL(wp), PUBLIC, SAVE :: h_ni                   ! half-saturation constant for monod equation
+   ! optics
+   LOGICAL , PUBLIC, SAVE :: ln_bipar               ! Flag to compute bottom ice PAR: false = use PAR from SI3 ; true = recompute PAR in CSIB
+   REAL(wp), PUBLIC, SAVE :: i0_sdry                ! i0 fraction of light transmitted through SSL for dry snow (-)
+   REAL(wp), PUBLIC, SAVE :: i0_swet                ! i0 fraction of light transmitted through SSL for wet snow (-)
+   REAL(wp), PUBLIC, SAVE :: i0_ice                 ! i0 fraction of light transmitted through SSL for ice (-)
+   REAL(wp), PUBLIC, SAVE :: sslh_sdry              ! surface scattering layer height for dry snow (m)
+   REAL(wp), PUBLIC, SAVE :: sslh_swet              ! surface scattering layer height for wet snow (m)
+   REAL(wp), PUBLIC, SAVE :: sslh_ice               ! surface scattering layer height for ice (m)
+   REAL(wp), PUBLIC, SAVE :: parext_swet            ! PAR attenuation coefficent in wet snow (m-1) 
+   REAL(wp), PUBLIC, SAVE :: parext_sdry            ! PAR attenuation coefficent in wet snow (m-1)
+   REAL(wp), PUBLIC, SAVE :: parext_ice             ! PAR attenuation coefficent in ice (m-1)
   
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -231,6 +244,8 @@ CONTAINS
       REAL(wp) :: ztotexp_icediac      ! total expected C export
       REAL(wp) :: zidmspd,zidms        ! temp var DMSPd, DMS 
       REAL(wp) :: zinpp,zlim_nut_dmspd ! for DMSPd 
+      REAL(wp) :: zbipar               ! bottom ice PAR
+      
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -383,6 +398,10 @@ CONTAINS
       ! Compute friction velocity, for molecular diffusion at sea ice ocean interface
       CALL ice_friction_velocity
       
+      if (ln_bipar) then
+         ! Compute bottom ice PAR for photosynthesis
+         CALL bottom_ice_PAR
+      endif
       
       DO jj = 1, jpj
          DO ji = 1, jpi
@@ -495,11 +514,15 @@ CONTAINS
                   ztemp = EXP(-ear*( 1._wp/(sst_m(ji,jj)+273.15_wp) - 1._wp/tempref) ) 
 
                   ! Light limitation factor (-), with inhibition 
-                  ! qtr_ice_bot: shortwave radiation transmitted through ice (W m-2)
+                  if (ln_bipar) then 
+                     zbipar = par_bi_cat(ji,jj,jl) ! bottom ice PAR (W m-2) computed here
+                  else 
+                     zbipar = qtr_ice_bot(ji,jj,jl) ! shortwave radiation transmitted through ice (W m-2) computed by sea ice model
+                  endif
                   zpcmaxidia = pcrefidia * ztemp * lim_nut(ji,jj,jl) / (qchidia(ji,jj,jl) + rtrn)
                   zalphaidia = alrefidia * qchidia(ji,jj,jl)
-                  lim_PAR(ji,jj,jl) = (1._wp - EXP(-zalphaidia/(zpcmaxidia+rtrn) * qtr_ice_bot(ji,jj,jl) ) ) &
-                                    & * EXP(-betaidia/(zpcmaxidia+rtrn) * qtr_ice_bot(ji,jj,jl) )   ! inhibition at high light
+                  lim_PAR(ji,jj,jl) = (1._wp - EXP(-zalphaidia/(zpcmaxidia+rtrn) * zbipar ) ) &
+                                    & * EXP(-betaidia/(zpcmaxidia+rtrn) * zbipar )   ! inhibition at high light
                   
                   ! Ice growth limitation
                   lim_ice(ji,jj,jl) = MAX( 0._wp , SIGN(1._wp,  1._wp - dh_bog_cat(ji,jj,jl)/cigr ) )
@@ -518,7 +541,7 @@ CONTAINS
                   diaupn(ji,jj,jl) = vnref * ztemp * znut * (zlim_nh4 + (1._wp - zlim_nh4) * zlim_no3) * icetra(ji,jj,jl,jridiac)
 
                   ! Chl synthesis rate (mg Chl m-3 s-1)
-                  zrhoch = zpcmaxidia * lim_PAR(ji,jj,jl) / ( zalphaidia * qtr_ice_bot(ji,jj,jl) + rtrn )
+                  zrhoch = zpcmaxidia * lim_PAR(ji,jj,jl) / ( zalphaidia * zbipar + rtrn )
                   chlsyn(ji,jj,jl) = zrhoch * ch2nmax * diaupn(ji,jj,jl)
                   
                   ! Ice algae mortality, off if below threshold min_icedia
@@ -532,7 +555,7 @@ CONTAINS
                   remin_dia(ji,jj,jl) = f_rm * mortlin_dia(ji,jj,jl) * qnidia(ji,jj,jl) /mmn
 
                   ! Nitrification, reduced by light
-                  nitri(ji,jj,jl) = r_ni / (1.0_wp+qtr_ice_bot(ji,jj,jl)) * icetra(ji,jj,jl,jrinh4)
+                  nitri(ji,jj,jl) = r_ni / (1.0_wp+zbipar) * icetra(ji,jj,jl,jrinh4)
 
 
                   ! Ice algae C biomass dynamics
@@ -637,7 +660,7 @@ CONTAINS
                      dmsp_lysis(ji,jj,jl) =  q_pi /mmc * mortlin_dia(ji,jj,jl)  * ( 1._wp/(zlim_nut_dmspd+0.1_wp) ) 
 
                      ! DMS photolysis
-                     dms_phot(ji,jj,jl) = k_photoi*icetra(ji,jj,jl,jridms) * qtr_ice_bot(ji,jj,jl)/(qtr_ice_bot(ji,jj,jl)+1._wp)
+                     dms_phot(ji,jj,jl) = k_photoi*icetra(ji,jj,jl,jridms) * zbipar/(zbipar+1._wp)
                      
 
                      ! Ice DMSP dynamics (umolS/m3)
@@ -868,6 +891,78 @@ CONTAINS
    END SUBROUTINE ice_friction_velocity
 
 
+
+   SUBROUTINE bottom_ice_PAR
+      !!-----------------------------------------------------------------------
+      !!                   ***  ROUTINE bottom_ice_PAR ***
+      !!
+      !! ** Purpose :   compute bottom ice PAR from qsr_ice 
+      !!                   surface scaterring layer (SSL) transmittes only a fraction i0 of light
+      !!                   attenuation of light by snow and ice with beer lambert 
+      !!                only for sea ice BGC - allows to use different attenuation parameters than used by sea ice model which is focused on thermodynamics
+      !!                code adapted from 
+      !!                   SBC/sbcblk for surface scatering layer
+      !!                   ICE/icethd_zdf_bl99 for attenuation in snow and ice
+      !!-----------------------------------------------------------------------
+      INTEGER  ::   ji, jj, jl         ! dummy loop indices
+      REAL(wp) ::   zi0                ! i0 fraction of light transmitted through surface scattering layer 
+      REAL(wp) ::   zh0                ! surface scattering layer height
+      REAL(wp) ::   zraext_s           ! snow extinction ceof
+      REAL(wp) ::   zqtr_ssl           ! light penetrating surface scattering layer
+      REAL(wp) ::   zqtr_top_ice       ! light reaching surface of ice
+      !!-----------------------------------------------------------------------
+
+       DO jj = 1, jpj
+         DO ji = 1, jpi
+            DO jl = 1, jpl  ! loop ice cat
+
+               IF( h_i(ji,jj,jl) < 0.1_wp ) THEN ! little or no ice 
+                  par_bi_cat(ji,jj,jl) = 0._wp
+               
+               ELSE ! sea ice is at least 10 cm
+                  IF( h_s(ji,jj,jl) > 0._wp ) THEN ! if snow: SSL in snow
+
+                     IF( t_su(ji,jj,jl) < rt0 ) THEN  ! sea ice surface temperature < 0 deg Celsius ->  no surface melting : dry snow
+                        zi0 = i0_sdry ! 1._wp (no SSL)
+                        zh0 = sslh_sdry  ! 0._wp
+                        zraext_s = parext_sdry ! 7._wp 
+                     ELSE ! surface melting: wet melting snow
+                        zi0 = i0_swet ! 0.45_wp
+                        zh0 = sslh_swet ! 0.03_wp
+                        zraext_s = parext_swet ! 5._wp  
+                     END IF
+                     
+                     ! light penetrating surface scaterring layer
+                     ! qsr_ice : downwelling shortwave * ( 1 - albedo)
+                     zqtr_ssl = zi0 * qsr_ice(ji,jj,jl)
+
+                     ! light at top of ice
+                     ! effects of melt ponds : weigted sum with melt pond fraction a_ip_frac
+                     zqtr_top_ice = (1.0_wp - a_ip_frac(ji,jj,jl)) * zqtr_ssl * EXP( - zraext_s * MAX( 0._wp, h_s(ji,jj,jl) - zh0 ) ) &
+                     &              + a_ip_frac(ji,jj,jl) * qsr_ice(ji,jj,jl) * EXP( - zraext_s * h_s(ji,jj,jl)  )  ! under meltpond : no SSL
+
+                     ! PAR in bottom ice layer
+                     par_bi_cat(ji,jj,jl) = zqtr_top_ice * EXP( - parext_ice * h_i(ji,jj,jl) ) 
+                     
+                  ELSE ! no snow: SSL in sea ice 
+                     zi0= i0_ice ! 0.26_wp
+                     zh0= sslh_ice ! 0.1_wp
+                     zqtr_ssl = zi0 * qsr_ice(ji,jj,jl)
+
+                     ! effects of melt ponds : weigted sum with melt pond fraction a_ip_frac
+                     par_bi_cat(ji,jj,jl) = (1.0_wp - a_ip_frac(ji,jj,jl)) * zqtr_ssl * EXP( - parext_ice * MAX( 0._wp, h_i(ji,jj,jl)-zh0) ) &
+                     &                      + a_ip_frac(ji,jj,jl) * qsr_ice(ji,jj,jl) * EXP( - parext_ice * h_i(ji,jj,jl) ) ! under meltpond : no SSL
+
+                  END IF
+               END IF
+
+            ENDDO
+         ENDDO
+      ENDDO
+
+   END SUBROUTINE bottom_ice_PAR
+
+
    INTEGER FUNCTION trc_sms_csib_alloc()
       !!----------------------------------------------------------------------
       !!              ***  ROUTINE trc_sms_csib_alloc  ***
@@ -887,7 +982,7 @@ CONTAINS
          &     t_i_b     (jpi,jpj,jpl) , dt_i       (jpi,jpj,jpl) ,                             &
          &     bogup     (jpi,jpj,jpl) , bogup_dia  (jpi,jpj,jpl) , lagup       (jpi,jpj,jpl) , &
          &     lagup_dia (jpi,jpj,jpl) , lagup_no3  (jpi,jpj,jpl) , lagup_nh4   (jpi,jpj,jpl) , &
-         &     nxsicedia (jpi,jpj,jpl) , cxsicedia  (jpi,jpj,jpl) ,                             &
+         &     nxsicedia (jpi,jpj,jpl) , cxsicedia  (jpi,jpj,jpl) , par_bi_cat  (jpi,jpj,jpl) , &
          &     phot_dia  (jpi,jpj,jpl) , mortlin_dia(jpi,jpj,jpl) , mortquad_dia(jpi,jpj,jpl) , &
          &     lim_PAR   (jpi,jpj,jpl) , lim_nut    (jpi,jpj,jpl) , lim_ice     (jpi,jpj,jpl) , &
          &     diaupn    (jpi,jpj,jpl) , chlsyn     (jpi,jpj,jpl) ,                             &

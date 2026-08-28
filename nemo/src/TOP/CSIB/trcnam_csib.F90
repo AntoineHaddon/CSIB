@@ -42,7 +42,8 @@ CONTAINS
          & z_ia, qnidiamin, cn_fct, cn_pow, qchidiaref, alrefidia, pcrefidia, betaidia, cigr, vnref, knh4, kno3, etares, ch2nmax, min_icedia, t_ia, r_m1, r_m2, f_p2, f_flsh, f_slgh, dt_mo, t_mo, d_mo, &
          & f_rm, r_ni, c_di, c_nu, &
          & sicpump, icedicref, icetalref, f_dicsw, f_dicsw_melt, &
-         & ln_dmsice, q_pi, f_zi, f_ei, f_yieldi, k_dmspdi, k_dmsi, k_freei, k_photoi, h_ni
+         & ln_dmsice, q_pi, f_zi, f_ei, f_yieldi, k_dmspdi, k_dmsi, k_freei, k_photoi, h_ni, &
+         & ln_bipar, i0_sdry, i0_swet, i0_ice, sslh_sdry, sslh_swet, sslh_ice, parext_swet, parext_sdry, parext_ice
       
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) '  trc_nam_csib : read icetra namelist in ice namelist file for CSIB2'
@@ -106,6 +107,19 @@ CONTAINS
          WRITE(numout,*) '  icetalref =',icetalref
          WRITE(numout,*) '  f_dicsw =',f_dicsw
          WRITE(numout,*) '  f_dicsw_melt =',f_dicsw_melt
+         WRITE(numout,*) '  '
+         WRITE(numout,*) 'Ice optics'
+         WRITE(numout,*) '  ln_bipar =', ln_bipar
+         WRITE(numout,*) '  i0_sdry =', i0_sdry
+         WRITE(numout,*) '  i0_swet =', i0_swet
+         WRITE(numout,*) '  i0_ice =', i0_ice
+         WRITE(numout,*) '  sslh_sdry =', sslh_sdry
+         WRITE(numout,*) '  sslh_swet =', sslh_swet
+         WRITE(numout,*) '  sslh_ice =', sslh_ice
+         WRITE(numout,*) '  parext_swet =', parext_swet
+         WRITE(numout,*) '  parext_sdry =', parext_sdry
+         WRITE(numout,*) '  parext_ice =', parext_ice
+         WRITE(numout,*) '  '
       ENDIF
 
       ! convert time unit from /day to /sec

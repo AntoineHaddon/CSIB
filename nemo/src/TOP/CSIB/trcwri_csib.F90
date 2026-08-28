@@ -107,6 +107,7 @@ CONTAINS
       CALL iom_put( 'lim_nut'          , lim_nut(:,:,:) )
       CALL iom_put( 'lim_ice'          , lim_ice(:,:,:) )
       CALL iom_put( 'qtr_ice_bot_cat'  , qtr_ice_bot(:,:,:) )
+      CALL iom_put( 'par_bi_cat'       , par_bi_cat(:,:,:) )
       CALL iom_put( 'diaupn'           , diaupn(:,:,:) )
       CALL iom_put( 'chlsyn'           , chlsyn(:,:,:) )
       CALL iom_put( 'mortlin_dia'      , mortlin_dia(:,:,:) )
